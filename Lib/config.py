@@ -129,7 +129,10 @@ class Config:
             Union[Dict[str, Any], List[Any]]: The value associated with the specified key.
         """
         if key in self.data:
-            return self.data[key]
+            try:
+                return self.data[key]
+            except KeyError:
+                return None
         else:
             raise KeyError(f"'{key}' not found in the configuration data")
 

@@ -4,33 +4,64 @@ This Is Fun Lib
 """
 import os
 from .config import Config
-
-config = Config("secrets/config.conf")
-layout = ["General","Logger", "Database", "APIs"]
+from .richer import print
+os.makedirs(".secrets", exist_ok=True)
+config = Config(".secrets/config.conf")
+layout = ["General","Logger"]#, "Database", "APIs"]
 config.set_layout(layout)
-try:
-    config.load()
-except FileNotFoundError:
-    config.data = {
+
+VERSION = "0.0.4"
+
+data = {
         "General": {
             "prefix": "ur.",
             "token": "Your Bot Token",
+            "SendToOwnerThatIsOnline": True,
             "owner": 829806976702873621,
-            "Guild Testing ID": 1080951710828220537
+            "GuildTestingID": 1080951710828220537,
+            "ConfigVersion": VERSION
         },
         "Logger": {
             "log": False,
-            "log_channel": 0
+            "Format": '%(asctime)s - %(levelname)s - %(message)s'
         },
     }
+
+
+
+try:
+    config.load()
+except FileNotFoundError:
+    config.data = data
     config.save()
 
-token = config.data["General"]["token"]
-prefix = config.data["General"]["prefix"]
-owner_id = config.data["General"]["owner"]
-TESTING_GUILD_ID = config.data["General"]["Guild Testing ID"]
+if config.data["General"]["ConfigVersion"] != VERSION:
+    print("Config Version Mismatch")
+    print("Backup Config File...")
+    os.makedirs(".secrets/backup", exist_ok=True)
+    os.rename(".secrets/config.conf", f".secrets/backup/config_{config["General"]["ConfigVersion"]}.conf")
+    print("Backup Done")
+    print("Creating New Config File...")
+    for section in layout:
+        if section not in config.data:
+            config[section] = {}
+        for key in data[section]:
+            if key not in config[section]:
+                config.data[section][key] = data[section][key]
+    config.data["General"]["ConfigVersion"] = VERSION
+    config.save()
 
-Logger_Enabled = config.data["Logger"]["log"]
+
+token = config["General"]["token"]
+prefix = config["General"]["prefix"]
+send_to_owner_enabled = config["General"]["SendToOwnerThatIsOnline"]
+owner_id = config["General"]["owner"]
+TESTING_GUILD_ID = config["General"]["GuildTestingID"]
+
+Logger_Enabled = config["Logger"]["log"]
+Format = config["Logger"]["Format"]
+
+
 
 line = "____________________________________________________________________"
 

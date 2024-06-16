@@ -1,3 +1,4 @@
-secrets/
+.secrets/
 logs/
 __pycache__/
+.Idea/

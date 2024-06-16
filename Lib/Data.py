@@ -2,13 +2,13 @@ import os
 import nextcord #type: ignore
 from nextcord.ext.commands import MissingPermissions
 from nextcord import Interaction
+from .Side import owner_id
 from nextcord import Interaction as init
 import random
 import json
 
-owner_id = None
 
-def check_persmsion(interaction:Interaction,**perms:bool) -> bool:
+def check_permission(interaction:Interaction,**perms:bool) -> bool:
     invalid = set(perms) - set(nextcord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
@@ -22,7 +22,7 @@ def check_persmsion(interaction:Interaction,**perms:bool) -> bool:
         raise MissingPermissions(missing)
     return predicate(interaction)
 
-def check_owner_persmsion(interaction:Interaction) -> bool:
+def check_owner_permission(interaction:Interaction) -> bool:
     async def predicate(ctx:Interaction) -> bool:
         if ctx.user.id == owner_id:
             return True
@@ -30,7 +30,7 @@ def check_owner_persmsion(interaction:Interaction) -> bool:
         raise MissingPermissions(ctx.user.name)
     return predicate(interaction)
 
-def check_owner_persmsion_message(message:nextcord.Message) -> bool:
+def check_owner_permission_message(message:nextcord.Message) -> bool:
     async def predicate(ctx:Interaction) -> bool:
         if ctx.author.id == owner_id:
             return True
