@@ -44,7 +44,11 @@ async def on_ready():
     if send_to_owner_enabled:
         user = client.get_user(owner_id)
         channel = await user.create_dm()
-        await channel.send("Running ✅")
+        await channel.send("Running ✅",embeds=[
+            debug_embed("Bot is Online"),
+            info_embed("Bot is Online"),
+            warn_embed("Bot is Online"),
+            error_embed("Bot is Online")])
 #End
 
 #Classes
@@ -74,6 +78,35 @@ async def reload_classes(ctx:init):
     print('Your Bot Is Reloaded!\nWe have logged in as {0.user}'.format(client))
     print(line)
 
+@client.slash_command("load_class")
+async def load_class(ctx:init,extension:str):
+    await ctx.response.defer(ephemeral=True)
+    await Data.check_owner_permission(ctx)
+    try:
+        client.load_extension(f"classes.{extension}")
+        await ctx.send(f"Loaded {extension}")
+    except Exception as e:
+        await ctx.send(embed=error_embed(str(e)))
+
+@client.slash_command("unload_class")
+async def unload_class(ctx:init,extension:str):
+    await ctx.response.defer(ephemeral=True)
+    await Data.check_owner_permission(ctx)
+    try:
+        client.unload_extension(f"classes.{extension}")
+        await ctx.send(f"Unloaded {extension}")
+    except Exception as e:
+        await ctx.send(embed=error_embed(str(e)))
+
+@client.slash_command("reload_class")
+async def reload_class(ctx:init,extension:str):
+    await ctx.response.defer(ephemeral=True)
+    await Data.check_owner_permission(ctx)
+    try:
+        client.reload_extension(f"classes.{extension}")
+        await ctx.send(f"Reloaded {extension}")
+    except Exception as e:
+        await ctx.send(embed=error_embed(str(e)))
 
 @client.slash_command("list_classes")
 async def list_classes(ctx:init):
@@ -93,5 +126,11 @@ async def list_classes(ctx:init):
 if __name__ == '__main__':
     for extension in initial_extension:
         client.load_extension(extension)
-
-client.run(token)
+try:
+    client.run(token)
+except nextcord.errors.LoginFailure:
+    print(Panel(f"""Here's the step to check if you Have put your Token right:
+    1- Add your token in the config file in {config_path}
+    2- see if it didn't change back to "Your Bot Token" and if is change it to your token
+    3- Reset your token in https://discord.com/developers/applications""",
+    title="Invalid Token",style="bold red",border_style="bold red"))

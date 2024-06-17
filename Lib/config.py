@@ -2,6 +2,18 @@ import json
 from typing import Any, Dict, List, Union
 
 import os
+
+
+class Color:
+    def __init__(self, value:int | str):
+        self.value = value
+        if isinstance(value,str):
+            self.value = int(value.replace("#","0x"),16)
+
+    def __str__(self):
+        return f"{hex(self.value).replace('0x','#')}"
+
+
 class Config:
     """
     This class provides a simple configuration file system with easy usage.
@@ -58,7 +70,7 @@ class Config:
                             lines.append(f"# {comment}\n")
                     if isinstance(value, str):
                         value = f"\"{value}\""
-                    elif not isinstance(value, (int, float, bool)):
+                    elif not isinstance(value, (int, float, bool,Color)):
                         raise ValueError("Invalid value: must be a boolean, string, int, or float")
                     lines.append(f"{key} = {value}\n")
             elif isinstance(section_data, list):

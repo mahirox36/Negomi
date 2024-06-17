@@ -2,11 +2,11 @@ import os
 import nextcord #type: ignore
 from nextcord.ext.commands import MissingPermissions
 from nextcord import Interaction
-from .Side import owner_id
+# from .Side import owner_id
 from nextcord import Interaction as init
 import random
 import json
-
+from typing import Any, Dict, List, Union
 
 def check_permission(interaction:Interaction,**perms:bool) -> bool:
     invalid = set(perms) - set(nextcord.Permissions.VALID_FLAGS)
@@ -54,42 +54,100 @@ def check_id(data,code) -> bool:
     
 
 
-class Data():
-    def __init__(self):
-        pass
+#TODO: add 2 classes Data() DataGlobal() and uses normal json files
+#TODO: add Four Functions for each class (save,load,check,delete)
 
-    def save(self, id: int, name: str, data: any,
-             custom_name:str = "data"):
-        os.makedirs(f"data/{name}/{id}", exist_ok=True)
-        with open(f"data/{name}/{id}/{custom_name}.json", "w", encoding='utf-8') as fp:
-            json.dump(data, fp)
-
-    def load(self, id: int, name: str,
-             custom_name:str = "data"):
+class Data:
+    def __init__(self,server_id:int, name:str,file:str="data"):
+        self.path = f"Data/{name}/{server_id}/"
+        self.file = f"{self.path}{file}.json"
+        os.makedirs(self.path,exist_ok=True)
+        
         try:
-            with open(f"data/{name}/{id}/{custom_name}.json", "r", encoding='utf-8') as fp:
-                return json.load(fp)
+            self.load()
         except FileNotFoundError:
-            return None
+            self.data = {}
     
-    def save_global(self, name: str, data: any,custom_name:str = "data"):
-        os.makedirs(f"data/{name}", exist_ok=True)
-        with open(f"data/{name}/{custom_name}.json", "w", encoding='utf-8') as fp:
-            json.dump(data, fp)
+    def save(self) -> None:
+        with open(self.file, "w") as f:
+            json.dump(self.data,f)
+    
+    def load(self) -> Any:
+        with open(self.file, "r") as f:
+            self.data = json.load(f)
+        return self.data
+    
+    def check(self) -> bool:
+        if os.path.exists(self.file):
+            return True
+        return False
+    
+    def delete(self,code) -> None:
+        del self.data[code]
+        self.save()
+        os.remove(self.file)
+    
+    def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
+        if key in self.data:
+            try:
+                return self.data[key]
+            except KeyError:
+                return None
+        else:
+            raise KeyError(f"'{key}' not found in the data")
 
-    def load_global(self, name: str,custom_name:str = "data"):
+    def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
+        if key in self.data:
+            self.data[key] = value
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+class DataGlobal:
+    def __init__(self, name:str,file:str="data"):
+        if name == ""   : self.path = f"Data/"
+        else            : self.path = f"Data/{name}/"
+        self.file = f"{self.path}{file}.json"
+        os.makedirs(self.path,exist_ok=True)
+        self.data = {}
         try:
-            with open(f"data/{name}/{custom_name}.json", "r", encoding='utf-8') as fp:
-                return json.load(fp)
+            self.load()
         except FileNotFoundError:
-            return None
-
-    def check(self, id: int,
-               name: str,custom_name:str = "data"):
-        return os.path.isfile(f"data/{name}/{id}/{custom_name}.json")
+            pass
     
-    def check_global(self, name: str,custom_name:str = "data"):
-        return os.path.isfile(f"data/{name}/{custom_name}.json")
+    def save(self):
+        with open(self.file, "w") as f:
+            json.dump(self.data,f)
+        return self
+    
+    def load(self) -> Any:
+        with open(self.file, "r") as f:
+            self.data = json.load(f)
+        return self.data
+    
+    def check(self) -> bool:
+        if os.path.exists(self.file):
+            return True
+        return False
+    
+    def delete(self,code) -> None:
+        del self.data[code]
+        self.save()
+        os.remove(self.file)
+    def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
+        if key in self.data:
+            try:
+                return self.data[key]
+            except KeyError:
+                return None
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+    def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
+        if key in self.data:
+            self.data[key] = value
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
 async def high(ctx:init,user:nextcord.Member):
     if user.top_role.position >= ctx.user.top_role.position:
         await ctx.send(f"User {user} Is Higher Than you")
