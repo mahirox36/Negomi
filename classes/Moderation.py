@@ -11,6 +11,7 @@ import json
 class Moderation(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
+        self.ID = BetterID()
     async def kick_command(self,ctx:init | commands.Context,user:Member,reason:str=None):
         if ctx.user.guild_permissions.kick_members:
             if (ctx.user.top_role.position > user.top_role.position) or \
@@ -127,9 +128,10 @@ class Moderation(commands.Cog):
                 date = str(current_datetime.strftime("%Y-%m-%d"))
                 timed = str(current_datetime.strftime("%H-%M-%S-%f"))
                 try:
-                    ID = BetterID()
+                    
                     data = {
                         user.id: {
+                            "id": self.ID.create_random_id(),
                             "reason": reason,
                             "date": date,
                             "time": timed,
