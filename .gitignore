@@ -4,4 +4,4 @@ __pycache__/
 .Idea/
 test.*
 data/
-setUser.bat
+*.bat
