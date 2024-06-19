@@ -53,77 +53,23 @@ async def on_ready():
 
 #Classes
 initial_extension = []
+base_extension = []
 
 for filename in os.listdir("./classes"):
     if filename.endswith(".py"):
         initial_extension.append("classes." + filename[:-3])
+for filename in os.listdir("./classes/base"):
+    if filename.endswith(".py"):
+        base_extension.append("classes.base." + filename[:-3])
 
-print(f"These All The Extension {initial_extension} ")
-@client.slash_command("reload_classes")
-async def reload_classes(ctx:init):
-    await ctx.response.defer(ephemeral=True)
-    """Reload all Classes
-        ~~~~~~~"""
-    await Data.check_owner_permission(ctx)
-    temp = 0
-    await ctx.response.send_message("Reloading...",ephemeral=True)
-    a = await ctx.channel.send("```Reloading...```")
-    for i in list(client.extensions):
-        client.reload_extension(i)
-        fv = a.content.replace(".```","")
-        temp += 1
-    fv = a.content.replace(".```","")
-    await a.edit(fv + f"\n\nReloaded {temp} Classes!```")
-    # clear()
-    print('Your Bot Is Reloaded!\nWe have logged in as {0.user}'.format(client))
-    print(line)
-
-@client.slash_command("load_class")
-async def load_class(ctx:init,extension:str):
-    await ctx.response.defer(ephemeral=True)
-    await Data.check_owner_permission(ctx)
-    try:
-        client.load_extension(f"classes.{extension}")
-        await ctx.send(f"Loaded {extension}")
-    except Exception as e:
-        await ctx.send(embed=error_embed(str(e)))
-
-@client.slash_command("unload_class")
-async def unload_class(ctx:init,extension:str):
-    await ctx.response.defer(ephemeral=True)
-    await Data.check_owner_permission(ctx)
-    try:
-        client.unload_extension(f"classes.{extension}")
-        await ctx.send(f"Unloaded {extension}")
-    except Exception as e:
-        await ctx.send(embed=error_embed(str(e)))
-
-@client.slash_command("reload_class")
-async def reload_class(ctx:init,extension:str):
-    await ctx.response.defer(ephemeral=True)
-    await Data.check_owner_permission(ctx)
-    try:
-        client.reload_extension(f"classes.{extension}")
-        await ctx.send(f"Reloaded {extension}")
-    except Exception as e:
-        await ctx.send(embed=error_embed(str(e)))
-
-@client.slash_command("list_classes")
-async def list_classes(ctx:init):
-    await ctx.response.defer(ephemeral=True)
-    await Data.check_owner_permission(ctx)
-    temp = 0
-    a = "```\n"
-    for i in list(client.extensions):
-        a += str(i + "\n")
-        temp += 1
-    a += f"\n{temp} Classes!```"
-    await ctx.send(a)
+print(f"These are All the Base {base_extension}\nand These All The Extension {initial_extension} ")
 
 
 # client.unload_extension("Lib.fun")
 
 if __name__ == '__main__':
+    for extension in base_extension:
+        client.load_extension(extension)
     for extension in initial_extension:
         client.load_extension(extension)
 try:

@@ -2,7 +2,7 @@ import os
 import nextcord #type: ignore
 from nextcord.ext.commands import MissingPermissions
 from nextcord import Interaction
-# from .Side import owner_id
+import Lib.Side as Side
 from nextcord import Interaction as init
 import random
 import json
@@ -24,7 +24,7 @@ def check_permission(interaction:Interaction,**perms:bool) -> bool:
 
 def check_owner_permission(interaction:Interaction) -> bool:
     async def predicate(ctx:Interaction) -> bool:
-        if ctx.user.id == owner_id:
+        if ctx.user.id == Side.owner_id:
             return True
         await ctx.send("You'r Not The Owner Of this Bot",ephemeral=True)
         raise MissingPermissions(ctx.user.name)
@@ -32,7 +32,7 @@ def check_owner_permission(interaction:Interaction) -> bool:
 
 def check_owner_permission_message(message:nextcord.Message) -> bool:
     async def predicate(ctx:Interaction) -> bool:
-        if ctx.author.id == owner_id:
+        if ctx.author.id == Side.owner_id:
             return True
         return False
     return predicate(message)
