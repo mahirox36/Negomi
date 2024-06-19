@@ -16,7 +16,7 @@ from datetime import timedelta
 os.makedirs(".secrets", exist_ok=True)
 config_path = ".secrets/config.conf"
 config = Config(config_path)
-layout = ["General","Logger","General Embeds Colour"]#, "Database", "APIs"]
+layout = ["General","Logger","General Embeds Colour","Advance"]#, "Database", "APIs"]
 config.set_layout(layout)
 
 VERSION = "0.0.5"
@@ -39,6 +39,10 @@ data = {
             "Info"  : color(0x1E90FF),
             "Warn"  : color(0xFFD700),
             "Error" : color(0xB22222)
+        },
+        "Advance": {
+            "DefaultBetterID_MaxNumber": 7,
+            "AllowOtherCoreExtension": False,
         }
     }
 
@@ -87,7 +91,10 @@ Info_Colour  = color(config["General Embeds Colour"]["Info"]).value
 Warn_Colour  = color(config["General Embeds Colour"]["Warn"]).value
 Error_Colour = color(config["General Embeds Colour"]["Error"]).value
 
-line = "____________________________________________________________________"
+#Advance 
+maxNum = config["Advance"]["DefaultBetterID_MaxNumber"]
+AllowOtherCoreExtension = config["Advance"]["AllowOtherCoreExtension"]
+
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
@@ -151,7 +158,7 @@ def convert_to_seconds(time_string):
     
 
 class BetterID:
-    def __init__(self,max:int = 7):
+    def __init__(self,max:int = maxNum):
         self.max = max
         self.file = GlobalData("","BetterID")
         try:

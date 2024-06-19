@@ -1,5 +1,9 @@
 {
     "cSpell.words": [
         "levelname"
-    ]
+    ],
+    "material-icon-theme.folders.associations": {
+    // "folder-name": "icon-name"
+        "mahirox":  "Syntax"
+    }
 }

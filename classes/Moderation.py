@@ -8,6 +8,46 @@ from Lib.Data import Data
 import os
 import json
 
+
+class warn(ui.Modal):
+    def __init__(self,user:Member,message:message = None):
+        super().__init__(f"Warn {user.display_name}", timeout=None)
+        self.reason = ui.TextInput(
+            label="Reason for Warning",
+            placeholder="Reason",
+            required=False,
+            style=TextInputStyle.paragraph
+        )
+        self.add_item(self.reason)
+        self.duration = ui.TextInput(
+            label="Duration of Warning",
+            placeholder="Duration",
+            required=False,
+            style=TextInputStyle.short
+        )
+        self.add_item(self.duration)
+        proof = message if message else "No Proof Provided"
+        self.proof = ui.TextInput(
+            label="Proof of Warning",
+            placeholder="Proof",
+            default_value=proof,
+            required=False,
+            style=TextInputStyle.short,
+        )
+        self.add_item(self.proof)
+        self.note = ui.TextInput(
+            label="Note from Moderator",
+            placeholder="Note",
+            required=False,
+            style=TextInputStyle.short
+        )
+        self.add_item(self.note)
+
+    async def callback(self, ctx: init) -> None:
+        Moderation(ctx.client).warn_command(ctx,self.user,self.reason.value,self.proof.value,self.duration.value,self.note.value)
+        await ctx.send(f"Warned {ctx.user.mention} for {self.reason.value}")
+
+
 class Moderation(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -210,7 +250,21 @@ class Moderation(commands.Cog):
     async def clear(self,ctx:commands.Context,amount:int):
         ctx.user = ctx.author
         await self.clear_command(ctx,amount)
+
+    #User Commands
+    @user_command(name="warn")
+    async def warn_user(self,ctx:init,user:Member):
+        await ctx.response.send_modal(warn(user))
+
     
+
+
+
+    #Message commands
+    @message_command(name="warn")
+    async def warn_message(self,ctx:init,message:Message):
+        await ctx.response.send_modal(warn(ctx.user,message.jump_url))
+
 
 
 def setup(client):

@@ -53,22 +53,24 @@ async def on_ready():
 
 #Classes
 initial_extension = []
-base_extension = []
+core_extension = []
 
 for filename in os.listdir("./classes"):
     if filename.endswith(".py"):
+        if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
         initial_extension.append("classes." + filename[:-3])
-for filename in os.listdir("./classes/base"):
+for filename in os.listdir("./classes/core"):
     if filename.endswith(".py"):
-        base_extension.append("classes.base." + filename[:-3])
+        if "." in filename[:-3]: raise Exception("You can't have a dot in the core name")
+        core_extension.append("classes.core." + filename[:-3])
 
-print(f"These are All the Base {base_extension}\nand These All The Extension {initial_extension} ")
+print(f"These are All the Core {core_extension}\nand These All The Extension {initial_extension} ")
 
 
 # client.unload_extension("Lib.fun")
 
 if __name__ == '__main__':
-    for extension in base_extension:
+    for extension in core_extension:
         client.load_extension(extension)
     for extension in initial_extension:
         client.load_extension(extension)
