@@ -1,9 +1,19 @@
 {
     "cSpell.words": [
-        "levelname"
+        "levelname",
+        "nttx"
     ],
     "material-icon-theme.folders.associations": {
-    // "folder-name": "icon-name"
-        "mahirox":  "Syntax"
-    }
+    //  "folder-name"   : "icon-name"
+        "mahirox"       : "Syntax",
+        "hiro"          : "Syntax",
+        "editor"        : "Generator",
+        
+    },
+    "material-icon-theme.files.associations": {
+    //  "File-name" : "icon-name"
+        "*.hiro"    : "Svgr",
+        "*.mahirox" : "Svgr"
+    },
+    "python.analysis.typeCheckingMode": "off"
 }

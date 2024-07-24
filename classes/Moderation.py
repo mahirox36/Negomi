@@ -45,7 +45,7 @@ class warn(ui.Modal):
 
     async def callback(self, ctx: init) -> None:
         Moderation(ctx.client).warn_command(ctx,self.user,self.reason.value,self.proof.value,self.duration.value,self.note.value)
-        await ctx.send(f"Warned {ctx.user.mention} for {self.reason.value}")
+        await ctx.send(embed=info_embed(f"Warned {ctx.user.mention} for {self.reason.value}"))
 
 
 class Moderation(commands.Cog):
@@ -58,7 +58,7 @@ class Moderation(commands.Cog):
                 (ctx.user.id == ctx.guild.owner_id):
                 reason = "No Reason Provided" if reason == None else reason
                 await user.kick(reason=reason)
-                await ctx.send(f"Kicked {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Kicked {user.mention} for {reason}"))
             else:
                 await ctx.send(embed=error_embed("You can't kick someone with a higher role than you."
                                                  ,title="Permission Error")
@@ -80,7 +80,7 @@ class Moderation(commands.Cog):
                 (ctx.user.id == ctx.guild.owner_id):
                 reason = "No Reason Provided" if reason == None else reason
                 await user.ban(reason=reason)
-                await ctx.send(f"Banned {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Banned {user.mention} for {reason}"))
             else:
                 await ctx.send(embed=error_embed("You can't ban someone with a higher role than you."
                                                  ,title="Permission Error")
@@ -100,7 +100,7 @@ class Moderation(commands.Cog):
         if ctx.user.guild_permissions.ban_members:
             reason = "No Reason Provided" if reason == None else reason
             await ctx.guild.unban(user,reason=reason)
-            await ctx.send(f"Unbanned {user.mention} for {reason}")
+            await ctx.send(embed=info_embed(f"Unbanned {user.mention} for {reason}"))
         else:
             await ctx.send(embed=error_embed("You don't have permission to unban members.",title="Permission Error"),ephemeral=True)
     
@@ -118,7 +118,7 @@ class Moderation(commands.Cog):
                 (ctx.user.id == ctx.guild.owner_id):
                 reason = "No Reason Provided" if reason == None else reason
                 user.timeout(time,reason=reason)
-                await ctx.send(f"Muted {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Muted {user.mention} for {reason}"))
             else:
                 await ctx.send(embed=error_embed("You can't mute someone with a higher role than you."
                                                  ,title="Permission Error")
@@ -140,7 +140,7 @@ class Moderation(commands.Cog):
                 (ctx.user.id == ctx.guild.owner_id):
                 reason = "No Reason Provided" if reason == None else reason
                 user.timeout(0,reason=reason)
-                await ctx.send(f"Unmuted {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Unmuted {user.mention} for {reason}"))
             else:
                 await ctx.send(embed=error_embed("You can't unmute someone with a higher role than you."
                                                  ,title="Permission Error")
@@ -189,7 +189,7 @@ class Moderation(commands.Cog):
                     return 
                 warns = Data(ctx.guild.id,"warnings")
                 warns[user.id].update(data)
-                await ctx.send(f"Warned {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Warned {user.mention} for {reason}"))
                 warns.save()
             else:
                 await ctx.send(embed=error_embed("You can't warn someone with a higher role than you."
@@ -220,7 +220,7 @@ class Moderation(commands.Cog):
                 warnings.pop()
                 with open(f"warnings/{user.id}.json","w") as f:
                     json.dump(warnings,f)
-                await ctx.send(f"Unwarned {user.mention} for {reason}")
+                await ctx.send(embed=info_embed(f"Unwarned {user.mention} for {reason}"))
             else:
                 await ctx.send(embed=error_embed("You can't unwarn someone with a higher role than you."
                                                  ,title="Permission Error")
@@ -239,7 +239,7 @@ class Moderation(commands.Cog):
     async def clear_command(self,ctx:init | commands.Context,amount:int):
         if ctx.user.guild_permissions.manage_messages:
             await ctx.channel.purge(limit=amount)
-            await ctx.send(f"Cleared {amount} messages.")
+            await ctx.send(embed=info_embed(f"Cleared {amount} messages."))
         else:
             await ctx.send(embed=error_embed("You don't have permission to clear messages.",title="Permission Error"),ephemeral=True)
 
