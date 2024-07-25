@@ -1,16 +1,23 @@
-import nextcord
-from nextcord.ext import commands
+import tracemalloc
+
+tracemalloc.start()
+
+import asyncio
+import discord
+from discord.ext import commands
 from requests import request
 from Lib.Side import *
 import os
 import Lib.Data as Data
-from nextcord import Interaction as init
+from discord import Interaction as init
 import logging
 from Lib.richer import *
 from datetime import datetime
 import threading
 import time
 
+
+handler = None
 clear()
 if Logger_Enabled:
     current_datetime = datetime.now()
@@ -30,7 +37,7 @@ if Logger_Enabled:
     logger.addHandler(handler)
 
 
-intents = nextcord.Intents.all()
+intents = discord.Intents.all()
 client = commands.Bot(command_prefix=prefix, intents=intents)
 # logging.basicConfig(filename=f'loggin/{datetime.datetime()}', level=logging.INFO)
 
@@ -39,7 +46,7 @@ client = commands.Bot(command_prefix=prefix, intents=intents)
 #On Bot Start
 @client.event
 async def on_ready():
-    await client.change_presence(activity=nextcord.Activity(type=nextcord.ActivityType.watching, name=f"Over {len(client.guilds)} Servers"))
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"Over {len(client.guilds)} Servers"))
     print(Rule(f'{client.user.display_name}  Is Online',style="bold green"))
     if send_to_owner_enabled:
         user = client.get_user(owner_id)
@@ -55,44 +62,45 @@ for filename in os.listdir("./classes"):
     if filename.endswith(".py"):
         if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
         initial_extension.append("classes." + filename[:-3])
-NotAllowedExtension = []
-for filename in os.listdir("./classes/core"):
-    if filename.endswith(".py"):
-        if "." in filename[:-3]: raise Exception("You can't have a dot in the core name")
-        if AllowOtherCoreExtension:
-            core_extension.append("classes.core." + filename[:-3])
-        else:
-            listCore = request("GET",f"https://raw.githubusercontent.com/mahirox36/Uranium/main/classes/core/Core_list.txt")
-            listCore = listCore.text.split("\n")
+# NotAllowedExtension = []
+# for filename in os.listdir("./classes/core"):
+#     if filename.endswith(".py"):
+#         if "." in filename[:-3]: raise Exception("You can't have a dot in the core name")
+#         if AllowOtherCoreExtension:
+#             core_extension.append("classes.core." + filename[:-3])
+#         else:
+#             listCore = request("GET",f"https://raw.githubusercontent.com/mahirox36/Uranium/main/classes/core/Core_list.txt")
+#             listCore = listCore.text.split("\n")
 
-            if filename[:-3] in listCore:
-                core_extension.append("classes.core." + filename[:-3])
-            else:
-                NotAllowedExtension.append("classes.core." + filename[:-3])
-if NotAllowedExtension:
-    try:
-        raise Exception(f"Core Extension/s {NotAllowedExtension} is not allowed, if you want to allow it please change the config file in {config_path} and set AllowOtherCoreExtension to True")
-    except Exception as e:
-        console.print_exception()
-        input("Press Enter to Exit")
-        exit()
+#             if filename[:-3] in listCore:
+#                 core_extension.append("classes.core." + filename[:-3])
+#             else:
+#                 NotAllowedExtension.append("classes.core." + filename[:-3])
+# if NotAllowedExtension:
+#     try:
+#         raise Exception(f"Core Extension/s {NotAllowedExtension} is not allowed, if you want to allow it please change the config file in {config_path} and set AllowOtherCoreExtension to True")
+#     except Exception as e:
+#         console.print_exception()
+#         input("Press Enter to Exit")
+#         exit()
 
 
-print(f"These are All the Core {core_extension}\nand These All The Extension {initial_extension} ")
+print(f"and These All The Extension {initial_extension} ")
 
 
 # client.unload_extension("Lib.fun")
 
+# for extension in core_extension:
+#     client.load_extension(extension)
+for extension in initial_extension:
+    client.load_extension(extension)
+
 if __name__ == '__main__':
-    for extension in core_extension:
-        client.load_extension(extension)
-    for extension in initial_extension:
-        client.load_extension(extension)
-try:
-    client.run(token)
-except nextcord.errors.LoginFailure:
-    print(Panel(f"""Here's the step to check if you Have put your Token right:
-    1- Add your token in the config file in {config_path}
-    2- see if it didn't change back to "Your Bot Token" and if is change it to your token
-    3- Reset your token in https://discord.com/developers/applications""",
-    title="Invalid Token",style="bold red",border_style="bold red"))
+    try:
+        client.run(token)
+    except discord.errors.LoginFailure:
+        print(Panel(f"""Here's the step to check if you Have put your Token right:
+        1- Add your token in the config file in {config_path}
+        2- see if it didn't change back to "Your Bot Token" and if is change it to your token
+        3- Reset your token in https://discord.com/developers/applications""",
+        title="Invalid Token",style="bold red",border_style="bold red"))

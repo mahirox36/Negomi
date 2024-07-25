@@ -9,7 +9,7 @@ import string
 from .config import Config, Color as color
 from .richer import print
 from .Data import DataGlobal as GlobalData
-from nextcord import Embed
+from discord import Embed
 import re
 from typing import Any, Dict, Iterator, List, Union
 from datetime import timedelta

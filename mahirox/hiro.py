@@ -1,3 +1,3 @@
-import nextcord as nttx
-import nextcord.application_command as SlashCommand
+import discord as nttx
+import discord.application_command as SlashCommand
 
