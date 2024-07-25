@@ -1,15 +1,15 @@
 import os
-import discord #type: ignore
-from discord.ext.commands import MissingPermissions
-from discord import Interaction
+import nextcord #type: ignore
+from nextcord.ext.commands import MissingPermissions
+from nextcord import Interaction
 import Lib.Side as Side
-from discord import Interaction as init
+from nextcord import Interaction as init
 import random
 import json
 from typing import Any, Dict, List, Union
 
 def check_permission(interaction:Interaction,**perms:bool) -> bool:
-    invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+    invalid = set(perms) - set(nextcord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
     async def predicate(ctx:Interaction) -> bool:
@@ -30,7 +30,7 @@ def check_owner_permission(interaction:Interaction) -> bool:
         raise MissingPermissions(ctx.user.name)
     return predicate(interaction)
 
-def check_owner_permission_message(message:discord.Message) -> bool:
+def check_owner_permission_message(message:nextcord.Message) -> bool:
     async def predicate(ctx:Interaction) -> bool:
         if ctx.author.id == Side.owner_id:
             return True
@@ -148,7 +148,7 @@ class DataGlobal:
         else:
             raise KeyError(f"'{key}' not found in the data")
 
-async def high(ctx:init,user:discord.Member):
+async def high(ctx:init,user:nextcord.Member):
     if user.top_role.position >= ctx.user.top_role.position:
         await ctx.send(f"User {user} Is Higher Than you")
         return True
