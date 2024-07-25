@@ -54,6 +54,8 @@ def check_id(data,code) -> bool:
     
 
 
+#TODO: add 2 classes Data() DataGlobal() and uses normal json files
+#TODO: add Four Functions for each class (save,load,check,delete)
 
 class Data:
     def __init__(self,server_id:int, name:str,file:str="data"):

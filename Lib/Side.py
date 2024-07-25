@@ -19,7 +19,7 @@ config = Config(config_path)
 layout = ["General","Logger","General Embeds Colour","Advance"]#, "Database", "APIs"]
 config.set_layout(layout)
 
-VERSION = "0.0.6"
+VERSION = "0.0.5"
 
 data = {
         "General": {
