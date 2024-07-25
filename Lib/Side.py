@@ -9,7 +9,6 @@ import string
 from .config import Config, Color as color
 from .richer import print
 from .Data import DataGlobal as GlobalData
-from nextcord import Client
 from nextcord import Embed
 import re
 from typing import Any, Dict, Iterator, List, Union
@@ -247,25 +246,3 @@ class BetterID:
     def __lshift__(self, other: Any) -> Any:
         return self.data << other
         
-class DuplicateCommandError(Exception): 
-    def __init__(self, command):
-        self.command = command
-    def __str__(self):
-        return f"Duplicate command found: {self.command}"
-
-commandx = {}
-def command(name, description):
-    def decorator(func):
-        category = "Core" # Default category is
-        # make the category a the name of the file if it's not in this file
-        if func.__module__ != __name__:
-            category = func.__module__.split('.')[-1]
-        global commandx
-        if name not in commandx:
-            commandx[name] = {"func": func, "description": description, "category": category}
-        else:
-            raise DuplicateCommandError(name)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator

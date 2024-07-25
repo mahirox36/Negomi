@@ -11,6 +11,8 @@ from datetime import datetime
 import threading
 import time
 
+intents = nextcord.Intents.all()
+client = commands.Bot(command_prefix=prefix, intents=intents)
 
 handler = None
 clear()
@@ -32,8 +34,6 @@ if Logger_Enabled:
     logger.addHandler(handler)
 
 
-intents = nextcord.Intents.all()
-client = commands.Bot(command_prefix=prefix, intents=intents)
 # logging.basicConfig(filename=f'loggin/{datetime.datetime()}', level=logging.INFO)
 
 
@@ -42,7 +42,7 @@ client = commands.Bot(command_prefix=prefix, intents=intents)
 @client.event
 async def on_ready():
     await client.change_presence(activity=nextcord.Activity(type=nextcord.ActivityType.watching, name=f"Over {len(client.guilds)} Servers"))
-    print(Rule(f'{client.user.display_name}  Is Online',style="bold green"))
+    print(Rule(f'{client.user.display_name}  Is Online',style="bold green")) # type: ignore
     if send_to_owner_enabled:
         user = client.get_user(owner_id)
         channel = await user.create_dm()
@@ -61,36 +61,9 @@ for filename in os.listdir("./classes"):
     if filename.endswith(".py"):
         if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
         initial_extension.append("classes." + filename[:-3])
-NotAllowedExtension = []
-for filename in os.listdir("./classes/core"):
-    if filename.endswith(".py"):
-        if "." in filename[:-3]: raise Exception("You can't have a dot in the core name")
-        if AllowOtherCoreExtension:
-            core_extension.append("classes.core." + filename[:-3])
-        else:
-            listCore = request("GET",f"https://raw.githubusercontent.com/mahirox36/Uranium/main/classes/core/Core_list.txt")
-            listCore = listCore.text.split("\n")
-
-            if filename[:-3] in listCore:
-                core_extension.append("classes.core." + filename[:-3])
-            else:
-                NotAllowedExtension.append("classes.core." + filename[:-3])
-if NotAllowedExtension:
-    try:
-        raise Exception(f"Core Extension/s {NotAllowedExtension} is not allowed, if you want to allow it please change the config file in {config_path} and set AllowOtherCoreExtension to True")
-    except Exception as e:
-        console.print_exception()
-        input("Press Enter to Exit")
-        exit()
 
 
 print(f"and These All The Extension {initial_extension} ")
-
-
-# client.unload_extension("Lib.fun")
-
-# for extension in core_extension:
-#     client.load_extension(extension)
 for extension in initial_extension:
     client.load_extension(extension)
 
