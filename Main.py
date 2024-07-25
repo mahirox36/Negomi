@@ -4,7 +4,7 @@ from requests import request
 from Lib.Side import *
 import os
 import Lib.Data as Data
-from discord import Interaction as init
+from nextcord import Interaction as init
 import logging
 from Lib.richer import *
 from datetime import datetime
@@ -32,7 +32,7 @@ if Logger_Enabled:
     logger.addHandler(handler)
 
 
-intents = discord.Intents.all()
+intents = nextcord.Intents.all()
 client = commands.Bot(command_prefix=prefix, intents=intents)
 # logging.basicConfig(filename=f'loggin/{datetime.datetime()}', level=logging.INFO)
 
@@ -97,7 +97,7 @@ for extension in initial_extension:
 if __name__ == '__main__':
     try:
         client.run(token)
-    except discord.errors.LoginFailure:
+    except nextcord.errors.LoginFailure:
         print(Panel(f"""Here's the step to check if you Have put your Token right:
         1- Add your token in the config file in {config_path}
         2- see if it didn't change back to "Your Bot Token" and if is change it to your token
