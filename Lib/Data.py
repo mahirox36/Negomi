@@ -66,7 +66,7 @@ class Data:
         try:
             self.load()
         except FileNotFoundError:
-            self.data = {}
+            self.data = None
     
     def save(self) -> None:
         with open(self.file, "w") as f:
