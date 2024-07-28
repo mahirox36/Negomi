@@ -1,19 +1,246 @@
+__UserSettingsVersion__ = 1
 import nextcord
 import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
+from nextcord.ui import View, Button, TextInput, UserSelect, Modal
 from nextcord import Interaction as init
-from Lib.Data import Data
+from Lib.Data import Data, DataGlobal
 from Lib.Side import *
-
 from Lib.Hybrid import setup_hybrid, userCTX
 import os
 import json
+
+
+async def check(ctx:init,data:Dict | List) -> bool:
+    try:ctx.user.voice.channel
+    except:
+        await ctx.send(embed=warn_embed("You are not in a channel"),ephemeral=True)
+        return False
+    num = 0
+    for i in data:
+            i = dict(i)
+            values_list = list(i.values())
+            if ctx.user.voice.channel.id == values_list[0]:break
+            num += 1
+    else:
+        await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+        return False
+
+    if ctx.user.voice.channel.id != data[num].get(str(ctx.user.id)):
+        await ctx.send(embed=warn_embed("You are not the Owner of this channel!"),ephemeral=True)
+        return False
+    else:
+        return True
+
+
+class EditMaxModal(Modal):
+    def __init__(self, channel:VoiceChannel,ctx:init):
+        super().__init__(title="Edit Name")
+        self.user = DataGlobal("TempVoice_UsersSettings",f"{ctx.user.id}")
+        self.channel = channel
+
+        self.max = TextInput(label="Enter the Max number Of User",
+                               placeholder="0 for Unlimited", required=True)
+        self.add_item(self.max)
+
+    async def callback(self, ctx: nextcord.Interaction):
+        # This is called when the modal is submitted
+        try:
+            num = int(self.max.value)
+        except ValueError:
+            await ctx.send(embed=error_embed(f"Value \"{self.max.value}\" isn't a number"),ephemeral=True)
+            return
+        if num > 99:
+            await ctx.send(embed=error_embed("The Value should be less than or equal to 99"),ephemeral=True)
+            return
+        elif num < 0:
+            await ctx.send(embed=error_embed("The Value should be greater than or equal to 0"),ephemeral=True)
+            return
+        self.user["Max"] = num
+        self.user.save()
+        await self.channel.edit(user_limit=num)
+
+class EditNameModal(Modal):
+    def __init__(self, channel:VoiceChannel,ctx:init):
+        super().__init__(title="Edit Name")
+        self.user = DataGlobal("TempVoice_UsersSettings",f"{ctx.user.id}")
+        self.channel = channel
+
+        self.name = TextInput(label="New Name", placeholder=ctx.user.global_name + "'s Chat" if ctx.user.global_name != None
+            else ctx.user.display_name + "'s Chat", required=True)
+        self.add_item(self.name)
+
+    async def callback(self, interaction: nextcord.Interaction):
+        # This is called when the modal is submitted
+        name = self.name.value
+        self.user["Name"] = name
+        self.user.save()
+        await self.channel.edit(name=name)
+
+def get_channel(data,ctx:init):
+    num = 0
+    for i in data:
+        i = dict(i)
+        values_list = list(i.values())
+        if ctx.user.voice.channel.id == values_list[0]:break
+        num += 1
+    else:
+        raise Exception
+    return ctx.guild.get_channel(data[num].get(str(ctx.user.id)))
+
+class ControlPanel(View):
+    def __init__(self, data:Dict,user:User):
+        super().__init__(timeout=None)
+        self.create_buttons()
+        self.data = data
+        self.user = DataGlobal("TempVoice_UsersSettings",f"{user.id}")
+        Default = {
+            "Name":user.global_name+ "'s Chat" if user.global_name != None
+            else user.display_name + "'s Chat",
+            "Hide": True,
+            "Lock": True,
+            "Max": 0,
+            "Version":__UserSettingsVersion__
+        }
+        if self.user.data.get("Version") != __UserSettingsVersion__: self.user.data = Default        
+
+        
+    #TODO: Add Transfer Owner
+    #TODO: Add Invite Button
+    def create_buttons(self):
+        self.button1 = Button(label=f"📝 Edit Name", style=nextcord.ButtonStyle.primary)
+        self.button1.callback = self.Edit_Name
+        self.add_item(self.button1)
+
+        self.button2 = Button(label=f"🫥 Hide/Show", style=nextcord.ButtonStyle.primary)
+        self.button2.callback = self.Hide
+        self.add_item(self.button2)
+
+        self.button3 = Button(label=f"🔓 Lock/Unlock", style=nextcord.ButtonStyle.primary)
+        self.button3.callback = self.Lock
+        self.add_item(self.button3)
+
+        self.button4 = Button(label=f"📝 Change Max Users", style=nextcord.ButtonStyle.primary)
+        self.button4.callback = self.Max
+        self.add_item(self.button4)
+
+        self.button5 = Button(label=f"🚫 Delete Channel Messages", style=nextcord.ButtonStyle.primary)
+        self.button5.callback = self.Delete_Messages
+        self.add_item(self.button5)
+
+        
+
+        self.button6 = Button(label=f"⛔ Delete", style=nextcord.ButtonStyle.primary)
+        self.button6.callback = self.Delete
+        self.add_item(self.button6)
+
+    async def Edit_Name(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        try:
+            modal = EditNameModal(get_channel(self.data,ctx),ctx)
+        except Exception:
+            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            return
+        await ctx.response.send_modal(modal)
+        
+
+    async def Hide(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        channeled = get_channel(self.data,ctx)
+        if self.user.data["Hide"] == True:
+            self.user.data["Hide"] = False
+            await channeled.set_permissions(everyone(ctx.guild),view_channel=True,
+                                            connect=True if self.user.data["Lock"] == False else False)
+            await ctx.send(embed=info_embed("The channel is showing", title="Operation Success"),ephemeral=True)
+        else:
+            self.user.data["Hide"] = True
+            await channeled.set_permissions(everyone(ctx.guild),view_channel=False,
+                                            connect=True if self.user.data["Lock"] == False else False)
+            await ctx.send(embed=info_embed("The channel is hiding", title="Operation Success"),ephemeral=True)
+        self.user.save()
+        return
+    
+    async def Lock(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        channeled = get_channel(self.data,ctx)
+        if self.user.data["Lock"] == True:
+            self.user.data["Lock"] = False
+            await channeled.set_permissions(everyone(ctx.guild),connect=True,
+                view_channel=True if self.user.data["Hide"] == False else False)
+            await ctx.send(embed=info_embed("The channel is Unlocked", title="Operation Success"),ephemeral=True)
+        else:
+            self.user.data["Lock"] = True
+            await channeled.set_permissions(everyone(ctx.guild),connect=False,
+                view_channel=True if self.user.data["Hide"] == False else False)
+            await ctx.send(embed=info_embed("The channel is Locked", title="Operation Success"),ephemeral=True)
+        self.user.save()
+        return
+    
+    async def Max(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        try:
+            modal = EditMaxModal(get_channel(self.data,ctx),ctx)
+        except Exception:
+            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            return
+        await ctx.response.send_modal(modal)
+
+    async def Delete_Messages(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        try:
+            channeled = get_channel(self.data,ctx)
+        except Exception:
+            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            return
+        await channeled.purge(limit=10000)
+
+    async def Delete(self, ctx: nextcord.Interaction):
+        if await check(ctx,self.data) == False: return
+        try:
+            channeled = get_channel(self.data,ctx)
+        except Exception:
+            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            return
+        file = Data(ctx.guild.id,"TempVoice","TempVoices")
+        num = 0
+        for i in file.data:
+            i = dict(i)
+            values_list = list(i.values())
+            if channeled.id == values_list[0]:break
+            num += 1
+        else:return
+        await channeled.delete()
+        file.data.remove(file.data[num])
+        file.save()
+        buttons = [
+            self.button1,self.button2,self.button3,
+            self.button4,self.button5,self.button6]
+        for button in buttons:
+            button.disabled = True
+        await self.refreshed(ctx)
+        self.stop()
+
+    async def refreshed(self, ctx: nextcord.Interaction):
+        await ctx.response.edit_message(view=self)
+        
+
 
 class TempVoice(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.Hybrid = setup_hybrid(client)
+
+    @slash_command(name="control-panel",
+        description="Bring the Control Panel for the TempVoice chat")
+    async def controlpanel(self,ctx:init):
+        file = Data(ctx.guild.id,"TempVoice","TempVoices")  
+        checks = check(ctx,file.data)
+        if await checks == False: return
+        
+        await ctx.response.send_message(embed=info_embed(title="Control Panel",
+                description="Please Chose"),view=ControlPanel(file.data,ctx.user),
+                ephemeral=True)
 
 
 
@@ -33,7 +260,7 @@ class TempVoice(commands.Cog):
         }
         file.data = data
         file.save()
-        await ctx.send(embed=info_embed("Setup Done!"))
+        await ctx.send(embed=info_embed("Setup Done!"),ephemeral=True)
     
 
     #Listener If a Person Created a Channel
@@ -44,16 +271,37 @@ class TempVoice(commands.Cog):
         except AttributeError:return
         file = Data(guild.id,"TempVoice")
         file2 = Data(guild.id,"TempVoice","TempVoices")
+        user = DataGlobal("TempVoice_UsersSettings",f"{member.id}")
+        if user.data.get("Version") == __UserSettingsVersion__:
+            temp = user.data
+            name = temp["Name"]
+            connect = True if temp["Lock"] == False else False
+            view = True if temp["Hide"] == False else False
+            Max = temp["Max"]
+            del temp
+        else:
+            name = member.global_name+ "'s Chat" if member.global_name != None \
+                else member.display_name+ "'s Chat"
+            connect = False
+            view = False
+            Max = 0
         if file.data == None:
             file.data = []
         createChannel = guild.get_channel(file["CreateChannel"])
         if createChannel.id != after.channel.id:return
-        newTempChat = await guild.create_voice_channel(member.global_name if member.global_name != None
-            else member.display_name+ "'s Chat", category= guild.get_channel(file["categoryChannel"]),
-                reason=f"User {member} Created a TempVoice")
+
+        overwrite = {
+            everyone(guild) : PermissionOverwriteWith(connect=connect,view_channel=view),
+            member          : PermissionOverwriteWith(connect=True,view_channel=True)
+        }
+
+        newTempChat = await guild.create_voice_channel(name, category= guild.get_channel(file["categoryChannel"]),
+                reason=f"User {member} Created a TempVoice",overwrites=overwrite,user_limit=Max)
         await member.move_to(newTempChat,reason=f"User {member} Created a TempVoice")
-        file2.data.append(newTempChat.id)
+        file2.data.append({member.id:newTempChat.id})
         file2.save()
+    
+    
     
 class TempVoice2(commands.Cog):
     def __init__(self, client:Client):
@@ -70,11 +318,16 @@ class TempVoice2(commands.Cog):
         if file.data == None:
             file.data = []
             file.save()
-        print(len(before.channel.members))
-        if before.channel.id not in file.data:return
-        elif len(before.channel.members) == 0:
+        num = 0
+        for i in file.data:
+            i = dict(i)
+            values_list = list(i.values())
+            if before.channel.id == values_list[0]:break
+            num += 1
+        else:return
+        if len(before.channel.members) == 0:
             await before.channel.delete()
-            file.data.remove(before.channel.id)
+            file.data.remove(file.data[num])
             file.save()
 
 
