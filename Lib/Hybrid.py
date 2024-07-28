@@ -20,5 +20,8 @@ def setup_hybrid(bot: commands.Bot):
     return hybrid
 
 def userCTX(ctx:Interaction):
-    ctx.user = ctx.author
+    try:
+        ctx.user = ctx.author
+    except:
+        pass
     return ctx
