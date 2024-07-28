@@ -2,6 +2,6 @@
     "cSpell.words": [
         "levelname"
     ],
-    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoImportCompletions": false,
     "python.analysis.typeCheckingMode": "off"
 }

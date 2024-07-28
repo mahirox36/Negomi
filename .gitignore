@@ -2,6 +2,6 @@
 logs/
 __pycache__/
 .Idea/
-test.*
+test*
 data/
 *.bat
