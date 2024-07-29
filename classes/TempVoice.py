@@ -288,14 +288,8 @@ class TempVoice(commands.Cog):
         await ctx.response.send_message(embed=info_embed(title="Control Panel",
                 description="Please Chose"),view=ControlPanel(file.data,ctx.user),
                 ephemeral=True)
-        
-    @commands.command(name="invite-voice",description="Invite a member",
-                      aliases=["invitevoice","inv-v","uwu"])
-    @commands.guild_only()
-    @commands.cooldown(1, 10, commands.BucketType.member)
-    async def invite_command(self,ctx,user:Member):
-        ctx = userCTX(ctx)
-        return await invite_function(ctx,user,self.client)
+
+
         
     @slash_command("invite-voice",description="Invite a member",dm_permission=False)
     async def invite_slash(self,ctx:init,user:Member):
