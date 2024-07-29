@@ -33,11 +33,23 @@ async def check(ctx:init,data:Dict | List) -> bool:
     else:
         return True
 
+def UserSettings(member):
+    user = DataGlobal("TempVoice_UsersSettings",f"{member.id}")
+    Default = {
+        "Name":member.global_name+ "'s Chat" if member.global_name != None
+        else member.display_name + "'s Chat",
+        "Hide": True,
+        "Lock": True,
+        "Max": 0,
+        "Version":__UserSettingsVersion__
+    }
+    if user.data.get("Version") != __UserSettingsVersion__: user.data = Default  
+    return user
 
 class EditMaxModal(Modal):
     def __init__(self, channel:VoiceChannel,ctx:init):
         super().__init__(title="Edit Name")
-        self.user = DataGlobal("TempVoice_UsersSettings",f"{ctx.user.id}")
+        self.user = UserSettings(ctx.user)
         self.channel = channel
 
         self.max = TextInput(label="Enter the Max number Of User",
@@ -64,7 +76,7 @@ class EditMaxModal(Modal):
 class EditNameModal(Modal):
     def __init__(self, channel:VoiceChannel,ctx:init):
         super().__init__(title="Edit Name")
-        self.user = DataGlobal("TempVoice_UsersSettings",f"{ctx.user.id}")
+        self.user = UserSettings(ctx.user)
         self.channel = channel
 
         self.name = TextInput(label="New Name", placeholder=ctx.user.global_name + "'s Chat" if ctx.user.global_name != None
@@ -94,16 +106,7 @@ class ControlPanel(View):
         super().__init__(timeout=None)
         self.create_buttons()
         self.data = data
-        self.user = DataGlobal("TempVoice_UsersSettings",f"{user.id}")
-        Default = {
-            "Name":user.global_name+ "'s Chat" if user.global_name != None
-            else user.display_name + "'s Chat",
-            "Hide": True,
-            "Lock": True,
-            "Max": 0,
-            "Version":__UserSettingsVersion__
-        }
-        if self.user.data.get("Version") != __UserSettingsVersion__: self.user.data = Default        
+        self.user = UserSettings(user)       
 
         
     #TODO: Add Transfer Owner
