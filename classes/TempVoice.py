@@ -19,10 +19,10 @@ async def check(ctx:init,data:Dict | List) -> bool:
         return False
     num = 0
     for i in data:
-            i = dict(i)
-            values_list = list(i.values())
-            if ctx.user.voice.channel.id == values_list[0]:break
-            num += 1
+        i = dict(i)
+        values_list = list(i.values())
+        if ctx.user.voice.channel.id == values_list[0]:break
+        num += 1
     else:
         await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
         return False
@@ -101,6 +101,8 @@ def get_channel(data,ctx:init):
         raise Exception
     return ctx.guild.get_channel(data[num].get(str(ctx.user.id)))
 
+
+
 class ControlPanel(View):
     def __init__(self, data:Dict,user:User):
         super().__init__(timeout=None)
@@ -139,7 +141,9 @@ class ControlPanel(View):
         self.add_item(self.button6)
 
     async def Edit_Name(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         try:
             modal = EditNameModal(get_channel(self.data,ctx),ctx)
         except Exception:
@@ -149,7 +153,9 @@ class ControlPanel(View):
         
 
     async def Hide(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         channeled = get_channel(self.data,ctx)
         if self.user.data["Hide"] == True:
             self.user.data["Hide"] = False
@@ -165,7 +171,9 @@ class ControlPanel(View):
         return
     
     async def Lock(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         channeled = get_channel(self.data,ctx)
         if self.user.data["Lock"] == True:
             self.user.data["Lock"] = False
@@ -181,7 +189,9 @@ class ControlPanel(View):
         return
     
     async def Max(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         try:
             modal = EditMaxModal(get_channel(self.data,ctx),ctx)
         except Exception:
@@ -190,7 +200,9 @@ class ControlPanel(View):
         await ctx.response.send_modal(modal)
 
     async def Delete_Messages(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         try:
             channeled = get_channel(self.data,ctx)
         except Exception:
@@ -199,7 +211,9 @@ class ControlPanel(View):
         await channeled.purge(limit=10000)
 
     async def Delete(self, ctx: nextcord.Interaction):
-        if await check(ctx,self.data) == False: return
+        if await check(ctx,self.data) == False:
+            await self.disable(ctx)
+            return
         try:
             channeled = get_channel(self.data,ctx)
         except Exception:
@@ -216,17 +230,47 @@ class ControlPanel(View):
         await channeled.delete()
         file.data.remove(file.data[num])
         file.save()
+        await self.disable(ctx)
+
+    async def disable(self, ctx: nextcord.Interaction):
         buttons = [
             self.button1,self.button2,self.button3,
             self.button4,self.button5,self.button6]
         for button in buttons:
             button.disabled = True
-        await self.refreshed(ctx)
         self.stop()
-
-    async def refreshed(self, ctx: nextcord.Interaction):
         await ctx.response.edit_message(view=self)
-        
+
+async def invite_function(ctx:init,user:Member,client):
+    await ctx.response.defer(ephemeral=True)
+    if ctx.user.id == user.id:
+        await ctx.send(embed=error_embed("You can't Invite yourself"))
+        return
+    elif user.id == client.user.id:
+        await ctx.send(embed=error_embed("Are You trying to Invite me?",footer="No, You can't"))
+        return
+    elif user.bot:
+        await ctx.send(embed=error_embed("You can't Invite Bot"))
+        return
+    file = Data(ctx.guild.id,"TempVoice","TempVoices")  
+    await check(ctx,file.data)
+    channel = get_channel(file.data,ctx)
+    name = ctx.user.global_name if ctx.user.global_name != None else ctx.user.display_name
+    await channel.set_permissions(user, view_channel=True, connect=True)
+    try:
+        await user.send(embed=info_embed(
+            f"You have Been Invited by {ctx.user.mention} to Channel {channel.mention}.\n[View The Channel]({channel.jump_url})",
+            "Invitation",
+            f"Click the Channel to Join it",[name,ctx.user.avatar.url]
+            ))
+    except HTTPException:
+        ctx.channel.send(f"{user.mention}",embed=info_embed(
+            f"{user.mention}, You have Been Invited by {ctx.user.mention} to Channel {channel.mention}.\n[View The Channel]({channel.jump_url})",
+            "Invitation",
+            f"Click the Channel to Join it",[name,ctx.user.avatar.url]
+            ))
+    await ctx.send("Sended!",ephemeral=True)
+    return
 
 
 class TempVoice(commands.Cog):
@@ -244,6 +288,23 @@ class TempVoice(commands.Cog):
         await ctx.response.send_message(embed=info_embed(title="Control Panel",
                 description="Please Chose"),view=ControlPanel(file.data,ctx.user),
                 ephemeral=True)
+        
+    @commands.command(name="invite-voice",description="Invite a member",
+                      aliases=["invitevoice","inv-v","uwu"])
+    @commands.guild_only()
+    @commands.cooldown(1, 10, commands.BucketType.member)
+    async def invite_command(self,ctx,user:Member):
+        ctx = userCTX(ctx)
+        return await invite_function(ctx,user,self.client)
+        
+    @slash_command("invite-voice",description="Invite a member",dm_permission=False)
+    async def invite_slash(self,ctx:init,user:Member):
+        return await invite_function(ctx,user,self.client)
+    
+    @user_command("Invite Voice",dm_permission=False)
+    async def invite(self,ctx:init, user:Member):
+        return await invite_function(ctx,user,self.client)
+        
 
 
 
@@ -294,8 +355,9 @@ class TempVoice(commands.Cog):
         if createChannel.id != after.channel.id:return
 
         overwrite = {
-            everyone(guild) : PermissionOverwriteWith(connect=connect,view_channel=view),
-            member          : PermissionOverwriteWith(connect=True,view_channel=True)
+            everyone(guild) : PermissionOverwriteWith(connect=connect, view_channel=view),
+            member          : PermissionOverwriteWith(connect=True, view_channel=True,
+                                            priority_speaker=True, move_members=True)
         }
 
         newTempChat = await guild.create_voice_channel(name, category= guild.get_channel(file["categoryChannel"]),

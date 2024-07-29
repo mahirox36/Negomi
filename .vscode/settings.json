@@ -3,5 +3,6 @@
         "levelname"
     ],
     "python.analysis.autoImportCompletions": false,
-    "python.analysis.typeCheckingMode": "off"
+    "python.analysis.typeCheckingMode": "off",
+    "todo-tree.tree.showCountsInTree": true
 }
