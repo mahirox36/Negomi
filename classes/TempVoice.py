@@ -290,8 +290,11 @@ class TempVoice(commands.Cog):
                 ephemeral=True)
 
 
-        
-    @slash_command("invite-voice",description="Invite a member",dm_permission=False)
+    @slash_command("uwu",description="What Does this thing do?",dm_permission=True)
+    async def invite_slash(self,ctx:init):
+        await ctx.send("UwU")
+     
+    @slash_command("invite-voice",description="Invite a member to Voice chat",dm_permission=False)
     async def invite_slash(self,ctx:init,user:Member):
         return await invite_function(ctx,user,self.client)
     
