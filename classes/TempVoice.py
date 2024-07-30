@@ -100,6 +100,19 @@ def get_channel(data,ctx:init):
     else:
         raise Exception
     return ctx.guild.get_channel(data[num].get(str(ctx.user.id)))
+def get_before(data,ctx:VoiceState,user:Member):
+    num = 0
+    for i in data:
+        i = dict(i)
+        values_list = list(i.values())
+        try:
+            if ctx.channel.id == values_list[0]:break
+        except AttributeError:
+            return None
+        num += 1
+    else:
+        return None
+    return ctx.channel.guild.get_channel(data[num].get(str(user.id)))
 
 
 
@@ -290,9 +303,6 @@ class TempVoice(commands.Cog):
                 ephemeral=True)
 
 
-    @slash_command("uwu",description="What Does this thing do?",dm_permission=True)
-    async def invite_slash(self,ctx:init):
-        await ctx.send("UwU")
      
     @slash_command("invite-voice",description="Invite a member to Voice chat",dm_permission=False)
     async def invite_slash(self,ctx:init,user:Member):
@@ -332,6 +342,9 @@ class TempVoice(commands.Cog):
         except AttributeError:return
         file = Data(guild.id,"TempVoice")
         file2 = Data(guild.id,"TempVoice","TempVoices")
+        if get_before(file2.data,before,member) != None:
+            await member.disconnect(reason="Trying to Bug the Bot")
+            return
         user = DataGlobal("TempVoice_UsersSettings",f"{member.id}")
         if user.data.get("Version") == __UserSettingsVersion__:
             temp = user.data
@@ -362,6 +375,8 @@ class TempVoice(commands.Cog):
         await member.move_to(newTempChat,reason=f"User {member} Created a TempVoice")
         file2.data.append({member.id:newTempChat.id})
         file2.save()
+        await newTempChat.send(embed=warn_embed("Only the Owner can change the settings of this channel, "+
+                                          "Even If he Left",title="Note",author=[member.name,member.avatar.url]))
     
     
     
@@ -391,6 +406,7 @@ class TempVoice2(commands.Cog):
             await before.channel.delete()
             file.data.remove(file.data[num])
             file.save()
+            return
 
 
 def setup(client):

@@ -9,7 +9,7 @@ def setup_hybrid(bot: commands.Bot):
     def hybrid(name: str, description: str, aliases: List[str] = [], **kwargs: Any):
         def decorator(func: Callable[..., Any]):
             # Register text command
-            bot.add_command(commands.Command(func, name=name, aliases=aliases, **kwargs))
+            bot.add_command(commands.Command(func, name="_"+name, **kwargs))
             
             # Register slash command
             bot.slash_command(name=name, description=description)(func)

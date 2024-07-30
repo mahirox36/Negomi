@@ -11,7 +11,14 @@ import json
 class Invite(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.Hybrid = setup_hybrid(client)
+    
+    @commands.command(name = "setup-invite",
+                    description = "Setup Invite System to save ...") #FIXME
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 10, commands.BucketType.member)
+    async def setup_invite(self, ctx:commands.Context):
+        await ctx.send("template command")
     
     
 

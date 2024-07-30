@@ -19,6 +19,9 @@ try:
     intents = nextcord.Intents.all()
     client = commands.Bot(command_prefix=prefix, intents=intents)
 
+    global Bot
+    Bot = client
+
     handler = None
     clear()
     if Logger_Enabled:
@@ -65,6 +68,8 @@ try:
     for filename in os.listdir("./classes"):
         if filename.endswith(".py"):
             if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
+            if (DisableAiClass == True) and (filename[:-3] == "AI"):
+                continue
             initial_extension.append("classes." + filename[:-3])
 
 

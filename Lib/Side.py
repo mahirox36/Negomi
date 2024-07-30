@@ -19,20 +19,22 @@ config = Config(config_path)
 layout = ["General","Logger","General Embeds Colour","Advance"]#, "Database", "APIs"]
 config.set_layout(layout)
 
-VERSION = "0.0.8"
+VERSION = "0.1"
 
 data = {
         "General": {
-            "prefix": "ur.",
+            "prefix": "u.",
             "token": "Your Bot Token",
             "SendToOwnerThatIsOnline": True,
             "owner": 829806976702873621,
             "GuildTestingID": 1080951710828220537,
+            "DisableAiClass":True,
             "ConfigVersion": VERSION
         },
         "Logger": {
             "log": False,
-            "Format": '%(asctime)s - %(levelname)s - %(message)s'
+            "Format": '%(asctime)s - %(levelname)s - %(message)s',
+            "logForAI": False
         },
         "General Embeds Colour": {
             "Debug" : color(0x00FF00),
@@ -41,8 +43,7 @@ data = {
             "Error" : color(0xB22222)
         },
         "Advance": {
-            "DefaultBetterID_MaxNumber": 7,
-            "AllowOtherCoreExtension": False,
+            "DefaultBetterID_MaxNumber": 7
         }
     }
 
@@ -70,22 +71,25 @@ if config.data["General"]["ConfigVersion"] != VERSION:
     config.data["General"]["ConfigVersion"] = VERSION
     config.save()
 
-
+#General
 token = config["General"]["token"]
 prefix = config["General"]["prefix"]
 send_to_owner_enabled = config["General"]["SendToOwnerThatIsOnline"]
 owner_id = config["General"]["owner"]
 TESTING_GUILD_ID = config["General"]["GuildTestingID"]
+DisableAiClass = config["General"]["DisableAiClass"]
 
+#Logger
 Logger_Enabled = config["Logger"]["log"]
 Format = config["Logger"]["Format"]
+logForAI = config["Logger"]["logForAI"]
 
-#US
+#US Color
 Debug_Color = color(config["General Embeds Colour"]["Debug"]).value
 Info_Color  = color(config["General Embeds Colour"]["Info"]).value
 Warn_Color  = color(config["General Embeds Colour"]["Warn"]).value
 Error_Color = color(config["General Embeds Colour"]["Error"]).value
-#UK
+#UK Colour
 Debug_Colour = color(config["General Embeds Colour"]["Debug"]).value
 Info_Colour  = color(config["General Embeds Colour"]["Info"]).value
 Warn_Colour  = color(config["General Embeds Colour"]["Warn"]).value
@@ -93,7 +97,6 @@ Error_Colour = color(config["General Embeds Colour"]["Error"]).value
 
 #Advance 
 maxNum = config["Advance"]["DefaultBetterID_MaxNumber"]
-AllowOtherCoreExtension = config["Advance"]["AllowOtherCoreExtension"]
 
 def PermissionOverwriteWith(
         create_instant_invite       : Optional[bool]= None,
@@ -222,6 +225,10 @@ def error_embed(description:str,title:str="Error", footer:str=None, author:List=
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
 
+def remove_prefix(s, prefix):
+    if s.startswith(prefix):
+        return s[len(prefix):]
+    return s
 
 # Dictionary to convert words to numbers
 word_to_number = {
