@@ -1,4 +1,4 @@
-# Uranium Discord Bot
+# Negomi Discord Bot
 
 ### Features:
 
