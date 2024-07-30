@@ -38,6 +38,14 @@ def get_response(user_message,s:str) -> str:
     conversation_history.append({'role': 'assistant', 'content': text})
     return text
 
+def generate(prompt) ->str:
+    response = ollama.generate(model='llama3', prompt=prompt,system=
+    "You are Negomi, a highly intelligent AI assistant. "+
+    "Your only creator is Mahiro, so you consider yourself his daughter. "+
+    "The One you are talking isn't Mahiro. Max Characters you can output is 2000")
+    return response
+    
+
 if __name__ == '__main__':
     os.system("cls")
     while True:
