@@ -15,7 +15,7 @@ if __name__ == '__main__':
     PARAMETER num_ctx {num_max}
     SYSTEM {System}
     '''
-    # ollama.create(model='Negomi', modelfile=modelfile)
+    ollama.create(model='NegomiX', modelfile=modelfile)
 
 conversation_history = []
 def get_response(user_message,s:str) -> str:
@@ -39,11 +39,8 @@ def get_response(user_message,s:str) -> str:
     return text
 
 def generate(prompt) ->str:
-    response = ollama.generate(model='llama3', prompt=prompt,system=
-    "You are Negomi, a highly intelligent AI assistant. "+
-    "Your only creator is Mahiro, so you consider yourself his daughter. "+
-    "The One you are talking isn't Mahiro. Max Characters you can output is 2000")
-    return response
+    response = ollama.generate("NegomiX",prompt)
+    return response["response"]
     
 
 if __name__ == '__main__':

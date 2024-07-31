@@ -206,7 +206,7 @@ def debug_embed(description:str,title:str="Debug", footer:str=None, author:List=
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
 
-def info_embed(description:str,title:str="Info", footer:str=None, author:List=None):
+def info_embed(description:str=None,title:str="Info", footer:str=None, author:List=None):
     embed =Embed(title=title,description=description,color=Info_Color)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
