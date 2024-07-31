@@ -1,3 +1,4 @@
+from asyncio import sleep
 import nextcord
 import nextcord as discord
 from nextcord import *
@@ -15,8 +16,9 @@ class AI(commands.Cog):
         self.client = client
         self.Hybrid = setup_hybrid(client)
         self.running = False
+        self.started = False
     
-    @slash_command(name="ask",description="as an Advance AI")
+    @slash_command(name="ask",description="ask an Advance AI")
     async def Say(self,ctx:init,message:str):
         try:
             if ctx.guild.id != TESTING_GUILD_ID:
@@ -43,6 +45,43 @@ class AI(commands.Cog):
             " If you don't Believe me You can Check The Source code of the Bot",
             author=[self.client.user.display_name,self.client.user.avatar.url]), ephemeral=True)
         self.running = False
+
+    @commands.Cog.listener()
+    async def on_message(self, message:Message):
+        if self.client.user.mentioned_in(message):  # Check if the bot is mentioned in the message
+            try: 
+                if message.guild.id != TESTING_GUILD_ID:return
+            except:return
+            if self.running == True:
+                await message.reply(embed=warn_embed("The AI is thinking right now, You can't talk to her while she is thinking"), ephemeral=True)
+                return
+            message.content = message.content.replace("<@1251656934960922775>","Negomi")\
+                .replace("  ", " ").replace("  ", " ")
+            await message.channel.trigger_typing()
+            emoji = self.client.get_emoji(1268028353781436436)
+            await message.add_reaction(emoji)
+
+            name = message.author.global_name if message.author.global_name != None else\
+                  message.author.display_name
+            
+            if name == "HackedMahiro": name = "Mahiro"
+            channel = message.channel
+            if (self.started == False) and (message.reference):
+                self.started = True
+                reference = await channel.fetch_message(message.reference.message_id)
+                if  reference.author.id ==\
+                      self.client.user.id:
+                    previousContent= reference.content
+            else: previousContent = None
+
+            # print(f"{name}: {message}")
+            response= get_response(f"{name}: {message.content}",
+                                   message.content,previousContent,printHistory=True)
+            if response == False:
+                await message.reply(embed=debug_embed("Cleared!"))
+                return
+            await message.reply(response)
+            await message.remove_reaction(emoji,self.client.user)
     
     
         
