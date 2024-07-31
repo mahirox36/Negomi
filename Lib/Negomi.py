@@ -24,8 +24,9 @@ def get_response(user_message,originalText:str,previousContent:str=None,previous
         current_datetime = datetime.datetime.now()
         date = str(current_datetime.strftime("%Y-%m-%d"))
         timed = str(current_datetime.strftime("%H-%M-%S-%f"))
-        with open(f'logs/{date}/output_for_Negomi_{timed}.txt') as f:
-            f.write(dumps(conversation_history))
+        os.makedirs(f"logs/{date}",exist_ok=True)
+        with open(f'logs/{date}/output_for_Negomi_{timed}.json', "w") as f:
+            f.write(dumps(conversation_history,indent=4))
         conversation_history = []
         return False
     # Add the new user message to the conversation history
