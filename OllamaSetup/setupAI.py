@@ -9,12 +9,12 @@ if q.lower().startswith("c"):
     max_tokens = 2000
 
     # Open and read the 'system' file, replacing newline characters with spaces
-    with open("system") as f:
+    with open("OllamaSetup/system") as f:
         system_content = f.read().replace("\n", " ")
         
     # Create the modelfile content for 'NegomiX'
     modelfile = f'''
-    FROM llama3
+    FROM llama3.1
     PARAMETER num_ctx {max_tokens}
     SYSTEM {system_content}
     '''
@@ -22,12 +22,12 @@ if q.lower().startswith("c"):
     ollama.create(model='NegomiX', modelfile=modelfile)
     
     # Open and read the 'systemNormalTalk' file, replacing newline characters with spaces
-    with open("systemNormalTalk") as f:
+    with open("OllamaSetup/systemNormalTalk") as f:
         system_content = f.read().replace("\n", " ")
         
     # Create the modelfile content for 'Negomi'
     modelfile = f'''
-    FROM llama3
+    FROM llama3.1
     PARAMETER num_ctx {max_tokens}
     SYSTEM {system_content}
     '''

@@ -64,11 +64,11 @@ class Data:
         try:
             self.load()
         except FileNotFoundError:
-            self.data = None
+            self.data = None | dict | list
     
     def save(self) -> None:
         with open(self.file, "w") as f:
-            json.dump(self.data,f)
+            json.dump(self.data,f,indent=4)
     
     def load(self) -> Any:
         with open(self.file, "r") as f:
