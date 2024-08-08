@@ -1,5 +1,5 @@
 """
-This Is Fun Lib
+Side Library for small and big functions and classes for Nextcord
 ~~~~~~~~~~~~~~~
 """
 #TODO: please Change the Id of the owner and the guild id after publish so that no one can use it by mistake
@@ -16,9 +16,9 @@ from datetime import timedelta
 os.makedirs(".secrets", exist_ok=True)
 config_path = ".secrets/config.conf"
 config = Config(config_path)
-layout = ["General","Logger","General Embeds Colour","Advance"]#, "Database", "APIs"]
+layout = ["General","Logger","General Embeds Colour","Advance"]#, Test Users]   #, "Database", "APIs"]
 config.set_layout(layout)
-
+#TODO: next 0.11
 VERSION = "0.1"
 
 data = {

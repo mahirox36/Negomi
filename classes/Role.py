@@ -100,17 +100,23 @@ class Rolez(commands.Cog):
         await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
         await ctx.send(embed=info_embed(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
         for i in user["members"]:
-            file.data.pop(i)
-        file.data.pop(f"{ctx.user.id}")
+            del file.data[i]
+        del file.data[f"{ctx.user.id}"]
         file.save()
     
     @slash_command(name="role-user-add",description="Add the role to a user")
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
+        if ctx.user.id == member.id:
+            await ctx.send(embed=error_embed("You can't add yourself"),ephemeral=True)
+            return
+        elif member.bot:
+            await ctx.send(embed=error_embed("You can't add a bot"),ephemeral=True)
+            return
         try:
             user = dict(file.data.get(f"{ctx.user.id}"))
-            user2= dict(file.data.get(f"{member.id}"))
+            user2= file.data.get(f"{member.id}")
             if user == None:
                 await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
                 return
@@ -132,7 +138,7 @@ class Rolez(commands.Cog):
         }}
         file.data.update(data)
         file.save()
-        member.add_roles(role)
+        await member.add_roles(role)
 
         await ctx.send(embed=info_embed(f"The {get_name(member)} Added!", title="Member Added!"),ephemeral=True)
 
@@ -140,9 +146,15 @@ class Rolez(commands.Cog):
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
+        if ctx.user.id == member.id:
+            await ctx.send(embed=error_embed("You can't remove yourself"),ephemeral=True)
+            return
+        elif member.bot:
+            await ctx.send(embed=error_embed("You can't remove a bot"),ephemeral=True)
+            return
         try:
-            user = dict(file.data.get(f"{ctx.user.id}"))
-            user2= dict(file.data.get(f"{member.id}"))
+            user = file.data.get(f"{ctx.user.id}")
+            user2= file.data.get(f"{member.id}")
             if user == None:
                 await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
                 return
@@ -160,10 +172,9 @@ class Rolez(commands.Cog):
         role = guild.get_role(user["roleID"])
         user["members"].remove(f"{member.id}")
         file.data[f"{ctx.user.id}"].update(user)
-        file.data.update(data)
-        file.data.remove(f"{member.id}")
+        del file.data[f"{member.id}"]
         file.save()
-        member.remove_roles(role)
+        await member.remove_roles(role)
 
         await ctx.send(embed=info_embed(f"The {get_name(member)} Removed!", title="Member Removed!"),ephemeral=True)
     
@@ -171,9 +182,7 @@ class Rolez(commands.Cog):
     @create_role.on_autocomplete("color")
     @role_edit.on_autocomplete("color")
     async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
-        # Example list of names
         colors = [i for i in self.colors.keys()]
-        # Filter and return names that match the user's input
         suggestions = [name for name in colors if name.lower().startswith(current.lower())]
         await interaction.response.send_autocomplete(suggestions)
     
