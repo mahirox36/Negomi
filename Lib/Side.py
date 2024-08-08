@@ -207,20 +207,20 @@ def debug_embed(description:str,title:str="Debug", footer:str=None, author:List=
     return embed
 
 def info_embed(description:str=None,title:str="Info", footer:str=None, author:List=None):
-    embed =Embed(title=title,description=description,color=Info_Color)
+    embed =Embed(title=title,description=description,color=Info_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
 
 def warn_embed(description:str,title:str="Warn", footer:str=None, author:List=None):
-    embed =Embed(title=title,description=description,color=Warn_Color)
+    embed =Embed(title=title,description=description,color=Warn_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     embed.set_author
     return embed
 
 def error_embed(description:str,title:str="Error", footer:str=None, author:List=None):
-    embed =Embed(title=title,description=description,color=Error_Color)
+    embed =Embed(title=title,description=description,color=Error_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
