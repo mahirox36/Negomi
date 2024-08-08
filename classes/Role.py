@@ -30,9 +30,11 @@ class Rolez(commands.Cog):
         color = self.colors[color]
         file = Data(guild.id,"Roles","MembersRoles")
         if file.data != None:
-            if file.data.get(f"{ctx.user.id}") != None:
-                await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
-                return
+            try:
+                if file.data.get(f"{ctx.user.id}") != None:
+                    await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
+                    return
+            except AttributeError: pass
         if name.lower() in self.notAllowed:
             await ctx.send(embed=error_embed("This word isn't allowed"),ephemeral=True)
             return
