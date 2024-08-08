@@ -104,7 +104,15 @@ class Rolez(commands.Cog):
         del file.data[f"{ctx.user.id}"]
         file.save()
     
-    @slash_command(name="role-user-add",description="Add the role to a user")
+    @user_command("Role: Add User")
+    async def role_user_add_user_command(self,ctx:init, member:Member):
+        await self.role_user_add(ctx,member)
+    @user_command("Role: Remove User")
+    async def role_user_remove_user_command(self,ctx:init, member:Member):
+        await self.role_user_remove(ctx,member)
+
+
+    @slash_command(name="role-add-user",description="Add the role to a user")
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
@@ -142,7 +150,7 @@ class Rolez(commands.Cog):
 
         await ctx.send(embed=info_embed(f"The {get_name(member)} Added!", title="Member Added!"),ephemeral=True)
 
-    @slash_command(name="role-user-remove",description="Remove the role from a user")
+    @slash_command(name="role-remove-user",description="Remove the role from a user")
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")

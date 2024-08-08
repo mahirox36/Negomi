@@ -123,9 +123,6 @@ class ControlPanel(View):
         self.data = data
         self.user = UserSettings(user)       
 
-        
-    #TODO: Add Transfer Owner
-    #TODO: Add Invite Button
     def create_buttons(self):
         self.button1 = Button(label=f"📝 Edit Name", style=nextcord.ButtonStyle.primary)
         self.button1.callback = self.Edit_Name
