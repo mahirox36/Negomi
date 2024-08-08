@@ -42,8 +42,9 @@ class Rolez(commands.Cog):
         await ctx.user.add_roles(role)
         await ctx.send(embed=info_embed(f"You have created a role by the name: {name}", title="Role Created!"),ephemeral=True)
         data= {f"{ctx.user.id}":{
-            "owner":True,
-            "roleID":role.id
+            "owner"     :True,
+            "roleID"    :role.id,
+            "members"   :[]
         }}
         file.data.update(data)
         file.save()
@@ -97,8 +98,74 @@ class Rolez(commands.Cog):
             return
         role = guild.get_role(user["roleID"])
         await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
-        await ctx.send(embed=info_embed(f"You have deleted the role", title="Role Edited!"),ephemeral=True)
+        await ctx.send(embed=info_embed(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
+        for i in user["members"]:
+            file.data.pop(i)
+        file.data.pop(f"{ctx.user.id}")
+        file.save()
     
+    @slash_command(name="role-user-add",description="Add the role to a user")
+    async def role_user_add(self,ctx:init, member:Member):
+        guild = ctx.guild
+        file = Data(guild.id,"Roles","MembersRoles")
+        try:
+            user = dict(file.data.get(f"{ctx.user.id}"))
+            user2= dict(file.data.get(f"{member.id}"))
+            if user == None:
+                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                return
+            if user2 != None:
+                await ctx.send(embed=error_embed("He/She already have a role"),ephemeral=True)
+                return
+            if user["owner"] == False:
+                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                return
+        except AttributeError: 
+            await ctx.send(embed=error_embed("You & Him/Her Don't have a role"),ephemeral=True)
+            return
+        role = guild.get_role(user["roleID"])
+        user["members"].append(f"{member.id}")
+        file.data[f"{ctx.user.id}"].update(user)
+        data = {f"{member.id}":{
+            "owner" :False,
+            "roleID":role.id,
+        }}
+        file.data.update(data)
+        file.save()
+        member.add_roles(role)
+
+        await ctx.send(embed=info_embed(f"The {get_name(member)} Added!", title="Member Added!"),ephemeral=True)
+
+    @slash_command(name="role-user-remove",description="Remove the role from a user")
+    async def role_user_remove(self,ctx:init, member:Member):
+        guild = ctx.guild
+        file = Data(guild.id,"Roles","MembersRoles")
+        try:
+            user = dict(file.data.get(f"{ctx.user.id}"))
+            user2= dict(file.data.get(f"{member.id}"))
+            if user == None:
+                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                return
+            elif user2 == None:
+                await ctx.send(embed=error_embed("He/She doesn't have a role"),ephemeral=True)
+                return
+            elif user["owner"] == False:
+                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                return
+            elif user["roleID"] != user2["roleID"]:
+                await ctx.send(embed=error_embed("He/She doesn't have your role"),ephemeral=True)
+        except AttributeError: 
+            await ctx.send(embed=error_embed("You & Him/Her Don't have a role"),ephemeral=True)
+            return
+        role = guild.get_role(user["roleID"])
+        user["members"].remove(f"{member.id}")
+        file.data[f"{ctx.user.id}"].update(user)
+        file.data.update(data)
+        file.data.remove(f"{member.id}")
+        file.save()
+        member.remove_roles(role)
+
+        await ctx.send(embed=info_embed(f"The {get_name(member)} Removed!", title="Member Removed!"),ephemeral=True)
     
 
     @create_role.on_autocomplete("color")
