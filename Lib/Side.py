@@ -9,7 +9,7 @@ import string
 from .config import Config, Color as color
 from .richer import print
 from .Data import DataGlobal as GlobalData
-from nextcord import Embed, Guild, PermissionOverwrite
+from nextcord import Embed, Guild, Member, PermissionOverwrite
 import re
 from typing import Any, Dict, Iterator, List, Optional, Union
 from datetime import timedelta
@@ -193,6 +193,9 @@ def PermissionOverwriteWith(
         start_embedded_activities   = start_embedded_activities,
         moderate_members            = moderate_members)
     
+
+def get_name(user:Member):
+    return user.global_name if user.global_name != None else user.display_name
 
 def everyone(guild:Guild):
     return guild.default_role
