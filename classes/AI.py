@@ -3,12 +3,15 @@ import nextcord
 import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
-from nextcord import Interaction as init
+from nextcord import Interaction as init, SlashOption
 from Lib.Side import *
 from Lib.Hybrid import setup_hybrid, userCTX
+import ollama
 import os
 import json
 from Lib.Negomi import get_response, generate
+
+models = [model["name"].split(":")[0] for model in ollama.list()["models"]]
 
 
 class AI(commands.Cog):
@@ -19,7 +22,13 @@ class AI(commands.Cog):
         self.started = False
     
     @slash_command(name="ask",description="ask an Advance AI")
-    async def Say(self,ctx:init,message:str):
+    async def Say(self,ctx:init,message:str,
+                  model= SlashOption(
+                      "model",
+                      "Select a model you wish to ask to",
+                      False,
+                      choices=models
+                  )):
         try:
             if ctx.guild.id != TESTING_GUILD_ID:
                 await ctx.send(embed=error_embed("Sorry But this Only Works on The Owner's Server\n"+
@@ -36,7 +45,8 @@ class AI(commands.Cog):
         # if name == "HackedMahiro": name = "Mahiro"
         # print(f"{name}: {message}")
         # response= get_response(f"{name}: {message}",message)
-        response= generate(message)
+        if model == None: response= generate(message)
+        else: response= generate(message,model)
         # if response == False:
         #     await ctx.send(embed=debug_embed("Cleared!"))
         #     return
