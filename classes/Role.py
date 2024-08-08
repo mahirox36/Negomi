@@ -66,15 +66,19 @@ class Rolez(commands.Cog):
         except AttributeError: 
             await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
             return
-        if name.lower() in self.notAllowed:
-            await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
-            return
+        try:
+            if name.lower() in self.notAllowed:
+                await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
+                return
+        except AttributeError:pass
         role = guild.get_role(user["roleID"])
         if (name == None) and (color == None):
             await ctx.send(embed=error_embed("you haven't change anything ||trying to be funny?||"),ephemeral=True)
             return
-        await role.edit(name=name,color=color)
+        if name != None:await role.edit(name=name)
+        if color!= None:await role.edit(color=color)
         await ctx.send(embed=info_embed(f"You have Edit a role by the name: {name}", title="Role Edited!"),ephemeral=True)
+    
 
     @create_role.on_autocomplete("color")
     @role_edit.on_autocomplete("color")
