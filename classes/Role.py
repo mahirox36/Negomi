@@ -77,7 +77,28 @@ class Rolez(commands.Cog):
             return
         if name != None:await role.edit(name=name)
         if color!= None:await role.edit(color=color)
-        await ctx.send(embed=info_embed(f"You have Edit a role by the name: {name}", title="Role Edited!"),ephemeral=True)
+        await ctx.send(embed=info_embed(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
+
+
+    @slash_command(name="role-delete",description="delete your own role")
+    async def role_delete(self,ctx:init):
+        guild = ctx.guild
+        file = Data(guild.id,"Roles","MembersRoles")
+        try:
+            user = file.data.get(f"{ctx.user.id}")
+            if user == None:
+                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                return
+            if user["owner"] == False:
+                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                return
+        except AttributeError: 
+            await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+            return
+        role = guild.get_role(user["roleID"])
+        await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
+        await ctx.send(embed=info_embed(f"You have deleted the role", title="Role Edited!"),ephemeral=True)
+    
     
 
     @create_role.on_autocomplete("color")
