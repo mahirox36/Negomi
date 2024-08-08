@@ -43,7 +43,7 @@ class Rolez(commands.Cog):
             "owner":True,
             "roleID":role.id
         }}
-        file.data.update(data) if file.data != None else file.data = data
+        file.data = data if file.data == None else file.data.update(data)
     @create_role.on_autocomplete("color")
     async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
         # Example list of names
