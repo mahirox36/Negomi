@@ -8,10 +8,10 @@ try:
     from nextcord.ext import commands
     from requests import request
     from Lib.Side import *
-    import os
     import Lib.Data as Data
+    from Lib.Logger import *
+    import os
     from nextcord import Interaction as init
-    import logging
     from datetime import datetime
     import threading
     import time
@@ -22,27 +22,8 @@ try:
     global Bot
     Bot = client
 
-    handler = None
     clear()
-    if Logger_Enabled:
-        current_datetime = datetime.now()
-        date = str(current_datetime.strftime("%Y-%m-%d"))
-        timed = str(current_datetime.strftime("%H-%M-%S-%f"))
-        # Create a logger
-        logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
-
-        os.makedirs(f"logs/{date}" ,exist_ok=True)
-        # Create a file handler
-        handler = logging.FileHandler(f'logs/{date}/output_{timed}.txt')
-        handler.setLevel(logging.INFO)
-        # formatter
-        formatter = logging.Formatter(Format)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-
-    # logging.basicConfig(filename=f'loggin/{datetime.datetime()}', level=logging.INFO)
+    
 
 
 
@@ -55,10 +36,7 @@ try:
             user = client.get_user(owner_id)
             channel = await user.create_dm()
             await channel.send("Running ✅",embeds=[
-                debug_embed("Bot is Online"),
-                info_embed("Bot is Online"),
-                warn_embed("Bot is Online"),
-                error_embed("Bot is Online")])
+                info_embed("Bot is Online")])
     #End
 
     #Classes
