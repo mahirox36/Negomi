@@ -35,23 +35,56 @@ class Rolez(commands.Cog):
                 return
         except AttributeError: file.data = {}
         if name.lower() in self.notAllowed:
-            await ctx.send(embed=error_embed("This word isn't allowed"),ephemeral=True)
+            await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
             return
         role = await guild.create_role(reason=f"{ctx.user.name}/{ctx.user.id} Created a role",
-                                name=name, color=color.value)
-        await ctx.send(embed=info_embed(f"You have created a role by the name: {name}", title="Role Created!"))
+                                name=name, color=color.value,hoist=True)
+        await ctx.user.add_roles(role)
+        await ctx.send(embed=info_embed(f"You have created a role by the name: {name}", title="Role Created!"),ephemeral=True)
         data= {f"{ctx.user.id}":{
             "owner":True,
             "roleID":role.id
         }}
         file.data.update(data)
+        file.save()
+    
+    @slash_command(name="role-edit",description="Edit your own role like the name or role or both!")
+    async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
+                                        required=False, autocomplete=True,default=None)):
+        guild = ctx.guild
+        if color != None:
+            color = self.colors[color]
+        file = Data(guild.id,"Roles","MembersRoles")
+        try:
+            user = file.data.get(f"{ctx.user.id}")
+            if user == None:
+                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                return
+            if user["owner"] == False:
+                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                return
+        except AttributeError: 
+            await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+            return
+        if name.lower() in self.notAllowed:
+            await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
+            return
+        role = guild.get_role(user["roleID"])
+        if (name == None) and (color == None):
+            await ctx.send(embed=error_embed("you haven't change anything ||trying to be funny?||"),ephemeral=True)
+            return
+        await role.edit(name=name,color=color)
+        await ctx.send(embed=info_embed(f"You have Edit a role by the name: {name}", title="Role Edited!"),ephemeral=True)
+
     @create_role.on_autocomplete("color")
+    @role_edit.on_autocomplete("color")
     async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
         # Example list of names
         colors = [i for i in self.colors.keys()]
         # Filter and return names that match the user's input
         suggestions = [name for name in colors if name.lower().startswith(current.lower())]
         await interaction.response.send_autocomplete(suggestions)
+    
     
     
 
