@@ -1,4 +1,4 @@
-# Negomi Discord Bot
+# Negomi Discord Bot (UNFINISHED)
 
 ### Features:
 
