@@ -43,8 +43,8 @@ def get_response(user_message,originalText:str,previousContent:str=None,previous
         print(conversation_history)
     return text
 
-def generate(prompt) ->str:
-    response = ollama.generate("NegomiX",prompt)
+def generate(prompt,model="NegomiX") ->str:
+    response = ollama.generate(model,prompt)
     return response["response"]
     
 
