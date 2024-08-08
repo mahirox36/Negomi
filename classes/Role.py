@@ -29,12 +29,11 @@ class Rolez(commands.Cog):
         guild = ctx.guild
         color = self.colors[color]
         file = Data(guild.id,"Roles","MembersRoles")
-        if file.data != None:
-            try:
-                if file.data.get(f"{ctx.user.id}") != None:
-                    await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
-                    return
-            except AttributeError: pass
+        try:
+            if file.data.get(f"{ctx.user.id}") != None:
+                await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
+                return
+        except AttributeError: file.data = {}
         if name.lower() in self.notAllowed:
             await ctx.send(embed=error_embed("This word isn't allowed"),ephemeral=True)
             return
@@ -45,7 +44,7 @@ class Rolez(commands.Cog):
             "owner":True,
             "roleID":role.id
         }}
-        file.data = data if file.data == None else file.data.update(data)
+        file.data.update(data)
     @create_role.on_autocomplete("color")
     async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
         # Example list of names
