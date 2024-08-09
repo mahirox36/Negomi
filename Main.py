@@ -53,6 +53,8 @@ try:
 
     print(f"and These All The Extension {initial_extension} ")
     for extension in initial_extension:
+        if (extension == "classes.Welcome") and (Welcome_enabled == False):
+            continue
         client.load_extension(extension)
 
     if __name__ == '__main__':
