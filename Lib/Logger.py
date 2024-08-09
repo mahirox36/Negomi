@@ -14,7 +14,7 @@ if Logger_Enabled:
     Logger.setLevel(logging.DEBUG)
     os.makedirs(f"logs/{date}" ,exist_ok=True)
     # Create a file handler
-    handler = logging.FileHandler(f'logs/{date}/output_{timed}.txt')
+    handler = logging.FileHandler(f'logs/{date}/output_{timed}.log')
     handler.setLevel(logging.INFO)
     # formatter
     formatter = logging.Formatter(Format)
