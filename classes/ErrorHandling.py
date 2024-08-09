@@ -30,6 +30,8 @@ class ErrorHandling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: init, error: Exception):
+        if isinstance(error,commands.errors.CommandNotFound):
+            return
         await ctx.send(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
