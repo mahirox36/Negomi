@@ -25,7 +25,8 @@ class funny(commands.Cog):
             "Very doubtful.","You are Gay","This question is Gay",
             #JOKE!!!!!!!!
             "No","Hell Nah", "I don't care about your question, I am The Best",
-            "Nuh Uh","Yea Uh","Bling-bang-bang, bling-bang-bang-born"
+            "Nuh Uh","Yea Uh","Bling-bang-bang, bling-bang-bang-born","Ni-",
+            "UwU","OwO",":3"
         ]
     @slash_command("uwu",description="What Does this thing do?")
     async def uwu2(self,ctx:init):
