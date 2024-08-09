@@ -70,8 +70,8 @@ class Config:
                             lines.append(f"# {comment}\n")
                     if isinstance(value, str):
                         value = f"\"{value}\""
-                    elif not isinstance(value, (int, float, bool,Color)):
-                        raise ValueError("Invalid value: must be a boolean, string, int, or float")
+                    elif not isinstance(value, (int, float, bool,Color,tuple)):
+                        raise ValueError("Invalid value: must be a boolean, string, int, float, or tuple")
                     lines.append(f"{key} = {value}\n")
             elif isinstance(section_data, list):
                 for item in section_data:
@@ -113,6 +113,12 @@ class Config:
                     value = True
                 elif (value == "false") or (value == "False"):
                     value = False
+                elif (value.startswith("(")) and (value.endswith(")")):
+                    # Assuming the tuple contains only integers
+                    value = tuple(map(int, value[1:-1].split(",")))
+                elif (value.startswith("#")):
+                    # Assume it is a color in hexadecimal format
+                    value = Color(value)
                 else:
                     value = json.loads(value)
                 self.data[current_section][key] = value
