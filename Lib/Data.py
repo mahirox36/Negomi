@@ -64,7 +64,7 @@ class Data:
         try:
             self.load()
         except FileNotFoundError:
-            self.data = None | dict | list
+            self.data: Union[Dict, List, None] = None
     
     def save(self) -> None:
         with open(self.file, "w") as f:
@@ -106,11 +106,10 @@ class DataGlobal:
         else            : self.path = f"Data/{name}/"
         self.file = f"{self.path}{file}.json"
         os.makedirs(self.path,exist_ok=True)
-        self.data = {}
         try:
             self.load()
         except FileNotFoundError:
-            pass
+            self.data: Union[Dict, List, None] = None
     
     def save(self):
         with open(self.file, "w") as f:

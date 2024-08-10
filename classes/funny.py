@@ -62,12 +62,6 @@ class funny(commands.Cog):
         await ctx.send(embed=info_embed(title=f"🎱 **Question:** {question}",
                            description=f"**Answer:** {response}"))
     
-    @slash_command(name="fortune-cookie",description="Opens a virtual fortune cookie and reveals your fortune.")
-    async def fortuneCookie(self,ctx:init):
-        #JOKE!!!!!!!!
-        if ctx.user.id == owner_id:
-            await ctx.send("You are not Gay or Femboy or Trans")
-        else:await ctx.send("You are Gay")
     
 
 def setup(client):

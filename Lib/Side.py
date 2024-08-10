@@ -11,7 +11,7 @@ from .richer import print
 from .Data import DataGlobal as GlobalData
 from nextcord import Embed, Guild, Member, PermissionOverwrite
 import re
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union, NewType
 from datetime import timedelta
 os.makedirs(".secrets", exist_ok=True)
 config_path = ".secrets/config.conf"
@@ -121,6 +121,11 @@ textColor       = config["Welcome Settings"]["textColor_RGB"]
 #Advance 
 maxNum = config["Advance"]["DefaultBetterID_MaxNumber"]
 
+
+#New Types:
+url = NewType("url", str)
+
+
 def PermissionOverwriteWith(
         create_instant_invite       : Optional[bool]= None,
         kick_members                : Optional[bool]= None,
@@ -226,26 +231,46 @@ def everyone(guild:Guild):
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
-def debug_embed(description:str,title:str="Debug", footer:str=None, author:List=None):
+def debug_embed(
+    description: str = None,
+    title: str = "Info",
+    footer: str = None,
+    author: List[Union[str, url]] = None
+) -> Embed:
     embed =Embed(title=title,description=description,color=Debug_Color)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
 
-def info_embed(description:str=None,title:str="Info", footer:str=None, author:List=None):
+def info_embed(
+    description: str = None,
+    title: str = "Info",
+    footer: str = None,
+    author: List[Union[str, url]] = None
+) -> Embed:
     embed =Embed(title=title,description=description,color=Info_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     return embed
 
-def warn_embed(description:str,title:str="Warn", footer:str=None, author:List=None):
+def warn_embed(
+    description: str = None,
+    title: str = "Info",
+    footer: str = None,
+    author: List[Union[str, url]] = None
+) -> Embed:
     embed =Embed(title=title,description=description,color=Warn_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
     embed.set_author
     return embed
 
-def error_embed(description:str,title:str="Error", footer:str=None, author:List=None):
+def error_embed(
+    description: str = None,
+    title: str = "Info",
+    footer: str = None,
+    author: List[Union[str, url]] = None
+) -> Embed:
     embed =Embed(title=title,description=description,color=Error_Colour)
     if footer: embed.set_footer(text=footer)
     if author != None: embed.set_author(name=author[0],icon_url=author[1])
@@ -282,6 +307,18 @@ def text_to_number(text):
     return word_to_number.get(text, None)
 
 def convert_to_seconds(time_string):
+    """Convert any time to seconds
+
+    Args:
+        time_string (str): Time
+
+    Raises:
+        ValueError: Invalid time Format 
+        ValueError: _description_
+
+    Returns:
+        int: Seconds
+    """
     time_string = time_string.lower()
     
     # Regex to find patterns like '5 days', 'five days', '5d', etc.
