@@ -27,7 +27,8 @@ class Rolez(commands.Cog):
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
-        color = self.colors[color]
+        try:color = self.colors[color]
+        except KeyError:color= Color("#"+color if not color.startswith("#") else color)
         file = Data(guild.id,"Roles","MembersRoles")
         try:
             if file.data.get(f"{ctx.user.id}") != None:
@@ -192,6 +193,8 @@ class Rolez(commands.Cog):
     async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
         colors = [i for i in self.colors.keys()]
         suggestions = [name for name in colors if name.lower().startswith(current.lower())]
+        if (suggestions == []) and (current.startswith("#")):
+             suggestions = [current]
         await interaction.response.send_autocomplete(suggestions)
     
     
