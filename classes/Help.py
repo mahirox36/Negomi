@@ -45,7 +45,7 @@ def embed_builder(CogName: str, title: str, client: commands.Bot, extraInfo:str 
 
 #TODO: add Button for Admin if the user was admin
 class HelpSelect(ui.View):
-    def __init__(self) -> None:
+    def __init__(self,admin: bool=False) -> None:
         super().__init__(timeout=None)
         self.options = [
             SelectOption(label="Home", value="home",emoji="🏠",default=True),
@@ -57,6 +57,10 @@ class HelpSelect(ui.View):
         self.select = ui.Select(placeholder="Choose an option...",options=self.options)
         self.select.callback = self.callback
         self.add_item(self.select)
+        if admin:
+            self.adminButton = ui.Button(style=ButtonStyle.green,label="🧑‍💻 Admin")
+            self.adminButton.callback = self.adminButtonCallback
+            self.add_item(self.adminButton)
     async def callback(self, ctx: Interaction):
         selected_value = self.select.values[0]
         num = 0
@@ -80,7 +84,26 @@ class HelpSelect(ui.View):
         if selected_value == "other": embed= embed_builder("funny", "⚙️ Other",         ctx.client,
         extraInfo="")
         await ctx.response.edit_message(embed=embed,view=self)
-
+    async def adminButtonCallback(self, ctx: init):
+        self.remove_item(self.select)
+        self.adminButton.label = "Back ⤴️"
+        self.adminButton.style = ButtonStyle.blurple
+        self.adminButton.callback = self.adminButtonReverseCallback
+        owner = ctx.client.get_user(owner_id)
+        embed = info_embed(f"Hey Admin! What's up?\n Anyway there isn't a lot showing here.\n\nSo please use the `{prefix}help` for admin commands!",
+                           title="🧑‍💻 Admin")
+            # .set_author(name=get_name(owner),icon_url=owner.avatar.url)
+        await ctx.response.edit_message(embed=embed,view=self)
+    async def adminButtonReverseCallback(self, ctx: Interaction):
+        self.add_item(self.select)
+        self.adminButton.label = "🧑‍💻 Admin"
+        self.adminButton.style = ButtonStyle.green
+        self.adminButton.callback = self.adminButtonCallback
+        owner = ctx.client.get_user(owner_id)
+        home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
+        await ctx.response.edit_message(embed=home_embed,view=self)
+        
+        
        
     
     async def disable(self, ctx: nextcord.Interaction):
@@ -100,7 +123,8 @@ class Help(commands.Cog):
     @slash_command(name="help",description="Help command")
     async def help(self,ctx:init):
         global home_embed
-        view = HelpSelect()
+        admin= ctx.user.guild_permissions.administrator
+        view = HelpSelect(admin)
         owner = self.client.get_user(owner_id)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
