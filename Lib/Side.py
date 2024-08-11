@@ -18,10 +18,10 @@ config_path = ".secrets/config.conf"
 config = Config(config_path)
 layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Test Users]   #, "Database", "APIs"]
 config.set_layout(layout)
-#TODO: next 0.11
+#TODO: next 0.12
 VERSION = "0.11"
 
-data = {
+configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
         "General": {
             "prefix"                    : "u.",
             "token"                     : "Your Bot Token",
@@ -64,7 +64,7 @@ data = {
 try:
     config.load()
 except FileNotFoundError:
-    config.data = data
+    config.data = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou
     config.save()
 
 if config.data["General"]["ConfigVersion"] != VERSION:
@@ -77,9 +77,9 @@ if config.data["General"]["ConfigVersion"] != VERSION:
     for section in layout:
         if section not in config.data:
             config[section] = {}
-        for key in data[section]:
+        for key in configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section]:
             if key not in config[section]:
-                config.data[section][key] = data[section][key]
+                config.data[section][key] = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section][key]
     config.data["General"]["ConfigVersion"] = VERSION
     config.save()
 
@@ -233,7 +233,7 @@ def clear():
 
 def debug_embed(
     description: str = None,
-    title: str = "Info",
+    title: str = "Debug",
     footer: str = None,
     author: List[Union[str, url]] = None
 ) -> Embed:
@@ -255,7 +255,7 @@ def info_embed(
 
 def warn_embed(
     description: str = None,
-    title: str = "Info",
+    title: str = "Warn",
     footer: str = None,
     author: List[Union[str, url]] = None
 ) -> Embed:
@@ -267,7 +267,7 @@ def warn_embed(
 
 def error_embed(
     description: str = None,
-    title: str = "Info",
+    title: str = "Error",
     footer: str = None,
     author: List[Union[str, url]] = None
 ) -> Embed:

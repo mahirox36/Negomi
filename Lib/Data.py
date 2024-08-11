@@ -56,10 +56,11 @@ def check_id(data,code) -> bool:
 
 
 class Data:
-    def __init__(self,server_id:int, name:str,file:str="data"):
-        self.path = f"Data/{name}/{server_id}/"
-        self.file = f"{self.path}{file}.json"
+    def __init__(self,server_id:int, name:str,file:str="data",subFolder: str = None):
+        self.path = f"Data/{name}/{server_id}" 
+        self.file = f"{self.path}/{file}.json" if subFolder == None else f"{self.path}/{subFolder}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
+        if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
         
         try:
             self.load()
