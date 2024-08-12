@@ -12,7 +12,7 @@ from Main import Bot
 import random
 Hybrid = setup_hybrid(Bot)
 
-class funny(commands.Cog):
+class Other(commands.Cog):
     def __init__(self, client:commands.Bot):
         self.client = client
         self.eight_ball_responses = [
@@ -65,4 +65,4 @@ class funny(commands.Cog):
     
 
 def setup(client):
-    client.add_cog(funny(client))
+    client.add_cog(Other(client))
