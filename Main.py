@@ -53,18 +53,23 @@ try:
 
     print(f"and These All The Extension {initial_extension} ")
     for extension in initial_extension:
+        LOGGER.info(f"Loading Class: {extension}")
         if (extension == "classes.Welcome") and (Welcome_enabled == False):
+            LOGGER.info(f"Failed to load Class: {extension}, Because Welcome Class isn't enabled")
             continue
         client.load_extension(extension)
+        LOGGER.info(f"Loaded Class: {extension}")
 
     if __name__ == '__main__':
         try:
             client.run(token)
         except nextcord.errors.LoginFailure:
+            LOGGER.error("Failed to Login")
             print(Panel(f"""Here's the step to check if you Have put your Token right:
             1- Add your token in the config file in {config_path}
             2- see if it didn't change back to "Your Bot Token" and if is change it to your token
             3- Reset your token in https://discord.com/developers/applications""",
             title="Invalid Token",style="bold red",border_style="bold red"))
 except Exception as e:
+    LOGGER.error(e)
     console.print_exception()

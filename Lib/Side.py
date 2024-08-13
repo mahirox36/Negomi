@@ -33,7 +33,7 @@ configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
         },
         "Logger": {
             "log"       : False,
-            "Format"    : '%(asctime)s - %(levelname)s - %(message)s',
+            "Format"    : "%(asctime)s - %(levelname)s - %(name)s: %(message)s",
             "logForAI"  : False
         },
         "General Embeds Colour": {

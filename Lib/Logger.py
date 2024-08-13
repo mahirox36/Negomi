@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import nextcord
 from Lib.Side import Format, Logger_Enabled
 
 
@@ -10,7 +11,7 @@ if Logger_Enabled:
     date = str(current_datetime.strftime("%Y-%m-%d"))
     timed = str(current_datetime.strftime("%H-%M-%S-%f"))
     # Create a LOGGER
-    Logger = logging.getLogger()
+    Logger = logging.getLogger('nextcord')
     Logger.setLevel(logging.DEBUG)
     os.makedirs(f"logs/{date}" ,exist_ok=True)
     # Create a file handler
@@ -20,7 +21,6 @@ if Logger_Enabled:
     formatter = logging.Formatter(Format)
     handler.setFormatter(formatter)
     Logger.addHandler(handler)
-# logging.basicConfig(filename=f'loggin/{datetime.datetime()}', level=logging.INFO)
 
 class Log:
     def __init__(self) -> None:
