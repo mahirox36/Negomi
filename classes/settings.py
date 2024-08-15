@@ -5,7 +5,7 @@ from nextcord.ext import commands
 from nextcord import Interaction as init
 from Lib.Side import *
 from Lib.Logger import *
-from Lib.Hybrid import setup_hybrid, userCTX
+from Lib.Extras import setup_hybrid, userCTX
 import os
 import json
 

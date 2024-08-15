@@ -17,7 +17,7 @@ all customable except error handling
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py) for Config Files.
 - [Data.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Data.py) For easier Json Files Saves for each Feature.
-- [Hybrid.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Hybrid.py) [Experimental] Hybrid commands for Nextcord.
+- [Extras.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Extras.py) [Experimental] Hybrid commands for Nextcord and other stuff.
 - [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py) for Logger like in java (Got inspired by Minecraft Modding).
 - [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py) For the AI System, Function, etc (All About AI).
 - [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py) For the Features that it's in Rich Library.

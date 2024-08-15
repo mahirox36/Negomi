@@ -8,7 +8,7 @@ from Lib.Side import *
 from Lib.Logger import *
 import emoji as emojis
 import re
-from Lib.Hybrid import setup_hybrid, userCTX
+from Lib.Extras import setup_hybrid, userCTX, cooldown
 import os
 import json
 
@@ -27,6 +27,12 @@ class DeleteSelect(ui.View):
                 )
                 for idx, item in enumerate(data)
             ]
+        self.options.append(SelectOption(
+                    label="Delete everything",
+                    value="-1",
+                    emoji="🗑️",
+                    description="Delete Every Group You have"
+                ))
         self.select = ui.Select(
             placeholder="Choose an option...",
             options=self.options
@@ -36,6 +42,36 @@ class DeleteSelect(ui.View):
 
     async def callback(self, ctx: Interaction):
         selected_value = int(self.select.values[0])
+        if selected_value == -1:
+            file = Data(ctx.guild.id, "Groups")
+            file_user = Data(ctx.guild.id, "Groups", f"{ctx.user.id}", subFolder="Members")
+            
+            # Safely iterate over a copy of file_user.data
+            for i in list(file_user.data):
+                try:
+                    channel_id = i.get("channel")
+                    if channel_id is None:
+                        continue
+                    
+                    channel = ctx.guild.get_channel(channel_id)
+                    if channel is not None:
+                        # Remove data from file_user and file
+                        file_user.data.remove(i)
+                        file["groups"].pop(str(channel_id), None)  # Use pop with default to avoid KeyError
+                        await channel.delete()
+                    else:
+                        # Optionally log or notify if the channel was not found
+                        LOGGER.warn(f"Channel with ID {channel_id} not found.")
+    
+                except Exception as e:
+                    # Log or handle exceptions that occur during deletion
+                    print(f"An error occurred while processing channel ID {i.get('channel')}: {e}")
+    
+            # Save changes to the data files
+            file_user.save()
+            file.save()
+            await ctx.response.edit_message(content=None, embed=info_embed("Every Group You had has been deleted!", "Deletion Success"), view=None)
+            return
         selected_option = next((opt for opt in self.select.options if opt.value == str(selected_value)), None)
         if selected_option:
             self.select.options.remove(selected_option)
@@ -81,6 +117,7 @@ class Groups(commands.Cog):
     
     @slash_command(name="group-create",description="Create a group (AKA Text Channels) For you and your friends")
     async def group_create(self,ctx:init,name: str, emoji: str, topic: str = SlashOption("topic","Topic is the small description in the top of the channel",max_length=100,required=False), nsfw: bool = False):
+        await cooldown(60,ctx.user,__name__)
         is_standard_emoji = emoji.replace(" ","") in emojis.EMOJI_DATA
         # Check if the emoji is a custom emoji (e.g., <a:customemoji:123456789012345678>)
         custom_emoji_pattern = re.compile(r'<a?:\w{2,32}:\d{18,}>')
@@ -99,13 +136,14 @@ class Groups(commands.Cog):
             category = await ctx.guild.create_category("Groups")
             file.data= {
                 "category"  : category.id,
+                "limit"     : 20,
                 "groups"    : {}
             }
         else:category= ctx.guild.get_channel(file["category"])
         if not fileUser.data:
             fileUser.data = [{"count":0}]
-        if fileUser.data[0]["count"] >= 20:
-            await ctx.send(error_embed("Sorry but you hit the limit"))
+        if fileUser.data[0]["count"] >= file["limit"]:
+            await ctx.send(embed= error_embed("Sorry but you hit the limit"))
             return
         overwrite = {
             ctx.user: PermissionOverwriteWith(manage_messages=True,send_messages=True,view_channel=True),
@@ -132,7 +170,7 @@ class Groups(commands.Cog):
     async def group_delete(self,ctx:init):
         fileUser= Data(ctx.guild_id,"Groups",f"{ctx.user.id}",subFolder="Members")
         if not fileUser.data:
-            await ctx.send(error_embed("You don't have groups to delete"))
+            await ctx.send(embed=error_embed("You don't have groups to delete"))
             return
         elif fileUser.data[0]["count"] == 0:
             await ctx.send(error_embed("You don't have groups to delete"))
@@ -141,8 +179,8 @@ class Groups(commands.Cog):
         fileUser.data.pop(0)
         view = DeleteSelect(fileUser.data, update)
         await ctx.send(embed=info_embed("Please Select the the Group you want to delete!","Delete Group"),ephemeral=True,view=view)
-    
-    
+
+
 
 def setup(client):
     client.add_cog(Groups(client))

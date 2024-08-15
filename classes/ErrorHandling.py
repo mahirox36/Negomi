@@ -2,6 +2,7 @@ import traceback
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
+from Lib.Extras import SlashCommandOnCooldown
 from Lib.Side import *
 from Lib.Logger import *
 
@@ -19,6 +20,11 @@ class ErrorHandling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx: init, error: Exception):
+        if isinstance(error.original, SlashCommandOnCooldown):
+            await ctx.send(
+                embed=error_embed(f"You're on cooldown! Try again in {error.original.retry_after:.2f} seconds.", "Too Fast"),
+                ephemeral=True)
+            return
         await ctx.send(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
@@ -29,10 +35,13 @@ class ErrorHandling(commands.Cog):
         await channel.send(f"New Error Master!\n{error_details}")
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: init, error: Exception):
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.reply(f"You're on cooldown! Try again in {error.retry_after:.2f} seconds.")
+            return
         if isinstance(error,commands.errors.CommandNotFound):
             return
-        await ctx.send(embed=error_embed(error,title="Error Occurred"))
+        await ctx.reply(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
         error_details = "```vbnet\n"+"".join(tb_str)+"```"

@@ -18,6 +18,7 @@ try:
 
     intents = nextcord.Intents.all()
     client = commands.Bot(command_prefix=prefix, intents=intents)
+    
 
     global Bot
     Bot = client

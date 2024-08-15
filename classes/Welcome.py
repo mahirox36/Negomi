@@ -10,7 +10,7 @@ from Lib.Logger import *
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import io
 import gc
-from Lib.Hybrid import setup_hybrid, userCTX
+from Lib.Extras import setup_hybrid, userCTX
 import os
 import json
 

@@ -5,7 +5,7 @@ from nextcord.ext import commands
 from nextcord import Interaction as init, SlashOption
 from Lib.Data import Data
 from Lib.Side import *
-from Lib.Hybrid import setup_hybrid, userCTX
+from Lib.Extras import setup_hybrid, userCTX
 from Lib.config import Color
 import os
 import json
