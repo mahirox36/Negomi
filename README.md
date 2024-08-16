@@ -6,18 +6,19 @@
 - Temp Voice chat.
 - Temp Text Chat (AKA Groups inside Server).
 - Roles for Normal Members.
+- Welcome Users with image and message
 - AI (Need to install your own).
 - Refresh the main Chat
 - Error Handling (When Error happens it get sent to the owner).
 - Fun Commands.
 
-all customable except error handling
+all customable except error handling and the image in the Greetings
 
 ### Libraries I made for this Bot:
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py) for Config Files.
-- [Data.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Data.py) For easier Json Files Saves for each Feature.
-- [Extras.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Extras.py) [Experimental] Hybrid commands for Nextcord and other stuff.
+- Data.py Merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py).
+- Extras.py Merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py).
 - [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py) for Logger like in java (Got inspired by Minecraft Modding).
 - [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py) For the AI System, Function, etc (All About AI).
 - [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py) For the Features that it's in Rich Library.

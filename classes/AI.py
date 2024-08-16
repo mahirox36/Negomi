@@ -5,7 +5,6 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init, SlashOption
 from Lib.Side import *
-from Lib.Extras import setup_hybrid, userCTX
 import ollama
 import os
 import json

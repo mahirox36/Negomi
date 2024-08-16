@@ -5,7 +5,6 @@ from nextcord.ext import commands
 from nextcord import Interaction as init
 from Lib.Side import *
 from Lib.Logger import *
-from Lib.Extras import setup_hybrid, userCTX
 import os
 import json
 
@@ -19,7 +18,9 @@ class Settings(commands.Cog):
         self.client = client
     #TODO: Add Simple Editing for Data
     @commands.command(name = "advance-viewing", aliases=["view-x"],description= description)
-    @commands.guild_only()
+    @commands.dm_only()
+    @commands.has_permissions()
+    @commands.is_owner
     async def advance_viewing(self, ctx:commands.Context, *folders):
         data = {}
         base_path = "./data"

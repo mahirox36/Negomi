@@ -3,20 +3,24 @@ Side Library for small and big functions and classes for Nextcord
 ~~~~~~~~~~~~~~~
 """
 #TODO: please Change the Id of the owner and the guild id after publish so that no one can use it by mistake
+import json
 import os
 import random
 import string
 from .config import Config, Color as color
-from .richer import print
-from .Data import DataGlobal as GlobalData
-from nextcord import Embed, Guild, Member, PermissionOverwrite
+from rich import print
+from nextcord import Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions
+from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
+from nextcord.ext import commands
 import re
 from typing import Any, Dict, Iterator, List, Optional, Union, NewType
 from datetime import timedelta
+import time
+from typing import Callable, Any, List
 os.makedirs(".secrets", exist_ok=True)
 config_path = ".secrets/config.conf"
 config = Config(config_path)
-layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Test Users]   #, "Database", "APIs"]
+layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Admin Users]
 config.set_layout(layout)
 #TODO: next 0.12
 VERSION = "0.11"
@@ -247,10 +251,210 @@ def convert_to_seconds(time_string: str):
     
 
 
+
+        
+
+class SlashCommandOnCooldown(Exception):
+    def __init__(self, retry_after: float) -> None:
+        super().__init__()
+        self.retry_after = retry_after
+
+def setup_hybrid(bot: commands.Bot):
+    """
+    Register commands on the bot instance.
+    """
+    def hybrid(name: str, description: str, aliases: List[str] = [], **kwargs: Any):
+        def decorator(func: Callable[..., Any]):
+            # Register text command
+            bot.add_command(commands.Command(func, name="_"+name, **kwargs))
+            
+            # Register slash command
+            bot.slash_command(name=name, description=description)(func)
+            
+            return func
+        return decorator
+    
+    return hybrid
+
+
+cooldowns= {}
+async def cooldown(cooldown_time: int,user:Member,name):
+    global cooldowns
+    user_id = user.id
+    
+    if name not in cooldowns:
+        cooldowns[name] = {}
+    # Check if the user is on cooldown
+    if user_id in cooldowns[name]:
+        time_left = cooldowns[name][user_id] - time.time()
+        if time_left > 0:
+            raise SlashCommandOnCooldown(time_left)
+    # Set a new cooldown for the user
+    cooldowns[name][user_id] = time.time() + cooldown_time
+    return
+    
+def userCTX(ctx:init):
+    try:
+        ctx.user = ctx.author
+    except:
+        pass
+    return ctx
+
+def create_random_id(data) -> int:
+    code = random.randint(1,99999999999999)
+    for i in data:
+        if code == i:
+            return create_random_id(data)
+    else:
+        return code
+    
+def check_id(data,code) -> bool:
+    for i in data:
+        if code == i:
+            return False
+    else:
+        return True
+    
+    
+class Data:
+    def __init__(self,server_id:int, name:str,file:str="data",subFolder: str = None):
+        self.path = f"Data/{name}/{server_id}" 
+        self.file = f"{self.path}/{file}.json" if subFolder == None else f"{self.path}/{subFolder}/{file}.json"
+        os.makedirs(self.path,exist_ok=True)
+        if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
+        
+        try:
+            self.load()
+        except FileNotFoundError:
+            self.data: Union[Dict, List, None] = None
+    
+    def save(self) -> None:
+        with open(self.file, "w") as f:
+            json.dump(self.data,f,indent=4)
+    
+    def load(self) -> Any:
+        with open(self.file, "r") as f:
+            self.data = json.load(f)
+        return self.data
+    
+    def check(self) -> bool:
+        if os.path.exists(self.file):
+            return True
+        return False
+    
+    def delete(self,code) -> None:
+        del self.data[code]
+        self.save()
+        os.remove(self.file)
+    
+    def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
+        if key in self.data:
+            try:
+                return self.data[key]
+            except KeyError:
+                return None
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+    def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
+        if key in self.data:
+            self.data[key] = value
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+class DataGlobal:
+    def __init__(self, name:str,file:str="data"):
+        if name == ""   : self.path = f"Data/"
+        else            : self.path = f"Data/{name}/"
+        self.file = f"{self.path}{file}.json"
+        os.makedirs(self.path,exist_ok=True)
+        try:
+            self.load()
+        except FileNotFoundError:
+            self.data: Union[Dict, List, None] = None
+    
+    def save(self):
+        with open(self.file, "w") as f:
+            json.dump(self.data,f)
+        return self
+    
+    def load(self) -> Any:
+        with open(self.file, "r") as f:
+            self.data = json.load(f)
+        return self.data
+    
+    def check(self) -> bool:
+        if os.path.exists(self.file):
+            return True
+        return False
+    
+    def delete(self,code) -> None:
+        del self.data[code]
+        self.save()
+        os.remove(self.file)
+    def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
+        if key in self.data:
+            try:
+                return self.data[key]
+            except KeyError:
+                return None
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+    def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
+        if key in self.data:
+            self.data[key] = value
+        else:
+            raise KeyError(f"'{key}' not found in the data")
+
+async def high(ctx:init,user:Member):
+    if user.top_role.position >= ctx.user.top_role.position:
+        await ctx.send(f"User {user} Is Higher Than you")
+        return True
+    return False
+
+class NotOwnerGuild(Exception):
+    def __init__(self,user:Member,guild:Guild) -> None:
+        super().__init__()
+        self.guild= guild.name
+        self.user= get_name(user)
+
+def has_permission(ctx:init,**perms:bool) -> True | MissingPermissions:
+    invalid = set(perms) - set(Permissions.VALID_FLAGS)
+    if invalid:
+        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+    ch = ctx.channel
+    permissions = ch.permissions_for(ctx.user)
+    missing = [perm for perm, value in perms.items() if getattr(permissions, perm) != value]
+    if not missing:
+        return True
+    raise MissingPermissions(missing)
+ 
+def is_owner(ctx:init) -> True | NotOwner:
+    if ctx.user.id == owner_id:
+        return True
+    raise NotOwner("You do not own this bot.")
+
+def is_owner_guild(ctx:init) -> True | NotOwnerGuild:
+    if ctx.user.id == ctx.guild.owner_id:
+        return True
+    raise NotOwnerGuild(ctx.user,ctx.guild)
+
+
+def guild_only(ctx:init) -> True | NoPrivateMessage:
+    if ctx.guild is None:
+        raise NoPrivateMessage()
+    return True
+
+def dm_only(ctx: init) -> True | PrivateMessageOnly:
+    if ctx.guild is not None:
+        raise PrivateMessageOnly()
+    return True
+    
 class BetterID:
     def __init__(self,max:int = maxNum):
         self.max = max
-        self.file = GlobalData("BetterID")
+        self.file = DataGlobal("BetterID")
         try:
             self.data = self.file.load()
         except FileNotFoundError:
@@ -290,49 +494,3 @@ class BetterID:
 
     def __delitem__(self, key: str) -> None:
         del self.data[key]
-
-    def __iter__(self) -> Iterator:
-        return iter(self.data)
-
-    def __len__(self) -> int:
-        return len(self.data)
-
-    def __repr__(self) -> str:
-        return f"{self.data}"
-    
-    def __str__(self) -> str:
-        return f"{self.data}"
-
-    def __contains__(self, key: str) -> bool:
-        return key in self.data
-
-    def __eq__(self, other: Any) -> bool:
-        return self.data == other
-
-    def __ne__(self, other: Any) -> bool:
-        return self.data != other
-
-    def __add__(self, other: Any) -> Any:
-        return self.data + other
-
-    def __sub__(self, other: Any) -> Any:
-        return self.data - other
-
-    def __mul__(self, other: Any) -> Any:
-        return self.data * other
-
-    def __floordiv__(self, other: Any) -> Any:
-        return self.data // other
-
-    def __mod__(self, other: Any) -> Any:
-        return self.data % other
-
-    def __divmod__(self, other: Any) -> Any:
-        return divmod(self.data, other)
-
-    def __pow__(self, other: Any) -> Any:
-        return self.data ** other
-
-    def __lshift__(self, other: Any) -> Any:
-        return self.data << other
-        

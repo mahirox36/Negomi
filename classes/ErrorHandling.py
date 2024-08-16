@@ -2,9 +2,10 @@ import traceback
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from Lib.Extras import SlashCommandOnCooldown
+from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 from Lib.Side import *
 from Lib.Logger import *
+    
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client:Client):
@@ -20,11 +21,39 @@ class ErrorHandling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx: init, error: Exception):
-        if isinstance(error.original, SlashCommandOnCooldown):
+        err = error.original
+        if isinstance(err, SlashCommandOnCooldown):
             await ctx.send(
-                embed=error_embed(f"You're on cooldown! Try again in {error.original.retry_after:.2f} seconds.", "Too Fast"),
+                embed=error_embed(f"You're on cooldown! Try again in {err.retry_after:.2f} seconds.", "Too Fast"),
                 ephemeral=True)
             return
+        elif isinstance(err, MissingPermissions):
+            missing = ", ".join(err.missing_permissions)
+            await ctx.send(
+                embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
+                ephemeral=True)
+            return
+        elif isinstance(err, NotOwner):
+            await ctx.send(
+                embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
+                ephemeral=True)
+            return
+        elif isinstance(err, NotOwnerGuild):
+            await ctx.send(
+                embed=error_embed(f"You are not the owner of the Server", "Not Owner of Server"),
+                ephemeral=True)
+            return
+        elif isinstance(err, NoPrivateMessage):
+            await ctx.send(
+                embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
+                ephemeral=True)
+            return
+        elif isinstance(err, PrivateMessageOnly):
+            await ctx.send(
+                embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
+                ephemeral=True)
+            return
+        
         await ctx.send(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)

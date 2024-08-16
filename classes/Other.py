@@ -4,7 +4,6 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from Lib.Side import *
-from Lib.Extras import setup_hybrid, userCTX
 import os
 import json
 from requests import get, post
@@ -61,6 +60,34 @@ class Other(commands.Cog):
         response = random.choice(self.eight_ball_responses)
         await ctx.send(embed=info_embed(title=f"🎱 **Question:** {question}",
                            description=f"**Answer:** {response}"))
+        
+        
+    @slash_command(name="server-info",description="Gives This server Information")
+    async def server_info(self,interaction:init):
+        name = str(interaction.guild.name)
+        description = str(interaction.guild.description)
+        idd = str(interaction.guild.id)
+        region = str(interaction.guild.region)
+        memberCount = str(interaction.guild.member_count)
+        icon = str(interaction.guild.icon)
+    
+        embed = info_embed(
+            title=name + " Info",
+            description=description,
+        )
+        embed.set_thumbnail(url=icon)
+        embed.add_field(name="🆔Id", value=idd,inline=True)
+        embed.add_field(name="👑Owner", value=f"{interaction.guild.owner.mention}",inline=True)
+        embed.add_field(name="👥Members", value=memberCount,inline=True)
+        embed.add_field(name=f"💬Channels ({len(interaction.guild.channels)})",value=f"**{len(interaction.guild.text_channels)}** Text|**{len(interaction.guild.voice_channels)}** Voice")
+        embed.add_field(name="🌍Region", value=region,inline=True)
+        embed.add_field(name="🔐Roles",value=len(interaction.guild.roles))
+        await interaction.send(embed=embed)
+        
+    @slash_command(name="ping",description="Ping the Bot")
+    async def ping(self,ctx:init):
+        latency = round(self.client.latency * 1000)
+        await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.")
     
     
 

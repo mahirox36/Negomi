@@ -7,7 +7,6 @@ from nextcord import Interaction as init
 from nextcord.utils import MISSING
 from Lib.Side import *
 from Lib.Logger import *
-from Lib.Extras import setup_hybrid, userCTX
 from typing import Dict, Optional
 import os
 import json
