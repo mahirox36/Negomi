@@ -10,15 +10,13 @@ import string
 from .config import Config, Color as color
 from rich import print
 from nextcord import Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions
-from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 from nextcord.ext import commands
+from nextcord.ext.application_checks import ApplicationCheckForBotOnly, ApplicationNotOwner, check
 import re
-from typing import Any, Dict, Iterator, List, Optional, Union, NewType
-from datetime import timedelta
+from typing import Any, Dict, List, Optional, Union, NewType, Callable
 import time
-from typing import Callable, Any, List
 os.makedirs(".secrets", exist_ok=True)
-config_path = ".secrets/config.conf"
+config_path = ".secrets/config.ini"
 config = Config(config_path)
 layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Admin Users]
 config.set_layout(layout)
@@ -299,6 +297,12 @@ def userCTX(ctx:init):
     except:
         pass
     return ctx
+def userCONTEXT(ctx:init):
+    try:
+        ctx.author = ctx.user
+    except:
+        pass
+    return ctx
 
 def create_random_id(data) -> int:
     code = random.randint(1,99999999999999)
@@ -413,43 +417,12 @@ async def high(ctx:init,user:Member):
         return True
     return False
 
-class NotOwnerGuild(Exception):
+class ApplicationNotOwnerGuild(Exception):
     def __init__(self,user:Member,guild:Guild) -> None:
         super().__init__()
         self.guild= guild.name
         self.user= get_name(user)
 
-def has_permission(ctx:init,**perms:bool) -> True | MissingPermissions:
-    invalid = set(perms) - set(Permissions.VALID_FLAGS)
-    if invalid:
-        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
-    ch = ctx.channel
-    permissions = ch.permissions_for(ctx.user)
-    missing = [perm for perm, value in perms.items() if getattr(permissions, perm) != value]
-    if not missing:
-        return True
-    raise MissingPermissions(missing)
- 
-def is_owner(ctx:init) -> True | NotOwner:
-    if ctx.user.id == owner_id:
-        return True
-    raise NotOwner("You do not own this bot.")
-
-def is_owner_guild(ctx:init) -> True | NotOwnerGuild:
-    if ctx.user.id == ctx.guild.owner_id:
-        return True
-    raise NotOwnerGuild(ctx.user,ctx.guild)
-
-
-def guild_only(ctx:init) -> True | NoPrivateMessage:
-    if ctx.guild is None:
-        raise NoPrivateMessage()
-    return True
-
-def dm_only(ctx: init) -> True | PrivateMessageOnly:
-    if ctx.guild is not None:
-        raise PrivateMessageOnly()
-    return True
     
 class BetterID:
     def __init__(self,max:int = maxNum):
@@ -494,3 +467,14 @@ class BetterID:
 
     def __delitem__(self, key: str) -> None:
         del self.data[key]
+
+
+def is_owner_guild():
+
+    async def predicate(ctx: init) -> bool:
+
+        if not ctx.guild.owner.id == ctx.user.id:
+            raise ApplicationNotOwnerGuild(ctx.user,ctx.guild)
+        return True
+
+    return check(predicate)
