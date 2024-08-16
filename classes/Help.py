@@ -80,7 +80,7 @@ class HelpSelect(ui.View):
         extraInfo="You can create a channel by Join the Create Channel ")
         if selected_value == "ai"   : embed= embed_builder("AI", "😈 AI"     ,          ctx.client,
         extraInfo="You can Talk to her by mention her or reply to her message")
-        if selected_value == "other": embed= embed_builder("funny", "⚙️ Other",         ctx.client,
+        if selected_value == "other": embed= embed_builder("Other", "⚙️ Other",         ctx.client,
         extraInfo="")
         await ctx.response.edit_message(embed=embed,view=self)
     async def adminButtonCallback(self, ctx: init):

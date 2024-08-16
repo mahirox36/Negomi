@@ -3,9 +3,10 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
+from nextcord.ext.application_checks import *
 from Lib.Side import *
 from Lib.Logger import *
-    
+
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client:Client):
@@ -21,34 +22,37 @@ class ErrorHandling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx: init, error: Exception):
-        err = error.original
+        try:
+            err = error.original
+        except:
+            err = error
         if isinstance(err, SlashCommandOnCooldown):
             await ctx.send(
                 embed=error_embed(f"You're on cooldown! Try again in {err.retry_after:.2f} seconds.", "Too Fast"),
                 ephemeral=True)
             return
-        elif isinstance(err, MissingPermissions):
+        elif isinstance(err, ApplicationMissingPermissions):
             missing = ", ".join(err.missing_permissions)
             await ctx.send(
                 embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
                 ephemeral=True)
             return
-        elif isinstance(err, NotOwner):
+        elif isinstance(err, ApplicationNotOwner):
             await ctx.send(
                 embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
                 ephemeral=True)
             return
-        elif isinstance(err, NotOwnerGuild):
+        elif isinstance(err, ApplicationNotOwnerGuild):
             await ctx.send(
-                embed=error_embed(f"You are not the owner of the Server", "Not Owner of Server"),
+                embed=error_embed(f"You are not the owner of the Server {err.guild}", "Not Owner of Server"),
                 ephemeral=True)
             return
-        elif isinstance(err, NoPrivateMessage):
+        elif isinstance(err, ApplicationNoPrivateMessage):
             await ctx.send(
                 embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
-        elif isinstance(err, PrivateMessageOnly):
+        elif isinstance(err, ApplicationPrivateMessageOnly):
             await ctx.send(
                 embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
@@ -68,7 +72,33 @@ class ErrorHandling(commands.Cog):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.reply(f"You're on cooldown! Try again in {error.retry_after:.2f} seconds.")
             return
-        if isinstance(error,commands.errors.CommandNotFound):
+        elif isinstance(error, MissingPermissions):
+            missing = ", ".join(error.missing_permissions)
+            await ctx.send(
+                embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
+                ephemeral=True)
+            return
+        elif isinstance(error, NotOwner):
+            await ctx.send(
+                embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
+                ephemeral=True)
+            return
+        # elif isinstance(error, NotOwnerGuild):
+        #     await ctx.send(
+        #         embed=error_embed(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),
+        #         ephemeral=True)
+        #     return
+        elif isinstance(error, NoPrivateMessage):
+            await ctx.send(
+                embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
+                ephemeral=True)
+            return
+        elif isinstance(error, PrivateMessageOnly):
+            await ctx.send(
+                embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
+                ephemeral=True)
+            return
+        elif isinstance(error,commands.errors.CommandNotFound):
             return
         await ctx.reply(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)

@@ -64,8 +64,8 @@ class Other(commands.Cog):
         
     @slash_command(name="server-info",description="Gives This server Information")
     async def server_info(self,interaction:init):
-        name = str(interaction.guild.name)
-        description = str(interaction.guild.description)
+        name = interaction.guild.name
+        description = interaction.guild.description
         idd = str(interaction.guild.id)
         region = str(interaction.guild.region)
         memberCount = str(interaction.guild.member_count)
@@ -76,18 +76,18 @@ class Other(commands.Cog):
             description=description,
         )
         embed.set_thumbnail(url=icon)
-        embed.add_field(name="🆔Id", value=idd,inline=True)
-        embed.add_field(name="👑Owner", value=f"{interaction.guild.owner.mention}",inline=True)
-        embed.add_field(name="👥Members", value=memberCount,inline=True)
-        embed.add_field(name=f"💬Channels ({len(interaction.guild.channels)})",value=f"**{len(interaction.guild.text_channels)}** Text|**{len(interaction.guild.voice_channels)}** Voice")
-        embed.add_field(name="🌍Region", value=region,inline=True)
-        embed.add_field(name="🔐Roles",value=len(interaction.guild.roles))
-        await interaction.send(embed=embed)
+        embed.add_field(name= "🆔 ID", value=idd)
+        embed.add_field(name= "👑 Owner", value=f"{interaction.guild.owner.mention}")
+        embed.add_field(name= "👥 Members", value=memberCount)
+        embed.add_field(name=f"💬 Channels ({len(interaction.guild.channels)})",value=f"**{len(interaction.guild.text_channels)}** Text|**{len(interaction.guild.voice_channels)}** Voice")
+        embed.add_field(name= "🌍 Region", value=region)
+        embed.add_field(name= "🔐 Roles",value=len(interaction.guild.roles))
+        await interaction.send(embed=embed,ephemeral=True)
         
     @slash_command(name="ping",description="Ping the Bot")
     async def ping(self,ctx:init):
         latency = round(self.client.latency * 1000)
-        await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.")
+        await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.",ephemeral=True)
     
     
 

@@ -18,9 +18,7 @@ class Settings(commands.Cog):
         self.client = client
     #TODO: Add Simple Editing for Data
     @commands.command(name = "advance-viewing", aliases=["view-x"],description= description)
-    @commands.dm_only()
-    @commands.has_permissions()
-    @commands.is_owner
+    @commands.guild_only()
     async def advance_viewing(self, ctx:commands.Context, *folders):
         data = {}
         base_path = "./data"

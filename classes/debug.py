@@ -1,8 +1,9 @@
 import platform
 import psutil
 import nextcord
+from nextcord import slash_command, Message, Member, Embed
 from Lib.Side import *
-from nextcord.ext import commands
+from nextcord.ext import commands, application_checks as check
 import time
 
 class Debug(commands.Cog):
@@ -12,16 +13,15 @@ class Debug(commands.Cog):
         self.message_count = 0  # Track the number of messages the client has sent
 
         # Track sent messages by listening to the on_message event
-        @client.event
-        async def on_message(message):
-            if message.author == client.user:
-                self.message_count += 1
-            await client.process_commands(message)
 
-    @commands.command(name="debug")
-    async def debug(self, ctx):
-        """Displays detailed debug information about the bot."""
-        embed = nextcord.Embed(title="🔧 Bot Debug Information", color=Debug_Color)
+    @commands.Cog.listener()
+    async def on_message(self,message:Message):
+        if message.author == self.client.user:
+            self.message_count += 1
+        # await self.client.process_commands(message)
+    
+    def debugEmbed(self, user: Member):
+        embed = Embed(title="🔧 Bot Debug Information", color=Debug_Color)
         
         # Uptime
         uptime = time.time() - self.start_time
@@ -69,10 +69,19 @@ class Debug(commands.Cog):
         embed.add_field(name="✉️ Messages Sent", value=f"**{self.message_count}**", inline=False)
 
         # Footer with client Name
-        embed.set_footer(text=f"Requested by {get_name(ctx.author)} ({ctx.author})", icon_url=ctx.author.avatar.url)
-        
-        # Send the embed
-        await ctx.send(embed=embed)
+        embed.set_footer(text=f"Requested by {get_name(user)} ({user})", icon_url=user.avatar.url)
+        return embed
+
+    @commands.command(name="debug")
+    async def debug(self, ctx:commands.Context):
+        """Displays detailed debug information about the bot."""
+        # await ctx.channel.trigger_typing()
+        await ctx.reply(embed=self.debugEmbed(ctx.author))
+    
+    @slash_command(name="debug",description="Displays detailed debug information about the bot.")
+    @check.guild_only()
+    async def debugSlash(self,ctx:init):
+        await ctx.send(embed=self.debugEmbed(ctx.user),ephemeral=True)
 
 def setup(client):
     client.add_cog(Debug(client))

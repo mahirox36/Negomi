@@ -6,12 +6,12 @@ from json import dumps, loads
 from Lib.Side import logForAI
 
 if __name__ == '__main__':
-    with open("system") as f:
+    with open("OllamaSetup/system") as f:
         sys= f.read().replace("\n"," ")
     System = sys
     num_max = 2000
     modelfile=f'''
-    FROM llama3
+    FROM llama3.1
     PARAMETER num_ctx {num_max}
     SYSTEM {System}
     '''
@@ -57,4 +57,3 @@ if __name__ == '__main__':
             break
         get_response("Mahiro: "+ text)
         print("\n")
-    print(conversation_history)

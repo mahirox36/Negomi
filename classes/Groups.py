@@ -177,6 +177,21 @@ class Groups(commands.Cog):
         fileUser.data.pop(0)
         view = DeleteSelect(fileUser.data, update)
         await ctx.send(embed=info_embed("Please Select the the Group you want to delete!","Delete Group"),ephemeral=True,view=view)
+        
+    @slash_command(name="group-add",description="Add Anyone to your Group")
+    async def group_add(self,ctx:init,user: Member):
+        file= Data(ctx.guild_id,"Groups")
+        if not file.data:
+            await ctx.send(embed=error_embed("You haven't Created a Group"))
+            return
+        elif not file.data["groups"]:
+            await ctx.send(embed=error_embed("You haven't Created a Group"))
+            return
+        data = file.data["groups"].get(f"{ctx.channel.id}")
+        if data == None:
+            await ctx.send(embed=error_embed("You haven't Created a Group"))
+            return
+        
 
 
 
