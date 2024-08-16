@@ -1,0 +1,100 @@
+import io
+from nextcord import *
+from nextcord.ext import commands
+from nextcord.ext.commands import Context, command
+from nextcord import Interaction as init
+from Lib.Side import *
+import json
+import os
+__version__ = 1.2
+__author__= "Mahiro"
+
+class backup(commands.Cog):
+    def __init__(self, client:Client):
+        self.client = client
+    
+    @command("export",description="this will export Roles, Channels, and Bots Names")
+    @commands.has_permissions(administrator=True)
+    async def export(self,ctx:Context):
+        await ctx.reply(embed=info_embed(f"This will take some time.","Wait! OwO"))
+        data = {
+            "version": __version__,
+            "channels":{
+                "Category":{},
+                "Voice"   :[],
+                "Channels":[]
+            },
+            "roles"   :[],
+            "bot_name":[]
+        }
+        for i in ctx.guild.channels:
+            if str(i.type) == "category":
+                data["channels"]["Category"].update({i.id:i.name})
+            elif str(i.type) == "voice":
+                data["channels"]["Voice"].append([i.name,i.category_id])
+            else:
+                try:
+                    data["channels"]["Channels"].append([i.name,i.category_id,i.topic])
+                except ApplicationInvokeError:
+                    data["channels"]["Channels"].append([i.name,i.category_id,None])
+        for i in reversed(ctx.guild.roles):
+            data["roles"].append([i.name,i.color.value,i.permissions.value])
+        for i in ctx.guild.bots:
+            data["bot_name"].append(i.display_name)
+        os.makedirs(f"temp/{ctx.guild.id}",exist_ok=True)
+        file_data = io.StringIO()
+        try:
+            json.dump(data, file_data, indent=2, ensure_ascii=False)
+            file_data.seek(0)
+            discord_file = File(file_data, filename="backup.json")
+            await ctx.channel.send(file=discord_file)
+        finally:
+            file_data.close()
+
+        
+    @command("import",description="This will import Roles, Channels, and Bots Names\nYou need to upload the file you made with export")
+    @commands.has_permissions(administrator=True)
+    async def imported(self,ctx:Context):
+        # Check if the user attached a file
+        if not ctx.message.attachments:
+            await ctx.send(embed=error_embed("You need to attach a file to use this command.","File is required"))
+            return
+        file: Attachment = ctx.message.attachments[0]
+        temp = await file.read()
+        data = dict(json.loads(temp))
+        if data.get("version") == __version__:
+            await ctx.reply(embed=info_embed("It will take some Time to Import Everything","Okie UwU"))
+        else:
+            await ctx.reply(embed=warn_embed("and we will import it for you, BUT If it didn't work do a new backup!",title="⚠️The Backup Version is Outdated⚠️"))
+        temp = {}
+        for i in data["channels"]["Category"]:
+            category = await ctx.guild.create_category(data["channels"]["Category"][i])
+            temp.update({i:category})
+        for i in data["channels"]["Voice"]:
+            gg = None
+            if i[1] != None:
+                for j in temp:
+                    if str(j) == str(i[1]):
+                        gg = j
+            await ctx.guild.create_voice_channel(i[0],category=temp.get(gg))
+        for i in data["channels"]["Channels"]:
+            gg = None
+            if i[1] != None:
+                for j in temp:
+                    if j == str(i[1]):
+                        gg = j
+            await ctx.guild.create_text_channel(i[0],category=temp.get(gg),topic=i[2])
+        for i in data["roles"]:
+            if i[0] == "@everyone":
+                await ctx.guild.default_role.edit(permissions=Permissions(i[2]))
+                continue
+            await ctx.guild.create_role(name=i[0],color=Color(i[1]),permissions=Permissions(i[2]))
+        finalChannel = await ctx.guild.create_text_channel("more-info")
+        botsNames = "Bots Names:\n"
+        for i in data["bot_name"]:
+            botsNames += i +"\n"
+        await finalChannel.send(botsNames)
+        await finalChannel.send("Finished Everything")
+
+def setup(client):
+    client.add_cog(backup(client))
