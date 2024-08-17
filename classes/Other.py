@@ -7,9 +7,7 @@ from Lib.Side import *
 import os
 import json
 from requests import get, post
-from Main import Bot
 import random
-Hybrid = setup_hybrid(Bot)
 
 class Other(commands.Cog):
     def __init__(self, client:commands.Bot):
