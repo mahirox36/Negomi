@@ -40,16 +40,86 @@ def embed_builder(CogName: str, title: str, client: commands.Bot, extraInfo:str 
     for name, description in data.items():
         embed.add_field(name=f"`{name}`",value="This Is User Command" if description == "" else description)
     return embed
-    
 
-#TODO: add Button for Admin if the user was admin
-class HelpSelect(ui.View):
-    def __init__(self,admin: bool=False) -> None:
+def dynamic_cog_getter_Context(cogName: str, client: commands.Bot) -> Optional[Dict]:
+    cog = client.get_cog(cogName)
+    data= {}
+    for command in cog.walk_commands():
+        name = command.name
+        description= command.description if command.description != None else descriptionNone()
+        data.update({name:description})
+    if data== {}:
+        return None
+    return data
+
+def dynamic_commands_getter(startswith: str, client: commands.Bot) -> Optional[Dict]:
+    commands = client.commands
+    data= {}
+    for command in commands:
+        if not command.name.startswith(startswith):
+            continue
+        name = command.name
+        description= command.description if command.description != None else descriptionNone()
+        data.update({name:description})
+    if data== {}:
+        return None
+    return data
+
+def embed_builder_Context(CogName: str, title: str, client: commands.Bot, extraInfo:str = None):
+    data = dynamic_cog_getter_Context(CogName, client)
+    if not data: return
+    owner = client.get_user(owner_id)
+    embed = info_embed(title=title, description=extraInfo)
+    for name, description in data.items():
+        embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`")
+    return embed
+
+
+class HelpSelectAdmin(ui.View):
+    def __init__(self,appliedPlugins:list) -> None:
         super().__init__(timeout=None)
+        self.options = [
+            SelectOption(label="Setups", value="setup",emoji="🔮",default=True),
+            SelectOption(label="Plugins Manager", value="plugin",emoji="🛠️"),
+            SelectOption(label="Other", value="other",emoji="🗿")
+        ]+[SelectOption(label=f"{plugin}", value=f"{plugin.lower()}") for plugin in appliedPlugins]
+        self.select = ui.Select(placeholder="Choose an option...",options=self.options)
+        self.select.callback = self.callback
+        self.add_item(self.select)
+    async def callback(self, ctx: Interaction):
+        selected_value = self.select.values[0]
+        num = 0
+        for option in self.options:
+            if option.value == self.select.values[0]:
+                RealNum = num
+            else:
+                self.options[num].default = None
+            num+=1
+        self.options[RealNum].default = True
+        self.select.options = self.options
+        if selected_value == "setup": 
+            data = dynamic_commands_getter("setup",ctx.client)
+            if not data: return
+            embed = info_embed(title="🔮 Setups")
+            for name, description in data.items():
+                embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`",inline=False)
+        elif selected_value == "plugin" : embed= embed_builder_Context("PluginsManager","🛠️ Plugins Manager" ,ctx.client)
+        elif selected_value == "other" : embed= embed_builder_Context("Debug","🗿 Other", ctx.client)
+        else:
+            embed= embed_builder_Context(selected_value.capitalize(),selected_value.capitalize(), ctx.client)
+        
+        
+        await ctx.response.edit_message(embed=embed,view=self)
+
+class HelpSelect(ui.View):
+    def __init__(self, client: commands.Bot,admin: bool=False) -> None:
+        super().__init__(timeout=None)
+        self.client = client
         self.options = [
             SelectOption(label="Home", value="home",emoji="🏠",default=True),
             SelectOption(label="Role", value="role",emoji="👥"),
             SelectOption(label="Temp Voice", value="temp",emoji="🎤"),
+            SelectOption(label="Groups", value="groups",emoji="💀"),
             SelectOption(label="AI", value="ai",emoji="😈"),
             SelectOption(label="Other", value="other",emoji="⚙️")
         ]
@@ -74,34 +144,23 @@ class HelpSelect(ui.View):
         global home_embed
         owner = ctx.client.get_user(owner_id)
         if selected_value == "home" : embed = home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
-        if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client,
-        extraInfo="")
+        if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client)
         if selected_value == "temp" : embed= embed_builder("TempVoice","🎤 Temp Voice", ctx.client,
         extraInfo="You can create a channel by Join the Create Channel ")
+        if selected_value == "groups" : embed= embed_builder("Groups","💀 Groups", ctx.client)
         if selected_value == "ai"   : embed= embed_builder("AI", "😈 AI"     ,          ctx.client,
         extraInfo="You can Talk to her by mention her or reply to her message")
-        if selected_value == "other": embed= embed_builder("Other", "⚙️ Other",         ctx.client,
-        extraInfo="")
+        if selected_value == "other": embed= embed_builder("Other", "⚙️ Other",         ctx.client)
         await ctx.response.edit_message(embed=embed,view=self)
     async def adminButtonCallback(self, ctx: init):
-        self.remove_item(self.select)
-        self.adminButton.label = "Back ⤴️"
-        self.adminButton.style = ButtonStyle.blurple
-        self.adminButton.callback = self.adminButtonReverseCallback
-        owner = ctx.client.get_user(owner_id)
-        embed = info_embed(f"Hey Admin! What's up?\n Anyway there isn't a lot showing here.\n\nSo please use the `{prefix}help` for admin commands!",
-                           title="🧑‍💻 Admin")
-            # .set_author(name=get_name(owner),icon_url=owner.avatar.url)
-        await ctx.response.edit_message(embed=embed,view=self)
-    async def adminButtonReverseCallback(self, ctx: Interaction):
-        self.add_item(self.select)
-        self.adminButton.label = "🧑‍💻 Admin"
-        self.adminButton.style = ButtonStyle.green
-        self.adminButton.callback = self.adminButtonCallback
-        owner = ctx.client.get_user(owner_id)
-        home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
-        await ctx.response.edit_message(embed=home_embed,view=self)
-        
+        data = dynamic_commands_getter("setup", self.client)
+        if not data: return
+        embed = info_embed("🔮 Setups")
+        for name, description in data.items():
+            embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`",inline=False)
+        data= Data(ctx.guild.id, "Plugins", "Applied Plugins")
+        data= data.data if data.data != None else []
+        await ctx.response.edit_message(embed=embed,view=HelpSelectAdmin(data))
         
        
     
@@ -119,14 +178,18 @@ class HelpSelect(ui.View):
 class Help(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
+        
     @slash_command(name="help",description="Help command")
     async def help(self,ctx:init):
         global home_embed
         admin= ctx.user.guild_permissions.administrator
-        view = HelpSelect(admin)
+        view = HelpSelect(self.client,admin)
         owner = self.client.get_user(owner_id)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
+    @commands.command(name = "help")
+    async def helpPlease(self, ctx:commands.Context):
+        await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help`","No Longer Available"))
     
 
 def setup(client):

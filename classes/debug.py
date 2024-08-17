@@ -72,9 +72,8 @@ class Debug(commands.Cog):
         embed.set_footer(text=f"Requested by {get_name(user)} ({user})", icon_url=user.avatar.url)
         return embed
 
-    @commands.command(name="debug")
+    @commands.command(name="debug", description="Displays detailed debug information about the bot.")
     async def debug(self, ctx:commands.Context):
-        """Displays detailed debug information about the bot."""
         # await ctx.channel.trigger_typing()
         await ctx.reply(embed=self.debugEmbed(ctx.author))
     

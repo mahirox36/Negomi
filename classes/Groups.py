@@ -107,7 +107,8 @@ class DeleteSelect(ui.View):
         if selected_value == -1:
             file = Data(ctx.guild.id, "Groups")
             file_user = Data(ctx.guild.id, "Groups", f"{ctx.user.id}", subFolder="Members")
-            
+            file_user.data[0]["count"] = 0
+            file_user.data[0]["update"] += 1
             # Safely iterate over a copy of file_user.data
             for i in list(file_user.data):
                 try:
@@ -168,7 +169,8 @@ class DeleteSelect(ui.View):
         file_user.save()
         
         # Delete the original ephemeral message by editing it with no content
-        await ctx.response.edit_message(content=None, embed=info_embed(message, "Deletion Success"), view=None)
+        try: await ctx.response.edit_message(content=None, embed=info_embed(message, "Deletion Success"), view=None)
+        except:pass
         
         
 
@@ -265,9 +267,13 @@ class Groups(commands.Cog):
     async def group_add(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
+        
+        if member.bot:
+            await ctx.send(embed=error_embed("You can't Add Bots", "Member Error"), ephemeral=True)
+            return
 
         if not group:
-            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"), ephemeral=True)
             return
 
         if member.id in group["Members"]:
@@ -289,9 +295,13 @@ class Groups(commands.Cog):
     async def group_kick(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
+        
+        if member.bot:
+            await ctx.send(embed=error_embed("You can't Kick Bots", "Member Error"), ephemeral=True)
+            return
 
         if not group:
-            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"), ephemeral=True)
             return
 
         if member.id not in group["Members"]:
@@ -311,9 +321,13 @@ class Groups(commands.Cog):
         file = Data(ctx.guild_id, "Groups")
         user_file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, user_file)
+        
+        if member.bot:
+            await ctx.send(embed=error_embed("You can't Transfer to Bots", "Member Error"), ephemeral=True)
+            return
 
         if not group:
-            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"), ephemeral=True)
             return
 
         if member.id == ctx.user.id:
@@ -345,8 +359,8 @@ class Groups(commands.Cog):
                     "update":0
                 }
             ]
-            new_owner_file.data[0]["count"] += 1
-            new_owner_file.data[0]["update"] +=1 
+        new_owner_file.data[0]["count"] += 1
+        new_owner_file.data[0]["update"] +=1 
         for user in group["Members"]:
             if user == ctx.user.id:
                 group["Members"].remove(user)

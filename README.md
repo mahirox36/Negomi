@@ -1,4 +1,4 @@
-# Negomi Discord Bot (UNFINISHED)
+# Negomi Discord Bot 0.5
 
 ### Features:
 
@@ -8,7 +8,7 @@
 - Roles for Normal Members.
 - Welcome Users with image and message
 - AI (Need to install your own).
-- Refresh the main Chat
+- Refresh the main Chat (Still In Dev)
 - Error Handling (When Error happens it get sent to the owner).
 - Fun Commands.
 

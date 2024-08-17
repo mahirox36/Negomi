@@ -2,10 +2,14 @@
     "cSpell.words": [
         "blurple",
         "cooldowns",
+        "customemoji",
         "levelname",
         "putalpha",
         "roleplay",
-        "Rolez"
+        "Rolez",
+        "Unmute",
+        "unmuted",
+        "Untimeout"
     ],
     "python.analysis.autoImportCompletions": false,
     "python.analysis.typeCheckingMode": "off",
@@ -42,5 +46,7 @@
         },
         
     ]
-}
+},
+"CodeGPT.apiKey": "Ollama",
+"CodeGPT.Autocomplete.provider": "Ollama - codellama:code"
 }

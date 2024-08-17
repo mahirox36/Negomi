@@ -11,14 +11,6 @@ from Lib.Logger import *
 class ErrorHandling(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-    
-    @commands.command(name = "error",
-                    aliases=["e"],
-                    description = "Nothing")
-    @commands.is_owner()
-    async def commandName(self, ctx:commands.Context):
-        1 / 0
-
 
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx: init, error: Exception):

@@ -42,3 +42,24 @@ class Log:
 
 
 LOGGER = Log()
+
+def log_action(action: str, author, target, reason: str):
+    global LOGGER
+    """Logs moderation actions such as kick, ban, mute, etc.
+
+    Args:
+        action (str): The type of action (e.g., "Kick", "Ban", "Mute").
+        author (nextcord.Member): The member who performed the action.
+        target (nextcord.Member): The target member of the action.
+        reason (str): The reason for the action.
+    """
+    log_message = (
+        f"ACTION: {action}\n"
+        f"Author: {author} (ID: {author.id})\n"
+        f"Target: {target} (ID: {target.id})\n"
+        f"Reason: {reason}\n"
+        "---------------------------"
+    )
+    
+    # Log the message using the custom LOGGER
+    LOGGER.info(log_message)

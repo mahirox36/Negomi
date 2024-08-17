@@ -3,7 +3,7 @@ import nextcord
 import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
-from nextcord.ui import View, Button, TextInput, UserSelect, Modal
+from nextcord.ui import View, Button, TextInput, Modal
 from nextcord import Interaction as init
 from Lib.Side import *
 import os

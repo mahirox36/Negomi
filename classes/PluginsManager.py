@@ -10,7 +10,7 @@ from Lib.Logger import *
 import os
 import json
 
-class Plugins(commands.Cog):
+class PluginsManager(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.plugins = [filename[:-3] for filename in os.listdir("classes/Plugins")\
@@ -42,7 +42,7 @@ class Plugins(commands.Cog):
             )
         await ctx.reply(embed=pluginsEmbed)
     
-    @command(name = "load-plugin", aliases=["add-plugin","load"])
+    @command(name = "load-plugin", aliases=["add-plugin","load"], description="Load any Plugin")
     @commands.cooldown(1, 10, commands.BucketType.member)
     @commands.has_permissions(administrator=True)
     async def load_plugin(self, ctx:Context,name: str):
@@ -62,7 +62,7 @@ class Plugins(commands.Cog):
         file.data = appliedPlugins
         file.save()
         await ctx.reply(embed=info_embed(f"{name} Plugin is Loaded!","Plugin Loaded"))
-    @command(name = "unload-plugin", aliases=["remove-plugin","unload"])
+    @command(name = "unload-plugin", aliases=["remove-plugin","unload"],description="Unload any Plugin")
     @commands.cooldown(1, 10, commands.BucketType.member)
     @commands.has_permissions(administrator=True)
     async def unload_plugin(self, ctx:Context,name: str):
@@ -77,6 +77,7 @@ class Plugins(commands.Cog):
         file.data.remove(name)
         file.save()
         await ctx.reply(embed=info_embed(f"{name} Plugin is Unloaded!","Plugin Unloaded"))
+        
     
     
         
@@ -85,4 +86,4 @@ class Plugins(commands.Cog):
     
 
 def setup(client):
-    client.add_cog(Plugins(client))
+    client.add_cog(PluginsManager(client))
