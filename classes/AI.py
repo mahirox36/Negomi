@@ -21,6 +21,7 @@ class AI(commands.Cog):
         self.started = False
     
     @slash_command(name="ask",description="ask an Advance AI")
+    @cooldown(15)
     async def Say(self,ctx:init,message:str,
                   model= SlashOption(
                       "model",

@@ -1,3 +1,5 @@
+"""
+Backup.py is for Backing up your server as a File"""
 import io
 from nextcord import *
 from nextcord.ext import commands
@@ -8,13 +10,15 @@ import json
 import os
 __version__ = 1.2
 __author__= "Mahiro"
+__authorDiscordID__ = 829806976702873621
 
-class backup(commands.Cog):
+class Backup(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
     
     @command("export",description="this will export Roles, Channels, and Bots Names")
     @commands.has_permissions(administrator=True)
+    @plugin()
     async def export(self,ctx:Context):
         await ctx.reply(embed=info_embed(f"This will take some time.","Wait! OwO"))
         data = {
@@ -54,6 +58,7 @@ class backup(commands.Cog):
         
     @command("import",description="This will import Roles, Channels, and Bots Names\nYou need to upload the file you made with export")
     @commands.has_permissions(administrator=True)
+    @plugin()
     async def imported(self,ctx:Context):
         # Check if the user attached a file
         if not ctx.message.attachments:
@@ -97,4 +102,4 @@ class backup(commands.Cog):
         await finalChannel.send("Finished Everything")
 
 def setup(client):
-    client.add_cog(backup(client))
+    client.add_cog(Backup(client))

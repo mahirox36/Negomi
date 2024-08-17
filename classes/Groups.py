@@ -1,3 +1,4 @@
+import asyncio
 import nextcord
 import nextcord as discord
 from nextcord import *
@@ -10,6 +11,69 @@ import re
 import os
 import json
 
+
+class GroupEditModal(ui.Modal):
+    def __init__(self, group, file: Data, client: commands.Bot):
+        super().__init__("Edit Group")
+        self.group = group
+        self.file = file
+        self.client = client
+
+        self.name = ui.TextInput(label="Group Name", placeholder="Enter the new group name", default_value=group["name"])
+        self.emoji = ui.TextInput(label="Emoji", placeholder="Enter the new emoji", default_value=group["emoji"])
+
+        self.add_item(self.name)
+        self.add_item(self.emoji)
+
+    async def callback(self, ctx: init):
+        try:
+            name = self.name.value.strip()
+            emoji = self.emoji.value.strip()
+
+            # Validate emoji
+            is_standard_emoji = emoji.replace(" ", "") in emojis.EMOJI_DATA
+
+            if not is_standard_emoji:
+                await ctx.send(embed=error_embed("That isn't a valid emoji", "Emoji Error"), ephemeral=True)
+                return
+
+            # Update group data
+            self.group["name"] = name
+            self.group["emoji"] = emoji
+
+            # Update channel properties
+            channel = ctx.guild.get_channel(self.group["channel"])
+            if channel:
+                await channel.edit(name=f"{emoji}・{name}")
+            else:
+                await ctx.send(embed=error_embed("Channel not found", "Error"), ephemeral=True)
+                return
+
+            # Save changes
+            self.file.save()
+
+            # Log the action
+            LOGGER.info(f"{ctx.user} edited the group in {self.group["channel"]}")
+
+            await ctx.send(embed=info_embed(f"Group updated to {name} with {emoji}", "Group Edited"), ephemeral=True)
+
+        except HTTPException as e:
+            if e.status == 429:
+                retry_after = e.retry_after or 5  # If no retry_after, wait for a few seconds
+                LOGGER.warning(f"Rate limited. Retrying in {retry_after} seconds.")
+                await asyncio.sleep(retry_after)
+                await self.callback(ctx)  # Retry after delay
+            else:
+                LOGGER.error(f"HTTP Exception: {e}")
+                await ctx.send(embed=error_embed("Error occurred, please try again later.", "Error"), ephemeral=True)
+        
+        except Forbidden:
+            LOGGER.error("Bot lacks permission to edit the channel.")
+            await ctx.send(embed=error_embed("I lack permissions to edit this channel.", "Permission Error"), ephemeral=True)
+        
+        except Exception as e:
+            LOGGER.error(f"Unexpected error: {e}")
+            await ctx.send(embed=error_embed("An unexpected error occurred.", "Error"), ephemeral=True)
 
 class DeleteSelect(ui.View):
     def __init__(self, data: list, update: int) -> None:
@@ -114,8 +178,8 @@ class Groups(commands.Cog):
         self.client = client
     
     @slash_command(name="group-create",description="Create a group (AKA Text Channels) For you and your friends")
+    @cooldown(60)
     async def group_create(self,ctx:init,name: str, emoji: str, topic: str = SlashOption("topic","Topic is the small description in the top of the channel",max_length=100,required=False), nsfw: bool = False):
-        await cooldown(60,ctx.user,__name__)
         is_standard_emoji = emoji.replace(" ","") in emojis.EMOJI_DATA
         # Check if the emoji is a custom emoji (e.g., <a:customemoji:123456789012345678>)
         custom_emoji_pattern = re.compile(r'<a?:\w{2,32}:\d{18,}>')
@@ -164,6 +228,18 @@ class Groups(commands.Cog):
         file.save()
         await ctx.send(embed=info_embed(f"<#{channel.id}>","Group Created!"),ephemeral=True)
     
+    @slash_command(name="group-edit", description="Edit this group's details")
+    @cooldown(180)
+    async def group_edit(self, ctx: init):
+        file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
+        group = self.get_group_by_channel(ctx, file)
+
+        if not group:
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            return
+
+        await ctx.response.send_modal(GroupEditModal(group, file, self.client))
+    
     @slash_command(name="group-delete",description="Delete a group")
     async def group_delete(self,ctx:init):
         fileUser= Data(ctx.guild_id,"Groups",f"{ctx.user.id}",subFolder="Members")
@@ -177,21 +253,108 @@ class Groups(commands.Cog):
         fileUser.data.pop(0)
         view = DeleteSelect(fileUser.data, update)
         await ctx.send(embed=info_embed("Please Select the the Group you want to delete!","Delete Group"),ephemeral=True,view=view)
+    
+    def get_group_by_channel(self, ctx: init, file: Data) -> dict:
+        """Helper method to get the group associated with the current channel."""
+        for group in file.data:
+            if group.get("channel") == ctx.channel.id:
+                return group
+        return None
+    
+    @slash_command(name="group-add", description="Add a member to this group")
+    async def group_add(self, ctx: init, member: Member):
+        file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
+        group = self.get_group_by_channel(ctx, file)
+
+        if not group:
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            return
+
+        if member.id in group["Members"]:
+            await ctx.send(embed=error_embed(f"{member.mention} is already in this group", "Member Exists"), ephemeral=True)
+            return
+
+        channel = ctx.guild.get_channel(group["channel"])
+        overwrite = channel.overwrites_for(member)
+        overwrite.view_channel = True
+        overwrite.send_messages = True
+        await channel.set_permissions(member, overwrite=overwrite)
+
+        group["Members"].append(member.id)
+        file.save()
+        await ctx.send(embed=info_embed(f"{member.mention} has been added to this group", "Member Added"))
+        LOGGER.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
+
+    @slash_command(name="group-kick", description="Remove a member from this group")
+    async def group_kick(self, ctx: init, member: Member):
+        file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
+        group = self.get_group_by_channel(ctx, file)
+
+        if not group:
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            return
+
+        if member.id not in group["Members"]:
+            await ctx.send(embed=error_embed(f"{member.mention} is not in this group", "Member Not Found"), ephemeral=True)
+            return
+
+        channel = ctx.guild.get_channel(group["channel"])
+        await channel.set_permissions(member, overwrite=None)
+
+        group["Members"].remove(member.id)
+        file.save()
+        await ctx.send(embed=info_embed(f"{member.mention} has been removed from this group", "Member Removed"))
+        LOGGER.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
+
+    @slash_command(name="group-transfer", description="Transfer group ownership to another member in this group")
+    async def group_transfer(self, ctx: init, member: Member):
+        file = Data(ctx.guild_id, "Groups")
+        user_file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
+        group = self.get_group_by_channel(ctx, user_file)
+
+        if not group:
+            await ctx.send(embed=error_embed("This channel is not linked to a group you own", "Group Error"))
+            return
+
+        if member.id == ctx.user.id:
+            await ctx.send(embed=error_embed("You are already the owner of this group", "Transfer Error"), ephemeral=True)
+            return
+
+        group_owner = file["groups"].get(str(group["channel"]))
+
+        if str(ctx.user.id) != str(group_owner):
+            await ctx.send(embed=error_embed("You are not the owner of this group", "Transfer Error"), ephemeral=True)
+            return
+        elif member.id not in group["Members"]:
+            await ctx.send(embed=error_embed("the Member that you have selected isn't in the Group", "Transfer Error"), ephemeral=True)
+            return
         
-    @slash_command(name="group-add",description="Add Anyone to your Group")
-    async def group_add(self,ctx:init,user: Member):
-        file= Data(ctx.guild_id,"Groups")
-        if not file.data:
-            await ctx.send(embed=error_embed("You haven't Created a Group"))
-            return
-        elif not file.data["groups"]:
-            await ctx.send(embed=error_embed("You haven't Created a Group"))
-            return
-        data = file.data["groups"].get(f"{ctx.channel.id}")
-        if data == None:
-            await ctx.send(embed=error_embed("You haven't Created a Group"))
-            return
-        
+        file["groups"][str(group["channel"])] = member.id
+        await ctx.send(embed=info_embed(f"{member.mention} is now the owner of this group", "Ownership Transferred"))
+        LOGGER.info(f"{ctx.user} transferred ownership of the group in {ctx.channel_id} to {member}")
+
+        user_file.data.remove(group)
+        user_file.data[0]["count"] -= 1
+        user_file.save()
+
+        new_owner_file = Data(ctx.guild_id, "Groups", f"{member.id}", subFolder="Members")
+        if not new_owner_file.data:
+            new_owner_file.data = [
+                {
+                    "count":0,
+                    "update":0
+                }
+            ]
+            new_owner_file.data[0]["count"] += 1
+            new_owner_file.data[0]["update"] +=1 
+        for user in group["Members"]:
+            if user == ctx.user.id:
+                group["Members"].remove(user)
+                break
+        group["Members"].append(ctx.user.id)
+        new_owner_file.data.append(group)
+        new_owner_file.save()
+        file.save()
 
 
 

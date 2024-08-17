@@ -7,11 +7,14 @@ import json
 import os
 import random
 import string
+
+import nextcord
 from .config import Config, Color as color
 from rich import print
 from nextcord import Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions
 from nextcord.ext import commands
-from nextcord.ext.application_checks import ApplicationCheckForBotOnly, ApplicationNotOwner, check
+from nextcord.ext.application_checks import check
+from nextcord.errors import ApplicationCheckFailure
 import re
 from typing import Any, Dict, List, Optional, Union, NewType, Callable
 import time
@@ -252,10 +255,10 @@ def convert_to_seconds(time_string: str):
 
         
 
-class SlashCommandOnCooldown(Exception):
-    def __init__(self, retry_after: float) -> None:
-        super().__init__()
-        self.retry_after = retry_after
+class SlashCommandOnCooldown(ApplicationCheckFailure):
+    def __init__(self, time_left: float):
+        self.time_left = time_left
+        super().__init__(f"Command is on cooldown. Try again in {time_left:.2f} seconds.")
 
 def setup_hybrid(bot: commands.Bot):
     """
@@ -273,23 +276,6 @@ def setup_hybrid(bot: commands.Bot):
         return decorator
     
     return hybrid
-
-
-cooldowns= {}
-async def cooldown(cooldown_time: int,user:Member,name):
-    global cooldowns
-    user_id = user.id
-    
-    if name not in cooldowns:
-        cooldowns[name] = {}
-    # Check if the user is on cooldown
-    if user_id in cooldowns[name]:
-        time_left = cooldowns[name][user_id] - time.time()
-        if time_left > 0:
-            raise SlashCommandOnCooldown(time_left)
-    # Set a new cooldown for the user
-    cooldowns[name][user_id] = time.time() + cooldown_time
-    return
     
 def userCTX(ctx:init):
     try:
@@ -417,7 +403,7 @@ async def high(ctx:init,user:Member):
         return True
     return False
 
-class ApplicationNotOwnerGuild(Exception):
+class ApplicationNotOwnerGuild(ApplicationCheckFailure):
     def __init__(self,user:Member,guild:Guild) -> None:
         super().__init__()
         self.guild= guild.name
@@ -469,8 +455,29 @@ class BetterID:
         del self.data[key]
 
 
-def is_owner_guild():
+cooldowns= {}
+def cooldown(cooldown_time: int):
+    async def predicate(ctx: init) -> bool:
+        global cooldowns
+        name = ctx.application_command.name
+        user_id = ctx.user.id
 
+        if name not in cooldowns:
+            cooldowns[name] = {}
+
+        # Check if the user is on cooldown
+        if user_id in cooldowns[name]:
+            time_left = cooldowns[name][user_id] - time.time()
+            if time_left > 0:
+                raise SlashCommandOnCooldown(time_left)
+
+        # Set a new cooldown for the user
+        cooldowns[name][user_id] = time.time() + cooldown_time
+        return True
+
+    return check(predicate)
+
+def is_owner_guild():
     async def predicate(ctx: init) -> bool:
 
         if not ctx.guild.owner.id == ctx.user.id:
@@ -478,3 +485,16 @@ def is_owner_guild():
         return True
 
     return check(predicate)
+
+class PluginNotLoaded(commands.CheckFailure):
+    def __init__(self, message: Optional[str] = None) -> None:
+        super().__init__(message or "This command didn't get loaded in your server")
+
+def plugin():
+    def predicate(ctx) -> bool:
+        file = Data(ctx.guild.id, "Plugins", "Applied Plugins")
+        applied_plugins = file.data if file.data is not None else []
+        if ctx.cog is None or ctx.cog.__cog_name__ not in applied_plugins:
+            raise PluginNotLoaded(f"Plugin '{ctx.cog.__cog_name__}' is not loaded.")
+        return True  # Check passed
+    return commands.check(predicate)

@@ -41,7 +41,7 @@ try:
 
     #Classes
     initial_extension = []
-    core_extension = []
+    plugins_extension = []
 
     for filename in os.listdir("./classes"):
         if filename.endswith(".py"):
@@ -49,9 +49,15 @@ try:
             if (DisableAiClass == True) and (filename[:-3] == "AI"):
                 continue
             initial_extension.append("classes." + filename[:-3])
+    for filename in os.listdir("./classes/Plugins"):
+        if filename.endswith(".py"):
+            if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
+            if (DisableAiClass == True) and (filename[:-3] == "AI"):
+                continue
+            plugins_extension.append("classes.Plugins." + filename[:-3])
+    
 
-
-    print(f"and These All The Extension {initial_extension} ")
+    print(f"and These All The Extension {initial_extension}\nPlugins: {plugins_extension}")
     for extension in initial_extension:
         LOGGER.info(f"Loading Class: {extension}")
         if (extension == "classes.Welcome") and (Welcome_enabled == False):
@@ -59,7 +65,14 @@ try:
             continue
         client.load_extension(extension)
         LOGGER.info(f"Loaded Class: {extension}")
-
+    for extension in plugins_extension:
+        LOGGER.info(f"Loading Class: {extension}")
+        if (extension == "classes.Welcome") and (Welcome_enabled == False):
+            LOGGER.info(f"Failed to load Class: {extension}, Because Welcome Class isn't enabled")
+            continue
+        client.load_extension(extension)
+        LOGGER.info(f"Loaded Plugin: {extension}")
+    
     if __name__ == '__main__':
         try:
             client.run(token)

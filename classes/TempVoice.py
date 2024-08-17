@@ -9,6 +9,7 @@ from Lib.Side import *
 import os
 import json
 
+#TODO: Add Kick, Ban Commands
 
 async def check(ctx:init,data:Dict | List) -> bool:
     try:ctx.user.voice.channel

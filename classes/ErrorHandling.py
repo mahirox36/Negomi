@@ -28,7 +28,7 @@ class ErrorHandling(commands.Cog):
             err = error
         if isinstance(err, SlashCommandOnCooldown):
             await ctx.send(
-                embed=error_embed(f"You're on cooldown! Try again in {err.retry_after:.2f} seconds.", "Too Fast"),
+                embed=error_embed(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationMissingPermissions):
@@ -75,14 +75,17 @@ class ErrorHandling(commands.Cog):
         elif isinstance(error, MissingPermissions):
             missing = ", ".join(error.missing_permissions)
             await ctx.send(
-                embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
-                ephemeral=True)
+                embed=error_embed(f"You don't have {missing}", "Missing Permissions"))
             return
         elif isinstance(error, NotOwner):
             await ctx.send(
-                embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
-                ephemeral=True)
+                embed=error_embed(f"You are not the owner of the bot", "Not Owner"))
             return
+        elif isinstance(error, PluginNotLoaded):
+            await ctx.send(
+                embed=error_embed(f"This command didn't get loaded in your server",
+                                  "Plugin Not loaded"))
+            return 
         # elif isinstance(error, NotOwnerGuild):
         #     await ctx.send(
         #         embed=error_embed(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),

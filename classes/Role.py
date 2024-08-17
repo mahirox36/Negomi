@@ -49,6 +49,7 @@ class Rolez(commands.Cog):
         file.save()
     
     @slash_command(name="role-edit",description="Edit your own role like the name or role or both!")
+    @cooldown(15)
     async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=False, autocomplete=True,default=None)):
         guild = ctx.guild
@@ -112,6 +113,7 @@ class Rolez(commands.Cog):
 
 
     @slash_command(name="role-add-user",description="Add the role to a user")
+    @cooldown(3)
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
@@ -150,6 +152,7 @@ class Rolez(commands.Cog):
         await ctx.send(embed=info_embed(f"The {get_name(member)} Added!", title="Member Added!"),ephemeral=True)
 
     @slash_command(name="role-remove-user",description="Remove the role from a user")
+    @cooldown(3)
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
