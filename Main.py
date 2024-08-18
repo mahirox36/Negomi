@@ -16,7 +16,7 @@ try:
     import time
 
     intents = nextcord.Intents.all()
-    client = commands.Bot(command_prefix=prefix, intents=intents)
+    client = commands.Bot(command_prefix=prefix, intents=intents,help_command=None)
     
 
     global Bot

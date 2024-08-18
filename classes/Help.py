@@ -189,7 +189,7 @@ class Help(commands.Cog):
 
     @commands.command(name = "help")
     async def helpPlease(self, ctx:commands.Context):
-        await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help`","No Longer Available"))
+        await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help` and if you are admin there's Secret Button OwO","No Longer Available"))
     
 
 def setup(client):
