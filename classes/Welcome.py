@@ -114,6 +114,14 @@ Setup a welcome message in a specific Channel, in the message option you can use
         file= Data(member.guild.id,"Welcome","Members")
         file.data.append(member.id)
         file.save()
+    
+    @commands.Cog.listener()
+    async def on_member_remove(self, member:Member):
+        file= Data(member.guild.id,"Welcome","Members")
+        file.data.remove(member.id)
+        file.save()
+    
+        
         
     @commands.Cog.listener()
     async def on_ready(self):
@@ -135,11 +143,11 @@ Setup a welcome message in a specific Channel, in the message option you can use
             
             members.data = newMembers
             members.save()
-            message = str(file["message"]).replace("{server}",guild.name).replace("{count}",str(guild.member_count))\
-                .replace("{mention}",member.mention).replace("{name}",name)
             
             for member in joined_members:
                 member= guild.get_member(member)
+                message = str(file["message"]).replace("{server}",guild.name).replace("{count}",str(guild.member_count))\
+                    .replace("{mention}",member.mention).replace("{name}",name)
                 name = get_name(member)
                 avatar_url = member.avatar.url  # Get the avatar URL
                 welcome_image = self.create_welcome_image(name, avatar_url)
