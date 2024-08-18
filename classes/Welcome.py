@@ -82,6 +82,14 @@ Setup a welcome message in a specific Channel, in the message option you can use
         }
         file.save()
         await ctx.reply(embed=info_embed(f"The message was: ``` {message}```",title="Done!"))
+        file= Data(ctx.guild.id,"Welcome","Members")
+        file.data = [member.id for member in ctx.guild.members]
+        file.save()
+        file= DataGlobal("Welcome","Guilds")
+        if file.data == None:
+            file.data = []
+        file.data.append(ctx.guild.id)
+        file.save()
         
     
     
@@ -91,6 +99,9 @@ Setup a welcome message in a specific Channel, in the message option you can use
         file = Data(guild.id,"Welcome")
         if not file.data:return
         channel = guild.get_channel(file["channel"])
+        if channel == None:
+            file.delete_guild()
+            return
         name = get_name(member)
         message = str(file["message"]).replace("{server}",guild.name).replace("{count}",str(guild.member_count))\
             .replace("{mention}",member.mention).replace("{name}",name)
@@ -100,6 +111,46 @@ Setup a welcome message in a specific Channel, in the message option you can use
         await channel.send(message)
         del welcome_image
         gc.collect()
+        file= Data(member.guild.id,"Welcome","Members")
+        file.data.append(member.id)
+        file.save()
+        
+    @commands.Cog.listener()
+    async def on_ready(self):
+        GlobalFile= DataGlobal("Welcome","Guilds")
+        guilds = GlobalFile.data
+        for guild in guilds:
+            file= Data(guild,"Welcome")
+            guild= self.client.get_guild(guild)
+            channel= guild.get_channel(file["channel"])
+            
+            if channel == None:
+                file.delete_guild()
+                continue
+            members = Data(guild.id, "Welcome", "Members")
+            oldMembers = members.data
+            newMembers = [member.id for member in guild.members]
+            joined_members = [member for member in newMembers if member not in oldMembers]
+            
+            members.data = newMembers
+            members.save()
+            message = str(file["message"]).replace("{server}",guild.name).replace("{count}",str(guild.member_count))\
+                .replace("{mention}",member.mention).replace("{name}",name)
+            
+            for member in joined_members:
+                member= guild.get_member(member)
+                name = get_name(member)
+                avatar_url = member.avatar.url  # Get the avatar URL
+                welcome_image = self.create_welcome_image(name, avatar_url)
+                await channel.send(file=nextcord.File(welcome_image, f"welcome_{name}.png"))
+                await channel.send(message)
+                del welcome_image
+                gc.collect()
+        print("Finished All Missed Welcome Messages")
+            
+            
+        
+    
         
     
     
