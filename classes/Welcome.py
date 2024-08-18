@@ -146,9 +146,9 @@ Setup a welcome message in a specific Channel, in the message option you can use
             
             for member in joined_members:
                 member= guild.get_member(member)
+                name = get_name(member)
                 message = str(file["message"]).replace("{server}",guild.name).replace("{count}",str(guild.member_count))\
                     .replace("{mention}",member.mention).replace("{name}",name)
-                name = get_name(member)
                 avatar_url = member.avatar.url  # Get the avatar URL
                 welcome_image = self.create_welcome_image(name, avatar_url)
                 await channel.send(file=nextcord.File(welcome_image, f"welcome_{name}.png"))
