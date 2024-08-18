@@ -6,6 +6,7 @@ Side Library for small and big functions and classes for Nextcord
 import json
 import os
 import random
+import shutil
 import string
 
 import nextcord
@@ -332,10 +333,10 @@ class Data:
             return True
         return False
     
-    def delete(self,code) -> None:
-        del self.data[code]
-        self.save()
+    def delete(self) -> None:
         os.remove(self.file)
+    def delete_guild(self):
+        shutil.rmtree(self.path)
     
     def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
         if key in self.data:
