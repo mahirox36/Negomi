@@ -119,6 +119,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     async def on_ready(self):
         GlobalFile= DataGlobal("Welcome","Guilds")
         guilds = GlobalFile.data
+        if guilds == None:return
         for guild in guilds:
             file= Data(guild,"Welcome")
             guild= self.client.get_guild(guild)
