@@ -16,21 +16,17 @@ try:
     import time
 
     intents = nextcord.Intents.all()
-    client = commands.Bot(command_prefix=prefix, intents=intents,help_command=None)
+    client = commands.Bot(command_prefix=prefix, intents=intents)
     
-
     global Bot
     Bot = client
 
     clear()
-    
-
-
 
     #On Bot Start
     @client.event
     async def on_ready():
-        await client.change_presence(activity=nextcord.Activity(type=nextcord.ActivityType.watching, name=f"Over {len(client.guilds)} Servers"))
+        await client.change_presence(activity=nextcord.Activity(type=nextcord.ActivityType.watching, name=Presence))
         print(Rule(f'{client.user.display_name}  Is Online',style="bold green")) # type: ignore
         if send_to_owner_enabled:
             user = client.get_user(owner_id)

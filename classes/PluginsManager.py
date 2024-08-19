@@ -47,21 +47,24 @@ class PluginsManager(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def load_plugin(self, ctx:Context,name: str):
         """Load a Plugin"""
-        name =name.capitalize()
         file = Data(ctx.guild.id,"Plugins","Applied Plugins")
         appliedPlugins= file.data if file.data != None else []
+        num =0
         if name in appliedPlugins:
             await ctx.reply(embed= error_embed("This Plugin Is Already Loaded"
                                                ,"Error While Loading Plugin"))
             return
-        elif name not in self.plugins:
+        for pluginName in self.plugins:
+            if pluginName.lower() == name.lower():break
+            num+=1
+        else:
             await ctx.reply(embed= error_embed(f"There is no Plugin Called `{name}`\
                 \nIf you need help please use {prefix}plugins","Error While Loading Plugin"))
             return
-        appliedPlugins.append(name)
+        appliedPlugins.append(self.plugins[num])
         file.data = appliedPlugins
         file.save()
-        await ctx.reply(embed=info_embed(f"{name} Plugin is Loaded!","Plugin Loaded"))
+        await ctx.reply(embed=info_embed(f"{self.plugins[num]} Plugin is Loaded!","Plugin Loaded"))
     @command(name = "unload-plugin", aliases=["remove-plugin","unload"],description="Unload any Plugin")
     @commands.cooldown(1, 10, commands.BucketType.member)
     @commands.has_permissions(administrator=True)

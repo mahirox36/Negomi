@@ -8,6 +8,35 @@ from Lib.config import Color
 import os
 import json
 
+class Request(ui.View):
+    def __init__(self,guild_id,client: commands.Bot, fromUser: Member):
+        super().__init__(timeout=None)
+        self.Accept = ui.Button(label=f"✅ Accept", style=nextcord.ButtonStyle.green)
+        self.Accept.callback = self.Accept
+        self.add_item(self.Accept)
+        self.guild_id= guild_id
+        self.client = client
+        self.fromUser =fromUser
+
+    async def Accept(self, ctx: nextcord.Interaction):
+        guild= self.client.get_guild(self.guild_id)
+        file = Data(self.guild_id,"Roles","MembersRoles")
+        role = guild.get_role(user["roleID"])
+        user = dict(file.data.get(f"{self.fromUser.id}"))
+        user["members"].append(f"{ctx.user.id}")
+        file.data[f"{self.fromUser.id}"].update(user)
+        data = {f"{member.id}":{
+            "owner" :False,
+            "roleID":role.id,
+        }}
+        file.data.update(data)
+        file.save()
+        member= guild.get_member(ctx.user.id)
+        await member.add_roles(role)
+        await ctx.send(embed=info_embed(title=f"You Joined a {get_name(self.fromUser)}'s Role",description=f"In {guild.name} and Role {role.name}"
+                                        ,author=[guild.name,guild.icon.url]),ephemeral= True)
+
+
 class Rolez(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -17,7 +46,7 @@ class Rolez(commands.Cog):
         self.colors = {
     "Red": Color("#FF0000"),"Green": Color("#008000"),"Blue": Color("#0000FF"),"Yellow": Color("#FFFF00"),"Cyan": Color("#00FFFF"),
     "Magenta": Color("#FF00FF"),"Orange": Color("#FFA500"),"Purple": Color("#800080"),"Pink": Color("#FFC0CB"),"Brown": Color("#A52A2A"),
-    "Gray": Color("#808080"),"Black": Color("#000000"),"White": Color("#FFFFFF"),"Lime": Color("#00FF00"),"Olive": Color("#808000"),
+    "Gray": Color("#808080"),"Black": Color("#000001"),"White": Color("#FFFFFF"),"Lime": Color("#00FF00"),"Olive": Color("#808000"),
     "Navy": Color("#000080"),"Teal": Color("#008080"),"Maroon": Color("#800000"),"Silver": Color("#C0C0C0"),"Gold": Color("#FFD700"),
     "Coral": Color("#FF7F50"),"Salmon": Color("#FA8072"),"Turquoise": Color("#40E0D0"),"Indigo": Color("#4B0082"),"Violet": Color("#EE82EE")}
     
@@ -25,7 +54,7 @@ class Rolez(commands.Cog):
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
-        try:color = self.colors[color]
+        try:color = self.colors[color.capitalize()]
         except KeyError:color= Color("#"+color if not color.startswith("#") else color)
         file = Data(guild.id,"Roles","MembersRoles")
         try:
@@ -54,7 +83,7 @@ class Rolez(commands.Cog):
                                         required=False, autocomplete=True,default=None)):
         guild = ctx.guild
         if color != None:
-            color = self.colors[color]
+            color = self.colors[color.capitalize()]
         file = Data(guild.id,"Roles","MembersRoles")
         try:
             user = file.data.get(f"{ctx.user.id}")
@@ -138,18 +167,16 @@ class Rolez(commands.Cog):
         except AttributeError: 
             await ctx.send(embed=error_embed("You & Him/Her Don't have a role"),ephemeral=True)
             return
+        view = Request(guild.id,self.client,ctx.user)
+        #Send DM or Channel
         role = guild.get_role(user["roleID"])
-        user["members"].append(f"{member.id}")
-        file.data[f"{ctx.user.id}"].update(user)
-        data = {f"{member.id}":{
-            "owner" :False,
-            "roleID":role.id,
-        }}
-        file.data.update(data)
-        file.save()
-        await member.add_roles(role)
-
-        await ctx.send(embed=info_embed(f"The {get_name(member)} Added!", title="Member Added!"),ephemeral=True)
+        try:
+            await member.send(member.mention,embed=info_embed(title=f"You got Invited by {get_name(ctx.user)}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+                              view=view)
+        except:
+            await ctx.channel.send(member.mention,embed=info_embed(title=f"You got Invited by {get_name(ctx.user)}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+                                view=view)
+        await ctx.send(embed=info_embed(title="Invited!",description=f"You have Invited {member.mention}"))
 
     @slash_command(name="role-remove-user",description="Remove the role from a user")
     @cooldown(3)

@@ -42,7 +42,8 @@ def UserSettings(member):
         "Max": 0,
         "Version":__UserSettingsVersion__
     }
-    if user.data.get("Version") != __UserSettingsVersion__: user.data = Default  
+    if user.data ==None: user.data = Default
+    elif user.data.get("Version") != __UserSettingsVersion__: user.data = Default  
     return user
 
 class EditMaxModal(Modal):
@@ -342,13 +343,14 @@ class TempVoice(commands.Cog):
             await member.disconnect(reason="Trying to Bug the Bot")
             return
         user = DataGlobal("TempVoice_UsersSettings",f"{member.id}")
-        if user.data.get("Version") == __UserSettingsVersion__:
-            temp = user.data
-            name = temp["Name"]
-            connect = True if temp["Lock"] == False else False
-            view = True if temp["Hide"] == False else False
-            Max = temp["Max"]
-            del temp
+        if user.data != None:
+            if user.data.get("Version") == __UserSettingsVersion__:
+                temp = user.data
+                name = temp["Name"]
+                connect = True if temp["Lock"] == False else False
+                view = True if temp["Hide"] == False else False
+                Max = temp["Max"]
+                del temp
         else:
             name = member.global_name+ "'s Chat" if member.global_name != None \
                 else member.display_name+ "'s Chat"

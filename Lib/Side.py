@@ -24,13 +24,13 @@ config_path = ".secrets/config.ini"
 config = Config(config_path)
 layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Admin Users]
 config.set_layout(layout)
-#TODO: next 0.12
-VERSION = "0.11"
+VERSION = "0.12"
 
 configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
         "General": {
             "prefix"                    : "u.",
             "token"                     : "Your Bot Token",
+            "Presence"                  : "My Master Mahiro",
             "SendToOwnerThatIsOnline"   : True,
             "owner"                     : 829806976702873621,
             "GuildTestingID"            : 1080951710828220537,
@@ -77,7 +77,7 @@ if config.data["General"]["ConfigVersion"] != VERSION:
     print("Config Version Mismatch")
     print("Backup Config File...")
     os.makedirs(".secrets/backup", exist_ok=True)
-    os.rename(".secrets/config.conf", f".secrets/backup/config_{config["General"]["ConfigVersion"]}.conf")
+    os.rename(".secrets/config.ini", f".secrets/backup/config_{config["General"]["ConfigVersion"]}.ini")
     print("Backup Done")
     print("Creating New Config File...")
     for section in layout:
@@ -92,6 +92,7 @@ if config.data["General"]["ConfigVersion"] != VERSION:
 #General
 token = config["General"]["token"]
 prefix = config["General"]["prefix"]
+Presence= config["General"]["Presence"]
 send_to_owner_enabled = config["General"]["SendToOwnerThatIsOnline"]
 owner_id = config["General"]["owner"]
 TESTING_GUILD_ID = config["General"]["GuildTestingID"]

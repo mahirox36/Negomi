@@ -187,9 +187,9 @@ class Help(commands.Cog):
         owner = self.client.get_user(owner_id)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
-    @commands.command(name = "help")
-    async def helpPlease(self, ctx:commands.Context):
-        await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help` and if you are admin there's Secret Button OwO","No Longer Available"))
+    # @commands.command(name = "help")
+    # async def helpPlease(self, ctx:commands.Context):
+    #     await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help` and if you are admin there's Secret Button OwO","No Longer Available"))
     
 
 def setup(client):
