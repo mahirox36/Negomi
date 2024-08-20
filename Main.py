@@ -6,7 +6,7 @@ from Lib.Logger import *
 install()
 try:
     import nextcord
-    from nextcord.ext import commands
+    from nextcord.ext import commands, ipc
     from requests import request
     from Lib.Side import *
     import os
@@ -33,6 +33,14 @@ try:
             channel = await user.create_dm()
             await channel.send("Running ✅",embeds=[
                 info_embed("Bot is Online")])
+    ipc = ipc.Server(bot= client, secret_key=IpcPassword,port=5001)
+    @client.event
+    async def on_ipc_ready():
+        print("Ipc is ready.")
+    @client.event
+    async def on_ipc_error(endpoint, error):
+        """Called upon an error being raised within an IPC route"""
+        print(endpoint, "raised", error)
     #End
 
     #Classes
@@ -71,6 +79,7 @@ try:
     
     if __name__ == '__main__':
         try:
+            ipc.start()
             client.run(token)
         except nextcord.errors.LoginFailure:
             LOGGER.error("Failed to Login")

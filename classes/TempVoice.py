@@ -339,6 +339,8 @@ class TempVoice(commands.Cog):
         except AttributeError:return
         file = Data(guild.id,"TempVoice")
         file2 = Data(guild.id,"TempVoice","TempVoices")
+        if file.check() == False:
+            return
         if get_before(file2.data,before,member) != None:
             await member.disconnect(reason="Trying to Bug the Bot")
             return
