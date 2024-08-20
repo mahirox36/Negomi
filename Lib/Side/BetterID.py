@@ -1,12 +1,12 @@
-from .config import maxNum
 import random
 import string
 from typing import Any, Dict, List, Union
 from .Data import DataGlobal
 
 
+
 class BetterID:
-    def __init__(self,max:int = maxNum):
+    def __init__(self,max:int = 7):
         self.max = max
         self.file = DataGlobal("BetterID")
         try:

@@ -47,7 +47,6 @@ configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
             
         },
         "Advance": {
-            "DefaultBetterID_MaxNumber": 7,
             "IpcPassword":create_code_ipc()
         }
     }
@@ -113,4 +112,4 @@ textPosition    = config["Welcome Settings"]["textPosition"]
 textColor       = config["Welcome Settings"]["textColor_RGB"]
 
 #Advance 
-maxNum = config["Advance"]["DefaultBetterID_MaxNumber"]
+IpcPassword = config["Advance"]["IpcPassword"]

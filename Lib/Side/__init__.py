@@ -7,5 +7,5 @@ from rich import print
 from .Data import *
 from .BetterID import *
 from .config import *
-from .nextcord import *
+from .sidecord import *
 from .other import *
