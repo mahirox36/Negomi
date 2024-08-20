@@ -205,7 +205,7 @@ class Groups(commands.Cog):
             }
         else:category= ctx.guild.get_channel(file["category"])
         if not fileUser.data:
-            fileUser.data = [{"count":0}]
+            fileUser.data = [{"count":0,"update":0}]
         if fileUser.data[0]["count"] >= file["limit"]:
             await ctx.send(embed= error_embed("Sorry but you hit the limit"))
             return
