@@ -6,9 +6,9 @@ from Lib.config import Config, Color as color
 os.makedirs(".secrets", exist_ok=True)
 config_path = ".secrets/config.ini"
 config = Config(config_path)
-layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance"]#, Admin Users]
+layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance", "AI_AllowedServers"]#, Admin Users]
 config.set_layout(layout)
-VERSION = "0.13"
+VERSION = "0.15"
 
 
 
@@ -24,7 +24,6 @@ configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
             "ConfigVersion"             : VERSION
         },
         "Logger": {
-            "log"       : False,
             "Format"    : "%(asctime)s - %(levelname)s - %(name)s: %(message)s",
             "logForAI"  : False
         },
@@ -48,15 +47,21 @@ configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
         },
         "Advance": {
             "IpcPassword":create_code_ipc()
-        }
+        },
+        "AI_AllowedServers":[
+            12341234
+        ]
     }
 
-
+def create_comments(config: Config):
+    config.create_comment("- <Server IDs>", "AI_AllowedServers",0)
+    return config
 
 try:
     config.load()
 except FileNotFoundError:
     config.data = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou
+    config= create_comments(config)
     config.save()
 
 if config.data["General"]["ConfigVersion"] != VERSION:
@@ -72,6 +77,7 @@ if config.data["General"]["ConfigVersion"] != VERSION:
         for key in configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section]:
             if key not in config[section]:
                 config.data[section][key] = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section][key]
+    config= create_comments(config)
     config.data["General"]["ConfigVersion"] = VERSION
     config.save()
 
@@ -85,7 +91,6 @@ TESTING_GUILD_ID = config["General"]["GuildTestingID"]
 DisableAiClass = config["General"]["DisableAiClass"]
 
 #Logger
-Logger_Enabled = config["Logger"]["log"]
 Format = config["Logger"]["Format"]
 logForAI = config["Logger"]["logForAI"]
 
@@ -111,5 +116,7 @@ avatarPosition  = config["Welcome Settings"]["avatarPosition"]
 textPosition    = config["Welcome Settings"]["textPosition"]
 textColor       = config["Welcome Settings"]["textColor_RGB"]
 
+#1274892436035993632
 #Advance 
-IpcPassword = config["Advance"]["IpcPassword"]
+IpcPassword         = config["Advance"]["IpcPassword"]
+AI_AllowedServers   = config["AI_AllowedServers"]

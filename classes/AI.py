@@ -60,7 +60,7 @@ class AI(commands.Cog):
     async def on_message(self, message:Message):
         if self.client.user.mentioned_in(message):  # Check if the bot is mentioned in the message
             try: 
-                if message.guild.id != TESTING_GUILD_ID:return
+                if message.guild.id not in AI_AllowedServers :return
             except:return
             if self.running == True:
                 await message.reply(embed=warn_embed("The AI is thinking right now, You can't talk to her while she is thinking"), ephemeral=True)
