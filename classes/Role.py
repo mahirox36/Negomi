@@ -50,7 +50,11 @@ class Rolez(commands.Cog):
     "Navy": Color("#000080"),"Teal": Color("#008080"),"Maroon": Color("#800000"),"Silver": Color("#C0C0C0"),"Gold": Color("#FFD700"),
     "Coral": Color("#FF7F50"),"Salmon": Color("#FA8072"),"Turquoise": Color("#40E0D0"),"Indigo": Color("#4B0082"),"Violet": Color("#EE82EE")}
     
-    @slash_command(name="role-create",description="Create a role for your self")
+    @slash_command(name="role")
+    async def role(self,ctx:init):
+        pass
+    
+    @role.subcommand(name="create",description="Create a role for your self")
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
@@ -77,7 +81,7 @@ class Rolez(commands.Cog):
         file.data.update(data)
         file.save()
     
-    @slash_command(name="role-edit",description="Edit your own role like the name or role or both!")
+    @role.subcommand(name="edit",description="Edit your own role like the name or role or both!")
     @cooldown(15)
     async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=False, autocomplete=True,default=None)):
@@ -110,7 +114,7 @@ class Rolez(commands.Cog):
         await ctx.send(embed=info_embed(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
 
 
-    @slash_command(name="role-delete",description="delete your own role")
+    @role.subcommand(name="delete",description="delete your own role")
     async def role_delete(self,ctx:init):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
@@ -141,7 +145,7 @@ class Rolez(commands.Cog):
         await self.role_user_remove(ctx,member)
 
 
-    @slash_command(name="role-add-user",description="Add the role to a user")
+    @role.subcommand(name="add",description="Add the role to a user")
     @cooldown(3)
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
@@ -178,7 +182,7 @@ class Rolez(commands.Cog):
                                 view=view)
         await ctx.send(embed=info_embed(title="Invited!",description=f"You have Invited {member.mention}"))
 
-    @slash_command(name="role-remove-user",description="Remove the role from a user")
+    @role.subcommand(name="remove",description="Remove the role from a user")
     @cooldown(3)
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild

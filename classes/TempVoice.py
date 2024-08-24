@@ -286,9 +286,10 @@ async def invite_function(ctx:init,user:Member,client):
 class TempVoice(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.Hybrid = setup_hybrid(client)
-
-    @slash_command(name="control-panel",
+    @slash_command(name="voice")
+    async def voice(self,ctx:init):
+        pass
+    @voice.subcommand(name="panel",
         description="Bring the Control Panel for the TempVoice chat")
     async def controlpanel(self,ctx:init):
         file = Data(ctx.guild.id,"TempVoice","TempVoices")  
@@ -301,7 +302,7 @@ class TempVoice(commands.Cog):
 
 
      
-    @slash_command("invite-voice",description="Invite a member to Voice chat",dm_permission=False)
+    @voice.subcommand("invite",description="Invite a member to Voice chat")
     async def invite_slash(self,ctx:init,user:Member):
         return await invite_function(ctx,user,self.client)
     

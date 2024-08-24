@@ -1,6 +1,7 @@
 import nextcord
 import nextcord as discord
 from nextcord import *
+from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from Lib.Side import *

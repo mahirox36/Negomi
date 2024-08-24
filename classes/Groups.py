@@ -179,7 +179,10 @@ class Groups(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
     
-    @slash_command(name="group-create",description="Create a group (AKA Text Channels) For you and your friends")
+    @slash_command(name="group",description="show group options")
+    async def group(self,ctx:init):
+        pass
+    @group.subcommand(name="create",description="Create a group (AKA Text Channels) For you and your friends")
     @cooldown(60)
     async def group_create(self,ctx:init,name: str, emoji: str, topic: str = SlashOption("topic","Topic is the small description in the top of the channel",max_length=100,required=False), nsfw: bool = False):
         is_standard_emoji = emoji.replace(" ","") in emojis.EMOJI_DATA
@@ -230,7 +233,7 @@ class Groups(commands.Cog):
         file.save()
         await ctx.send(embed=info_embed(f"<#{channel.id}>","Group Created!"),ephemeral=True)
     
-    @slash_command(name="group-edit", description="Edit this group's details")
+    @group.subcommand(name="edit", description="Edit this group's details")
     @cooldown(180)
     async def group_edit(self, ctx: init):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
@@ -242,7 +245,7 @@ class Groups(commands.Cog):
 
         await ctx.response.send_modal(GroupEditModal(group, file, self.client))
     
-    @slash_command(name="group-delete",description="Delete a group")
+    @group.subcommand(name="delete",description="Delete a group")
     async def group_delete(self,ctx:init):
         fileUser= Data(ctx.guild_id,"Groups",f"{ctx.user.id}",subFolder="Members")
         if not fileUser.data:
@@ -263,7 +266,7 @@ class Groups(commands.Cog):
                 return group
         return None
     
-    @slash_command(name="group-add", description="Add a member to this group")
+    @group.subcommand(name="add", description="Add a member to this group")
     async def group_add(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
@@ -291,7 +294,7 @@ class Groups(commands.Cog):
         await ctx.send(embed=info_embed(f"{member.mention} has been added to this group", "Member Added"))
         LOGGER.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
 
-    @slash_command(name="group-kick", description="Remove a member from this group")
+    @group.subcommand(name="kick", description="Remove a member from this group")
     async def group_kick(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
@@ -316,7 +319,7 @@ class Groups(commands.Cog):
         await ctx.send(embed=info_embed(f"{member.mention} has been removed from this group", "Member Removed"))
         LOGGER.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
 
-    @slash_command(name="group-transfer", description="Transfer group ownership to another member in this group")
+    @group.subcommand(name="transfer", description="Transfer group ownership to another member in this group")
     async def group_transfer(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups")
         user_file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")

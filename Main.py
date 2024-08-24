@@ -33,7 +33,7 @@ try:
             channel = await user.create_dm()
             await channel.send("Running ✅",embeds=[
                 info_embed("Bot is Online")])
-    ipc = ipc.Server(bot= client, secret_key=IpcPassword,port=5001)
+    ipc = ipc.Server(bot= client, secret_key=IpcPassword)
     @client.event
     async def on_ipc_ready():
         print("Ipc is ready.")
@@ -79,7 +79,7 @@ try:
     
     if __name__ == '__main__':
         try:
-            ipc.start()
+            # ipc.start()
             client.run(token)
         except nextcord.errors.LoginFailure:
             LOGGER.error("Failed to Login")
