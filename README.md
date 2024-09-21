@@ -1,35 +1,38 @@
 # Negomi Discord Bot 0.5
 
-### Features:
+### 🚀 Features:
 
-- Easy Small Server Management.
-- Temp Voice chat.
-- Temp Text Chat (AKA Groups inside Server).
-- Roles for Normal Members.
-- Welcome Users with image and message
-- AI (Need to install your own).
-- Refresh the main Chat (Still In Dev)
-- Error Handling (When Error happens it get sent to the owner).
-- Fun Commands.
+- Effortless Small Server Management
+- Temporary Voice Chat
+- Temporary Text Chat (Groups within Server)
+- Customizable Roles for Members
+- Welcoming Users with Image and Message
+- AI Integration (Bring Your Own AI)
+- Main Chat Refresh (In Development)
+- Robust Error Handling (Errors Sent to Owner)
+- Fun and Engaging Commands
 
-all customable except error handling and the image in the Greetings
+*Note: All features are customizable except error handling and the greeting image.*
 
-### Libraries I made for this Bot:
+### 📚 Custom Libraries for This Bot:
 
-- [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py) for Config Files.
-- Data.py Merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py).
-- Extras.py Merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py).
-- [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py) for Logger like in java (Got inspired by Minecraft Modding).
-- [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py) For the AI System, Function, etc (All About AI).
-- [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py) For the Features that it's in Rich Library.
-- [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py) the most Important Library, it contains Functions, Classes, Config of the Bot, Embeds, Shortcut Functions, and make programming With Nextcord Easier.
+- [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py): Configuration Management
+- Data.py merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py)
+- Extras.py merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py)
+- [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py): Java-Inspired Logging (Inspired by Minecraft Modding)
+- [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py): AI System and Functions
+- [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py): Rich Library Features
+- [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py): Core Library with Functions, Classes, Bot Config, Embeds, and Nextcord Shortcuts
 
-## This Bot uses Nextcord! It will not work if u used Discord.py/Pycord
+### ⚙️ Compatibility:
 
-why you ask? cuz why not?
+This bot is built with Nextcord! It will not function with Discord.py or Pycord.
 
-I tried to switching for the discord.py but It's a hell. So I returned to nextcord
+*Why Nextcord? Because it's simply better!*
 
-### Finally, If you got any Ideas or issues make a new Issue in github or add me in discord!
+### 💡 Got Ideas or Issues?
 
-Username: mahirox36
+Feel free to open a new issue on GitHub or add me on Discord!
+
+**Discord Username:** mahirox36
+
