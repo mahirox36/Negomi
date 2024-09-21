@@ -8,19 +8,14 @@ from nextcord import Interaction as init
 from Lib.Side import *
 import json
 import os
-__version__ = 1.2
-__author__= "Mahiro"
-__authorDiscordID__ = 829806976702873621
+__version__ = 1.3
 
 class Backup(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-    
-    @command("export",description="this will export Roles, Channels, and Bots Names")
-    @commands.has_permissions(administrator=True)
-    @plugin()
-    async def export(self,ctx:Context):
-        await ctx.reply(embed=info_embed(f"This will take some time.","Wait! OwO"))
+    @slash_command(name="export", description="this will export Roles, Channels, and Bots Names", default_member_permissions=Permissions(administrator=True))
+    async def export(self,ctx:init):
+        await ctx.send(embed=info_embed(f"This will take some time.","Wait! OwO"))
         data = {
             "version": __version__,
             "channels":{
@@ -55,22 +50,16 @@ class Backup(commands.Cog):
         finally:
             file_data.close()
 
-        
-    @command("import",description="This will import Roles, Channels, and Bots Names\nYou need to upload the file you made with export")
-    @commands.has_permissions(administrator=True)
-    @plugin()
-    async def imported(self,ctx:Context):
-        # Check if the user attached a file
-        if not ctx.message.attachments:
-            await ctx.send(embed=error_embed("You need to attach a file to use this command.","File is required"))
-            return
-        file: Attachment = ctx.message.attachments[0]
+    @slash_command(name="import",
+                   description="This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
+                   default_member_permissions=Permissions(administrator=True))
+    async def imported(self,ctx:init, file: Attachment):
         temp = await file.read()
         data = dict(json.loads(temp))
         if data.get("version") == __version__:
-            await ctx.reply(embed=info_embed("It will take some Time to Import Everything","Okie UwU"))
+            await ctx.send(embed=info_embed("It will take some Time to Import Everything","Okie UwU"))
         else:
-            await ctx.reply(embed=warn_embed("and we will import it for you, BUT If it didn't work do a new backup!",title="⚠️The Backup Version is Outdated⚠️"))
+            await ctx.send(embed=warn_embed("and we will import it for you, BUT If it didn't work do a new backup!",title="⚠️The Backup Version is Outdated⚠️"))
         temp = {}
         for i in data["channels"]["Category"]:
             category = await ctx.guild.create_category(data["channels"]["Category"][i])

@@ -71,14 +71,8 @@ class Debug(commands.Cog):
         # Footer with client Name
         embed.set_footer(text=f"Requested by {get_name(user)} ({user})", icon_url=user.avatar.url)
         return embed
-
-    @commands.command(name="debug", description="Displays detailed debug information about the bot.")
-    async def debug(self, ctx:commands.Context):
-        # await ctx.channel.trigger_typing()
-        await ctx.reply(embed=self.debugEmbed(ctx.author))
     
     @slash_command(name="debug",description="Displays detailed debug information about the bot.")
-    @check.guild_only()
     async def debugSlash(self,ctx:init):
         await ctx.send(embed=self.debugEmbed(ctx.user),ephemeral=True)
 

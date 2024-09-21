@@ -1,14 +1,15 @@
 import random
 import string
 from typing import Any, Dict, List, Union
-from .Data import DataGlobal
+from .Data import Data
 
 
 
 class BetterID:
-    def __init__(self,max:int = 7):
+    def __init__(self,subFolder: str = None,max:int = 7):
         self.max = max
-        self.file = DataGlobal("BetterID")
+        self.file = Data("BetterID",subFolder)
+        
         try:
             self.data = self.file.load()
         except FileNotFoundError:
@@ -16,8 +17,8 @@ class BetterID:
             self.file.data = self.data
             self.file.save()
     def create_random_id(self) -> str:
-        characters = string.ascii_lowercase + string.digits  # lowercase letters + digits
-        code = ''.join(random.choice(characters) for _ in range(self.max))
+        hexdigits = string.digits + 'abcdef'
+        code = ''.join(random.choice(hexdigits) for _ in range(self.max))
         for i in self.data:
             if code == i:
                 return self.create_random_id()
@@ -50,4 +51,4 @@ class BetterID:
         del self.data[key]
 
 def create_code_ipc():
-    return BetterID(26).create_random_id()
+    return BetterID(max=26).create_random_id()

@@ -33,6 +33,7 @@ try:
             channel = await user.create_dm()
             await channel.send("Running ✅",embeds=[
                 info_embed("Bot is Online")])
+        await client.sync_all_application_commands()
     ipc = ipc.Server(bot= client, secret_key=IpcPassword)
     @client.event
     async def on_ipc_ready():
@@ -44,24 +45,27 @@ try:
     #End
 
     #Classes
-    initial_extension = []
-    plugins_extension = []
+    def get_classes(folder="./classes", replace=True) -> List[str]:
+        folder_prefix = folder.strip("./").replace("\\", ".").replace("/", ".") + "." if replace else folder.strip("./").replace("\\", ".").replace("/", ".")
+        initial_extension = []
 
-    for filename in os.listdir("./classes"):
-        if filename.endswith(".py"):
-            if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
-            if (DisableAiClass == True) and (filename[:-3] == "AI"):
-                continue
-            initial_extension.append("classes." + filename[:-3])
-    for filename in os.listdir("./classes/Plugins"):
-        if filename.endswith(".py"):
-            if "." in filename[:-3]: raise Exception("You can't have a dot in the class name")
-            if (DisableAiClass == True) and (filename[:-3] == "AI"):
-                continue
-            plugins_extension.append("classes.Plugins." + filename[:-3])
-    
+        for root, _, files in os.walk(folder):
+            for file in files:
+                if file.endswith(".py"):
+                    if "__pycache__" in root or "Working on Progress" in root:
+                        continue
+                    if "." in file[:-3]:
+                        raise Exception("You can't have a dot in the class name")
+                    if DisableAiClass and file[:-3] == "AI":
+                        continue
+                    relative_path = os.path.relpath(os.path.join(root, file), folder).replace("\\", ".").replace("/", ".")
+                    initial_extension.append(folder_prefix + relative_path[:-3])
 
-    print(f"and These All The Extension {initial_extension}\nPlugins: {plugins_extension}")
+        return initial_extension
+        
+    initial_extension = get_classes()
+    print(f"Classes: {initial_extension}")
+
     for extension in initial_extension:
         LOGGER.info(f"Loading Class: {extension}")
         if (extension == "classes.Welcome") and (Welcome_enabled == False):
@@ -69,13 +73,6 @@ try:
             continue
         client.load_extension(extension)
         LOGGER.info(f"Loaded Class: {extension}")
-    for extension in plugins_extension:
-        LOGGER.info(f"Loading Class: {extension}")
-        if (extension == "classes.Welcome") and (Welcome_enabled == False):
-            LOGGER.info(f"Failed to load Class: {extension}, Because Welcome Class isn't enabled")
-            continue
-        client.load_extension(extension)
-        LOGGER.info(f"Loaded Plugin: {extension}")
     
     if __name__ == '__main__':
         try:

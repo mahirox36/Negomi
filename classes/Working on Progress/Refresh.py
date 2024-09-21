@@ -10,11 +10,6 @@ from Lib.Side import *
 from Lib.Logger import *
 import os
 import json
-
-__version__ = 1.0
-__author__= "Mahiro"
-__authorDiscordID__ = 829806976702873621
-
 class Refresh(commands.Cog):
     def __init__(self, client:Client):
         self.client = client

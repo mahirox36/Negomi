@@ -10,13 +10,15 @@ class AutoRole(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
 
-    @commands.command(name = "setup-auto-role",
-                    aliases=["auto role"],
-                    description = "Setup auto role for members and bots")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.cooldown(1, 10, commands.BucketType.member)
-    @plugin()
+    @slash_command(name="auto",default_member_permissions=Permissions(administrator=True))
+    async def auto(self,ctx:init):
+        pass
+    @auto.subcommand(name="role")
+    async def role(self,ctx:init):
+        pass
+
+    @role.subcommand(name="setup",
+                   description="Setup auto role for members and bots")
     async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
         file= Data(ctx.guild_id,"Auto role")
         file.data = {
@@ -25,7 +27,7 @@ class AutoRole(commands.Cog):
         }
         file.save()
         
-        await ctx.send("Auto Role Set!")
+        await ctx.send(embed=info_embed("Auto role setup successfully"))
         
             
     @commands.Cog.listener()

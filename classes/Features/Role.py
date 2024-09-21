@@ -54,6 +54,9 @@ class Rolez(commands.Cog):
     async def role(self,ctx:init):
         pass
     
+    @role.subcommand(name="setup",description="Create a role for your self")
+    async def setup(self,ctx:init):
+        ctx.guild.integrations()
     @role.subcommand(name="create",description="Create a role for your self")
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):

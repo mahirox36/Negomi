@@ -1,10 +1,13 @@
 emoji==2.12.1
+fastapi==0.115.0
 nextcord==2.6.0
 nextcord_ext_ipc==2.2.1
 nextcord_ext_menus==1.5.7
-ollama==0.3.1
+ollama==0.3.3
 Pillow==10.4.0
 psutil==6.0.0
 Requests==2.32.3
-rich==13.7.1
-textual==0.76.0
+rich==13.8.1
+starlette==0.38.5
+textual==0.79.1
+uvicorn==0.30.6

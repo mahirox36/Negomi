@@ -7,10 +7,18 @@ import requests
 from Lib.Side import *
 from Lib.Logger import *
 from PIL import Image, ImageDraw, ImageFont
+from nextcord.ext.application_checks import *
 import io
 import gc
 import os
 import json
+"\
+Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):\
+{server}  : For the name of the server\
+{count}   : For the count of members in the server\
+{mention} : Mention the user\
+{name}    : Just the name of the user\
+"
 
 class Welcome(commands.Cog):
     def __init__(self, client:Client):
@@ -61,7 +69,7 @@ class Welcome(commands.Cog):
         del avatar
 
         return buffer
-    
+
     @commands.command(name = "setup-welcome-message",
                     aliases=["setup-welcome"],
                     description = """
@@ -130,8 +138,12 @@ Setup a welcome message in a specific Channel, in the message option you can use
         if guilds == None:return
         for guild in guilds:
             file= Data(guild,"Welcome")
+            if not file.data:
+                file.delete_guild()
+                GlobalFile.data.remove(guild)
+                continue
             guild= self.client.get_guild(guild)
-            channel= guild.get_channel(file["channel"])
+            channel= guild.get_channel(file.data.get("channel"))
             
             if channel == None:
                 file.delete_guild()
