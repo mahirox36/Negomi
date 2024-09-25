@@ -64,11 +64,7 @@ class Data:
             raise KeyError(f"'{key}' not found in the data")
 
     def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
-        if key in self.data:
-            self.data[key] = value
-        else:
-            raise KeyError(f"'{key}' not found in the data")
-
+        self.data[key] = value
 class DataGlobal:
     def __init__(self,
                  name:str,
@@ -125,7 +121,4 @@ class DataGlobal:
             raise KeyError(f"'{key}' not found in the data")
 
     def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
-        if key in self.data:
-            self.data[key] = value
-        else:
-            raise KeyError(f"'{key}' not found in the data")
+        self.data[key] = value

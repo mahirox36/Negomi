@@ -27,6 +27,8 @@ class BetterID:
             self.file.data = self.data
             self.file.save()
             return code
+    def generate(self) -> str:
+        return self.create_random_id()
         
     def check_id(self,code) -> bool:
         for i in self.data:
