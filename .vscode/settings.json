@@ -45,8 +45,4 @@
             }
         },
         
-    ]
-},
-"CodeGPT.apiKey": "Ollama",
-"CodeGPT.Autocomplete.provider": "Ollama - codellama:code"
-}
+    ]}}
