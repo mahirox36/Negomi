@@ -16,7 +16,7 @@ class Data:
         self.file = f"{self.path}/{file}.json" if subFolder == None else f"{self.path}/{subFolder}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
         if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
-        
+        self.default = default
         try:
             self.load()
         except FileNotFoundError:
@@ -27,10 +27,12 @@ class Data:
             json.dump(self.data,f,indent=4)
     
     def load(self) -> Any:
-        with open(self.file, "r") as f:
-            self.data = json.load(f)
-        return self.data
-    
+        try:
+            with open(self.file, "r") as f:
+                self.data = json.load(f)
+            return self.data
+        except FileNotFoundError:
+            return self.default
     def check(self) -> bool:
         if os.path.exists(self.file):
             return True
@@ -74,6 +76,7 @@ class DataGlobal:
         else            : self.path = f"Data/{name}/"
         self.file = f"{self.path}{file}.json"
         os.makedirs(self.path,exist_ok=True)
+        self.default = default
         try:
             self.load()
         except FileNotFoundError:
@@ -88,7 +91,6 @@ class DataGlobal:
         with open(self.file, "r") as f:
             self.data = json.load(f)
         return self.data
-    
     def check(self) -> bool:
         if os.path.exists(self.file):
             return True
