@@ -146,15 +146,16 @@ def is_owner_guild():
 
     return check(predicate)
 
-class PluginNotLoaded(commands.CheckFailure):
-    def __init__(self, message: Optional[str] = None) -> None:
-        super().__init__(message or "This command didn't get loaded in your server")
+class FeatureDisabled(commands.CheckFailure):
+    def __init__(self, message: Optional[str] = None,cog: Optional[str] = None) -> None:
+        self.cog = cog
+        super().__init__(message or "This command is disabled.")
 
-def plugin():
+def feature():
     def predicate(ctx) -> bool:
-        file = Data(ctx.guild.id, "Plugins", "Applied Plugins")
-        applied_plugins = file.data if file.data is not None else []
-        if ctx.cog is None or ctx.cog.__cog_name__ not in applied_plugins:
-            raise PluginNotLoaded(f"Plugin '{ctx.cog.__cog_name__}' is not loaded.")
+        file = Data(ctx.guild.id, "Feature")
+        applied_feature = file.data if file.data is not None else []
+        if ctx.cog is None or ctx.cog.__cog_name__ not in applied_feature:
+            raise FeatureDisabled(f"Feature '{ctx.cog.__cog_name__}' is disabled.",ctx.cog.__cog_name__)
         return True  # Check passed
-    return commands.check(predicate)
+    return check(predicate)

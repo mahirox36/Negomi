@@ -18,7 +18,7 @@ if __name__ == '__main__':
     ollama.create(model='NegomiX', modelfile=modelfile)
 
 conversation_history = []
-def get_response(user_message,originalText:str,previousContent:str=None,previousRole:str = "assistant",*,printHistory:bool=False) -> str:
+def get_response(user_message,originalText:str,previousContent:str=None,previousRole:str = "assistant") -> str:
     global conversation_history
     if (originalText.startswith("/clear")) and (logForAI):
         current_datetime = datetime.datetime.now()
@@ -39,8 +39,6 @@ def get_response(user_message,originalText:str,previousContent:str=None,previous
     
     text = response['message']['content']
     conversation_history.append({'role': 'assistant', 'content': text})
-    if printHistory:
-        print(conversation_history)
     return text
 
 def generate(prompt,model="NegomiX") ->str:

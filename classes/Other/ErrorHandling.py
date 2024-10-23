@@ -49,7 +49,11 @@ class ErrorHandling(commands.Cog):
                 embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return
-        
+        elif isinstance(error, FeatureDisabled):
+            await ctx.send(
+                embed=error_embed(f"This Feature is disabled",
+                                  "Feature Disabled"))
+            return 
         await ctx.send(embed=error_embed(error,title="Error Occurred"))
         LOGGER.error(error)
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
@@ -73,10 +77,10 @@ class ErrorHandling(commands.Cog):
             await ctx.send(
                 embed=error_embed(f"You are not the owner of the bot", "Not Owner"))
             return
-        elif isinstance(error, PluginNotLoaded):
+        elif isinstance(error, FeatureDisabled):
             await ctx.send(
-                embed=error_embed(f"This command didn't get loaded in your server",
-                                  "Plugin Not loaded"))
+                embed=error_embed(f"This Feature is disabled",
+                                  "Feature Disabled"))
             return 
         # elif isinstance(error, NotOwnerGuild):
         #     await ctx.send(

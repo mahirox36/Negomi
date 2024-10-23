@@ -58,7 +58,7 @@ class AI(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message:Message):
-        if self.client.user.mentioned_in(message):  # Check if the bot is mentioned in the message
+        if str(self.client.user.id) in message.content:  # Check if the bot is mentioned in the message
             try: 
                 if message.guild.id not in AI_AllowedServers :return
             except:return
@@ -68,7 +68,7 @@ class AI(commands.Cog):
             message.content = message.content.replace("<@1251656934960922775>","Negomi")\
                 .replace("  ", " ").replace("  ", " ")
             await message.channel.trigger_typing()
-            emoji = self.client.get_emoji(1268028353781436436)
+            emoji = "<a:loading:1268004524426006578>"
             await message.add_reaction(emoji)
 
             name = message.author.global_name if message.author.global_name != None else\

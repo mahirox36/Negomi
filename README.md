@@ -4,7 +4,7 @@
 
 - Effortless Small Server Management
 - Temporary Voice Chat
-- Temporary Text Chat (Groups within Server)
+- Creatable Text Chat (Groups within Server)
 - Customizable Roles for Members
 - Welcoming Users with Image and Message
 - AI Integration (Bring Your Own AI)
@@ -35,4 +35,3 @@ This bot is built with Nextcord! It will not function with Discord.py or Pycord.
 Feel free to open a new issue on GitHub or add me on Discord!
 
 **Discord Username:** mahirox36
-

@@ -16,7 +16,6 @@ class Refresh(commands.Cog):
     
     @commands.command(name = "methods")
     @commands.has_permissions(administrator=True)
-    @plugin()
     async def methods(self, ctx:commands.Context):
         await ctx.reply(embed=info_embed("These are the Three Methods You Can Use.","Methods")\
             .add_field(name="1. Don't Save Chat",value="Delete And Create The Chat without Saving it to a File or Archive Channel",inline=False)\
@@ -28,7 +27,6 @@ class Refresh(commands.Cog):
     
     # @commands.command(name = "add-refresh")
     # @commands.has_permissions(administrator=True)
-    # @plugin()
     # async def add_refresh(self, ctx:commands.Context,channel: TextChannel, method: int):
         
     

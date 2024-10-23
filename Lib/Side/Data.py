@@ -17,10 +17,8 @@ class Data:
         os.makedirs(self.path,exist_ok=True)
         if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
         self.default = default
-        try:
-            self.load()
-        except FileNotFoundError:
-            self.data= default
+        self.data = default
+        self.load()
     
     def save(self) -> None:
         with open(self.file, "w") as f:
@@ -67,6 +65,14 @@ class Data:
 
     def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
         self.data[key] = value
+        
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.save()
+        return False
+    
 class DataGlobal:
     def __init__(self,
                  name:str,
@@ -77,10 +83,8 @@ class DataGlobal:
         self.file = f"{self.path}{file}.json"
         os.makedirs(self.path,exist_ok=True)
         self.default = default
-        try:
-            self.load()
-        except FileNotFoundError:
-            self.data= default
+        self.data = default
+        self.load()
     
     def save(self):
         with open(self.file, "w") as f:
@@ -88,9 +92,12 @@ class DataGlobal:
         return self
     
     def load(self) -> Any:
-        with open(self.file, "r") as f:
-            self.data = json.load(f)
-        return self.data
+        try:
+            with open(self.file, "r") as f:
+                self.data = json.load(f)
+            return self.data
+        except FileNotFoundError:
+            return self.default
     def check(self) -> bool:
         if os.path.exists(self.file):
             return True
@@ -124,3 +131,10 @@ class DataGlobal:
 
     def __setitem__(self, key: str, value: Union[Dict[str, Any], List[Any]]) -> None:
         self.data[key] = value
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.save()
+        return False

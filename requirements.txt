@@ -8,6 +8,6 @@ Pillow==10.4.0
 psutil==6.0.0
 Requests==2.32.3
 rich==13.8.1
-starlette==0.38.5
+starlette==0.40.0
 textual==0.79.1
 uvicorn==0.30.6
