@@ -55,9 +55,11 @@ class Rolez(commands.Cog):
         pass
     
     @role.subcommand(name="setup",description="Create a role for your self")
+    @feature()
     async def setup(self,ctx:init):
         ctx.guild.integrations()
     @role.subcommand(name="create",description="Create a role for your self")
+    @feature()
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
@@ -86,6 +88,7 @@ class Rolez(commands.Cog):
     
     @role.subcommand(name="edit",description="Edit your own role like the name or role or both!")
     @cooldown(15)
+    @feature()
     async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=False, autocomplete=True,default=None)):
         guild = ctx.guild
@@ -118,6 +121,7 @@ class Rolez(commands.Cog):
 
 
     @role.subcommand(name="delete",description="delete your own role")
+    @feature()
     async def role_delete(self,ctx:init):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
@@ -141,15 +145,18 @@ class Rolez(commands.Cog):
         file.save()
     
     @user_command("Role: Add User")
+    @feature()
     async def role_user_add_user_command(self,ctx:init, member:Member):
         await self.role_user_add(ctx,member)
     @user_command("Role: Remove User")
+    @feature()
     async def role_user_remove_user_command(self,ctx:init, member:Member):
         await self.role_user_remove(ctx,member)
 
 
     @role.subcommand(name="add",description="Add the role to a user")
     @cooldown(3)
+    @feature()
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")
@@ -187,6 +194,7 @@ class Rolez(commands.Cog):
 
     @role.subcommand(name="remove",description="Remove the role from a user")
     @cooldown(3)
+    @feature()
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
         file = Data(guild.id,"Roles","MembersRoles")

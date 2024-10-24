@@ -291,6 +291,7 @@ class TempVoice(commands.Cog):
         pass
     @voice.subcommand(name="panel",
         description="Bring the Control Panel for the TempVoice chat")
+    @feature()
     async def controlpanel(self,ctx:init):
         file = Data(ctx.guild.id,"TempVoice","TempVoices")  
         checks = check(ctx,file.data)
@@ -303,10 +304,12 @@ class TempVoice(commands.Cog):
 
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
+    @feature()
     async def invite_slash(self,ctx:init,user:Member):
         return await invite_function(ctx,user,self.client)
     
     @user_command("Invite Voice",dm_permission=False)
+    @feature()
     async def invite(self,ctx:init, user:Member):
         return await invite_function(ctx,user,self.client)
         
@@ -320,6 +323,7 @@ class TempVoice(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 10, commands.BucketType.member)
     async def setup(self, ctx:commands.Context, Category:CategoryChannel):
+        featureInside(ctx.guild.id,self)
         file = Data(ctx.guild.id,"TempVoice")
         createChannel = await ctx.guild.create_voice_channel("➕・Create",
             reason=f"Used setup Temp Voice by {ctx.author}", category=Category)
@@ -336,6 +340,7 @@ class TempVoice(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                  before:discord.VoiceState, after:discord.VoiceState):
+        featureInside(after.channel.guild.id,self)
         try:guild = after.channel.guild
         except AttributeError:return
         file = Data(guild.id,"TempVoice")
@@ -384,11 +389,11 @@ class TempVoice(commands.Cog):
 class TempVoice2(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.Hybrid = setup_hybrid(client)
     #Listener For if the user left the server and there is no one left in the server
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                      before:discord.VoiceState, after:discord.VoiceState):
+        featureInside(after.channel.guild.id,self)
         try: before.channel.id
         except AttributeError: return
         guild = before.channel.guild

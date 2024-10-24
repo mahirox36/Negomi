@@ -35,7 +35,6 @@ def dynamic_cog_getter(cogName: str, client: commands.Bot) -> Optional[Dict]:
 def embed_builder(CogName: str, title: str, client: commands.Bot, extraInfo:str = None):
     data = dynamic_cog_getter(CogName, client)
     if not data: return
-    owner = client.get_user(owner_id)
     embed = info_embed(extraInfo,title)
     for name, description in data.items():
         embed.add_field(name=f"`{name}`",value="This Is User Command" if description == "" else description)
@@ -68,7 +67,6 @@ def dynamic_commands_getter(startswith: str, client: commands.Bot) -> Optional[D
 def embed_builder_Context(CogName: str, title: str, client: commands.Bot, extraInfo:str = None):
     data = dynamic_cog_getter_Context(CogName, client)
     if not data: return
-    owner = client.get_user(owner_id)
     embed = info_embed(title=title, description=extraInfo)
     for name, description in data.items():
         embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`")
@@ -142,7 +140,7 @@ class HelpSelect(ui.View):
         self.options[RealNum].default = True
         self.select.options = self.options
         global home_embed
-        owner = ctx.client.get_user(owner_id)
+        owner = ctx.client.get_user(self.client.owner_id)
         if selected_value == "home" : embed = home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
         if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client)
         if selected_value == "temp" : embed= embed_builder("TempVoice","🎤 Temp Voice", ctx.client,
@@ -184,7 +182,7 @@ class Help(commands.Cog):
         global home_embed
         admin= ctx.user.guild_permissions.administrator
         view = HelpSelect(self.client,admin)
-        owner = self.client.get_user(owner_id)
+        owner = self.client.get_user(self.client.owner_id)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
     # @commands.command(name = "help")

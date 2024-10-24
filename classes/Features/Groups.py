@@ -184,6 +184,7 @@ class Groups(commands.Cog):
         pass
     @group.subcommand(name="create",description="Create a group (AKA Text Channels) For you and your friends")
     @cooldown(60)
+    @feature()
     async def group_create(self,ctx:init,name: str, emoji: str, topic: str = SlashOption("topic","Topic is the small description in the top of the channel",max_length=100,required=False), nsfw: bool = False):
         is_standard_emoji = emoji.replace(" ","") in emojis.EMOJI_DATA
         # Check if the emoji is a custom emoji (e.g., <a:customemoji:123456789012345678>)
@@ -235,6 +236,7 @@ class Groups(commands.Cog):
     
     @group.subcommand(name="edit", description="Edit this group's details")
     @cooldown(180)
+    @feature()
     async def group_edit(self, ctx: init):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
@@ -246,6 +248,7 @@ class Groups(commands.Cog):
         await ctx.response.send_modal(GroupEditModal(group, file, self.client))
     
     @group.subcommand(name="delete",description="Delete a group")
+    @feature()
     async def group_delete(self,ctx:init):
         fileUser= Data(ctx.guild_id,"Groups",f"{ctx.user.id}",subFolder="Members")
         if not fileUser.data:
@@ -267,6 +270,7 @@ class Groups(commands.Cog):
         return None
     
     @group.subcommand(name="add", description="Add a member to this group")
+    @feature()
     async def group_add(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
@@ -295,6 +299,7 @@ class Groups(commands.Cog):
         LOGGER.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
 
     @group.subcommand(name="kick", description="Remove a member from this group")
+    @feature()
     async def group_kick(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")
         group = self.get_group_by_channel(ctx, file)
@@ -320,6 +325,7 @@ class Groups(commands.Cog):
         LOGGER.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
 
     @group.subcommand(name="transfer", description="Transfer group ownership to another member in this group")
+    @feature()
     async def group_transfer(self, ctx: init, member: Member):
         file = Data(ctx.guild_id, "Groups")
         user_file = Data(ctx.guild_id, "Groups", f"{ctx.user.id}", subFolder="Members")

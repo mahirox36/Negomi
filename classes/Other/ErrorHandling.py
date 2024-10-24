@@ -59,8 +59,12 @@ class ErrorHandling(commands.Cog):
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
         error_details = "```vbnet\n"+"".join(tb_str)+"```"
         
-        user = self.client.get_user(owner_id)
-        channel = await user.create_dm()
+        BotInfo: AppInfo = await self.client.application_info()
+        if BotInfo.owner.name.startswith("team"):
+            user =  self.client.get_user(BotInfo.team.owner.id)
+            channel =await user.create_dm()
+        else:
+            channel =await BotInfo.owner.create_dm()
         await channel.send(f"New Error Master!\n{error_details}")
 
     @commands.Cog.listener()
@@ -104,8 +108,12 @@ class ErrorHandling(commands.Cog):
         tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
         error_details = "```vbnet\n"+"".join(tb_str)+"```"
         
-        user = self.client.get_user(owner_id)
-        channel = await user.create_dm()
+        BotInfo: AppInfo = await self.client.application_info()
+        if BotInfo.owner.name.startswith("team"):
+            user =  self.client.get_user(BotInfo.team.owner.id)
+            channel =await user.create_dm()
+        else:
+            channel =await BotInfo.owner.create_dm()
         await channel.send(f"New Error Master!\n{error_details}")
 
     

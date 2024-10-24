@@ -14,6 +14,7 @@ class Backup(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
     @slash_command(name="export", description="this will export Roles, Channels, and Bots Names", default_member_permissions=Permissions(administrator=True))
+    @feature()
     async def export(self,ctx:init):
         await ctx.send(embed=info_embed(f"This will take some time.","Wait! OwO"))
         data = {
@@ -53,6 +54,7 @@ class Backup(commands.Cog):
     @slash_command(name="import",
                    description="This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
                    default_member_permissions=Permissions(administrator=True))
+    @feature()
     async def imported(self,ctx:init, file: Attachment):
         temp = await file.read()
         data = dict(json.loads(temp))

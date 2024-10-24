@@ -83,6 +83,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 10, commands.BucketType.member)
     async def setupWelcome(self, ctx:commands.Context,message: str, channel:TextChannel):
+        featureInside(ctx.guild.id,self)
         file = Data(ctx.guild.id,"Welcome")
         file.data= {
             "message":message,
@@ -103,6 +104,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
+        featureInside(member.guild.id,self)
         guild = member.guild
         file = Data(guild.id,"Welcome")
         if not file.data:return
@@ -125,6 +127,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     
     @commands.Cog.listener()
     async def on_member_remove(self, member:Member):
+        featureInside(member.guild.id,self)
         file= Data(member.guild.id,"Welcome","Members")
         file.data.remove(member.id)
         file.save()
@@ -137,6 +140,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
         guilds = GlobalFile.data
         if guilds == None:return
         for guild in guilds:
+            featureInside(guild, self)
             file= Data(guild,"Welcome")
             if not file.data:
                 file.delete_guild()

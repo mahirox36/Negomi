@@ -33,7 +33,7 @@ class AutoRole(commands.Cog):
             
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        featureInside(member.guild.id)
+        featureInside(member.guild.id, self)
         guild = member.guild
         if Data(member.guild.id,"Auto role").check():
             data = Data(member.guild.id,"Auto role").load()

@@ -79,13 +79,13 @@ class Settings(commands.Cog):
             await ctx.reply(embed=error_embed(description=f"`{folders[-1]}` is not a valid folder or file."))
     
     def get_disabled(self, serverID) -> List[str]:
-        with DataGlobal("Feature", serverID, default=[]) as data:
-            disabled_features = set(self.features) - set(data.data)
-        return list(disabled_features) 
+        with DataGlobal("Feature", serverID, [], False) as data:
+            return data.data
     
     def get_enabled(self, serverID) -> List[str]:
-        with DataGlobal("Feature", serverID, default=self.features) as data:
-            return data.data
+        with DataGlobal("Feature", serverID, [], False) as data:
+            result = set(self.features) - set(data.data)
+        return result
         
     
     @slash_command("feature", default_member_permissions=Permissions(administrator=True))
@@ -98,11 +98,11 @@ class Settings(commands.Cog):
         if feature in self.get_disabled(ctx.guild_id):
             await ctx.send(embed=error_embed(f"{feature} is Already Disabled", "Already disabled"), ephemeral=True)
             return
-        elif feature not in self.get_enabled(ctx.guild.id):
+        elif feature not in self.features:
             await ctx.send(embed=error_embed(f"There is not feature called {feature}"))
             return
-        data = self.get_enabled(ctx.guild.id)
-        data.remove(feature)
+        data = self.get_disabled(ctx.guild.id)
+        data.append(feature)
         with DataGlobal("Feature", ctx.guild_id) as file:
             file.data = data
         await ctx.send(embed=info_embed(f"{feature.capitalize()} got disabled!","Feature disabled"))
@@ -113,11 +113,11 @@ class Settings(commands.Cog):
         if feature in self.get_enabled(ctx.guild_id):
             await ctx.send(embed=error_embed(f"{feature} is Already enabled", "Already enabled"), ephemeral=True)
             return
-        elif feature not in self.get_disabled(ctx.guild.id):
+        elif feature not in self.features:
             await ctx.send(embed=error_embed(f"There is not feature called {feature}"))
             return
-        data = self.get_enabled(ctx.guild.id)
-        data.append(feature)
+        data = self.get_disabled(ctx.guild.id)
+        data.remove(feature)
         with DataGlobal("Feature", ctx.guild_id) as file:
             file.data = data
         await ctx.send(embed=info_embed(f"{feature.capitalize()} got enabled!","Feature enabled"))

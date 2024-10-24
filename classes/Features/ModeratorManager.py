@@ -13,7 +13,7 @@ import json
 #TODO: Make it easy to Upgrade and Downgrade moderators
 #TODO: If the Mod got hacked, and want to return to the server, we should have a way to get him back and the hacker get banned
 #TODO: Commands Left: [add, remove, upgrade, downgrade, hacked, list, info]
-class MM(commands.Cog):
+class moderatormanager(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.logger = LOGGER
@@ -26,6 +26,7 @@ class MM(commands.Cog):
         pass
     
     @manager.subcommand("setup", "Setup the Moderator Manager")
+    @feature()
     async def setup(self, ctx:init,
                     staffRole:Role  = SlashOption("staff"   , "Role for staff members"   ,required=False),
                     trailRole:Role  = SlashOption("trail"   , "Role for trail mod"   ,required=False),
@@ -69,6 +70,7 @@ class MM(commands.Cog):
         file.save()
         await ctx.send(embed=info_embed("Moderator Manager setup successfully", "Moderator Manager"))
     @manager.subcommand("add", "Add a Moderator")
+    @feature()
     async def add(self, ctx:init, member:Member, role:Role= None):
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
@@ -94,8 +96,11 @@ class MM(commands.Cog):
         }
         data[member.id] = data
         file.save()
-        await ctx.send(embed=info_embed(f"{member.mention} is now a {role.mention}", "Moderator Manager"))    
+        await ctx.send(embed=info_embed(f"{member.mention} is now a {role.mention}", "Moderator Manager")) 
+    #TODO: add command promote
+    #TODO: demote
+    #TODO: remove 
     
 
 def setup(client):
-    client.add_cog(MM(client))
+    client.add_cog(moderatormanager(client))

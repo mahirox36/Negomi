@@ -16,7 +16,6 @@ models = [model["name"].split(":")[0] for model in ollama.list()["models"]]
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.Hybrid = setup_hybrid(client)
         self.running = False
         self.started = False
     
@@ -30,7 +29,7 @@ class AI(commands.Cog):
                       choices=models
                   )):
         try:
-            if ctx.guild.id != TESTING_GUILD_ID:
+            if ctx.guild.id != AI_AllowedServers:
                 await ctx.send(embed=error_embed("Sorry But this Only Works on The Owner's Server\n"+
         "If you want this feature please run your [own bot here](https://github.com/mahirox36/Negomi) and your own AI Using Ollama"), ephemeral=True)
         except:
