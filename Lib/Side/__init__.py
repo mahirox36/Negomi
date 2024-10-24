@@ -1,5 +1,5 @@
 """
-Side Library for small and big functions and classes for Nextcord
+Core Library with Functions, Classes, Bot Config, Embeds, and Nextcord Shortcuts
 ~~~~~~~~~~~~~~~
 """
 from rich import print

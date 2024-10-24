@@ -1,6 +1,6 @@
 # Negomi Discord Bot 0.5
 
-### 🚀 Features:
+## 🚀 Features:
 
 - Effortless Small Server Management
 - Temporary Voice Chat
@@ -12,13 +12,11 @@
 - Robust Error Handling (Errors Sent to Owner)
 - Fun and Engaging Commands
 
-*Note: All features are customizable except error handling and the greeting image.*
+*Note: All features are customizable except the greeting image.*
 
-### 📚 Custom Libraries for This Bot:
+## 📚 Custom Libraries for This Bot:
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py): Configuration Management
-- Data.py merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py)
-- Extras.py merged with [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py)
 - [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py): Java-Inspired Logging (Inspired by Minecraft Modding)
 - [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py): AI System and Functions
 - [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py): Rich Library Features
