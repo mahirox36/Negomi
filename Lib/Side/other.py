@@ -68,4 +68,8 @@ def convert_to_seconds(time_string: str):
         return number * time_units[unit]
     else:
         raise ValueError(f"Invalid time format: {time_string}")
-    
+
+
+
+def remove_numbers(text):
+    return re.sub(r'\d+', '', text)

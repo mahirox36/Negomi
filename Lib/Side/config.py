@@ -1,122 +1,251 @@
 import os
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
 from .BetterID import create_code_ipc
 from Lib.config import Config, Color as color
 
+VERSION = "0.16"
 
-os.makedirs(".secrets", exist_ok=True)
-config_path = ".secrets/config.ini"
-config = Config(config_path)
-layout = ["General","Logger","General Embeds Colour","Welcome Settings","Advance", "AI_AllowedServers"]#, Admin Users]
-config.set_layout(layout)
-VERSION = "0.15"
+@dataclass
+class GeneralConfig:
+    prefix: str = "u."
+    token: str = "Your Bot Token"
+    Presence: str = "My Master Mahiro"
+    SendToOwnerThatIsOnline: bool = True
+    DisableAiClass: bool = True
+    ConfigVersion: str = VERSION
+
+@dataclass
+class LoggerConfig:
+    Format: str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
+    logForAI: bool = False
+
+@dataclass
+class ColorConfig:
+    Debug: color = field(default_factory=lambda: color(0x00FF00))
+    Info: color = field(default_factory=lambda: color(0x1E90FF))
+    Warn: color = field(default_factory=lambda: color(0xFFD700))
+    Error: color = field(default_factory=lambda: color(0xB22222))
+
+    def to_dict(self) -> Dict[str, str]:
+        """Convert color values to hex strings for storage"""
+        return {
+            k: str(v) for k, v in self.__dict__.items()
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ColorConfig':
+        """Create ColorConfig from dictionary, handling hex strings"""
+        processed_data = {}
+        for key, value in data.items():
+            if isinstance(value, (int, str)):
+                processed_data[key] = color(value)
+            elif isinstance(value, color):
+                processed_data[key] = value
+            else:
+                raise ValueError(f"Invalid color value for {key}: {value}")
+        return cls(**processed_data)
 
 
+@dataclass
+class WelcomeConfig:
+    Enabled: bool = True
+    baseImagePath: str = "Assets/img/Welcome.png"
+    Font: str = "Assets/font/MonsterFriendFore.otf"
+    BackupFont: str = "Assets/font/arial.ttf"
+    SizeFont: int = 30
+    Resize: tuple[int, int] = (99, 99)
+    avatarPosition: tuple[int, int] = (47, 47)
+    textPosition: tuple[int, int] = (190, 195)
+    textColor_RGB: tuple[int, int, int] = (70, 243, 243)
 
-configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou = {
-        "General": {
-            "prefix"                    : "u.",
-            "token"                     : "Your Bot Token",
-            "Presence"                  : "My Master Mahiro",
-            "SendToOwnerThatIsOnline"   : True,
-            "owner"                     : 829806976702873621,
-            "GuildTestingID"            : 1080951710828220537,
-            "DisableAiClass"            : True,
-            "ConfigVersion"             : VERSION
-        },
-        "Logger": {
-            "Format"    : "%(asctime)s - %(levelname)s - %(name)s: %(message)s",
-            "logForAI"  : False
-        },
-        "General Embeds Colour": {
-            "Debug" : color(0x00FF00),
-            "Info"  : color(0x1E90FF),
-            "Warn"  : color(0xFFD700),
-            "Error" : color(0xB22222)
-        },
-        "Welcome Settings":{
-            "Enabled"       : True,
-            "baseImagePath" : "Assets/img/Welcome.png",
-            "Font"          : "Assets/font/MonsterFriendFore.otf",
-            "BackupFont"    : "Assets/font/arial.ttf",
-            "SizeFont"      : 30,
-            "Resize"        : (99, 99),
-            "avatarPosition": (47, 47),
-            "textPosition"  : (190, 195),
-            "textColor_RGB" : (70, 243, 243) 
-            
-        },
-        "Advance": {
-            "IpcPassword":create_code_ipc()
-        },
-        "AI_AllowedServers":[
-            12341234
+@dataclass
+class AdvanceConfig:
+    IpcPassword: str = field(default_factory=create_code_ipc)
+    GuildTestingID: int = 1080951710828220537
+
+@dataclass
+class Bot_Config:
+    General: GeneralConfig = field(default_factory=GeneralConfig)
+    Logger: LoggerConfig = field(default_factory=LoggerConfig)
+    General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
+    Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
+    Advance: AdvanceConfig = field(default_factory=AdvanceConfig)
+    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234])
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the config to a dictionary format."""
+        return {
+            "General": {
+                k: v for k, v in self.General.__dict__.items()
+            },
+            "Logger": {
+                k: v for k, v in self.Logger.__dict__.items()
+            },
+            "General Embeds Colour": self.General_Embeds_Colour.to_dict(),
+            "Welcome Settings": {
+                k: v for k, v in self.Welcome_Settings.__dict__.items()
+            },
+            "Advance": {
+                k: v for k, v in self.Advance.__dict__.items()
+            },
+            "AI_AllowedServers": self.AI_AllowedServers
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Bot_Config':
+        """Create a Bot_Config instance from a dictionary."""
+        return cls(
+            General=GeneralConfig(**data.get("General", {})),
+            Logger=LoggerConfig(**data.get("Logger", {})),
+            General_Embeds_Colour=ColorConfig.from_dict(data.get("General Embeds Colour", {})),
+            Welcome_Settings=WelcomeConfig(**data.get("Welcome Settings", {})),
+            Advance=AdvanceConfig(**data.get("Advance", {})),
+            AI_AllowedServers=data.get("AI_AllowedServers", [12341234])
+        )
+
+@dataclass
+class ConfigManager:
+    config_path: str
+    backup_folder: str = ".secrets/backup"
+    
+    def __post_init__(self) -> None:
+        os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
+        os.makedirs(self.backup_folder, exist_ok=True)
+        self.config = Config(self.config_path)
+        self.layout = [
+            "General",
+            "Logger",
+            "General Embeds Colour",
+            "Welcome Settings",
+            "Advance",
+            "AI_AllowedServers"
         ]
-    }
+        self.config.set_layout(self.layout)
+        self.BotConfig: Optional[Bot_Config] = None
+    
+    def create_backup(self) -> str:
+        """Create a backup of the current config file."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        current_version = self.config.data.get("General", {}).get("ConfigVersion", "unknown")
+        backup_filename = f"config_{current_version}_{timestamp}.ini"
+        backup_path = os.path.join(self.backup_folder, backup_filename)
+        
+        try:
+            if os.path.exists(self.config.filepath):
+                with open(self.config.filepath, 'r') as source:
+                    with open(backup_path, 'w') as target:
+                        target.write(source.read())
+            return backup_path
+        except Exception as e:
+            raise Exception(f"Failed to create backup: {str(e)}")
+    
+    def update_config(self, new_config: Bot_Config) -> None:
+        """Update the configuration while preserving existing values."""
+        backup_path = self.create_backup()
+        backup_data = self.config.data.copy()
+        
+        try:
+            # Convert new config to dict format
+            new_data = new_config.to_dict()
+            
+            # Update existing config data
+            for section in self.layout:
+                if section not in new_data:
+                    continue
+                
+                if isinstance(new_data[section], list):
+                    if section in self.config.data and isinstance(self.config.data[section], list):
+                        continue  # Preserve existing list
+                    self.config.data[section] = new_data[section].copy()
+                    continue
+                
+                if section not in self.config.data:
+                    self.config.data[section] = {}
+                
+                for key, default_value in new_data[section].items():
+                    if section not in self.config.data or key not in self.config.data[section]:
+                        self.config.data[section][key] = default_value
+            
+            # Update BotConfig with the merged data
+            self.BotConfig = Bot_Config.from_dict(self.config.data)
+            self.config.save()
+            
+        except Exception as e:
+            # Restore from backup on failure
+            self.config.data = backup_data
+            try:
+                if os.path.exists(backup_path):
+                    with open(backup_path, 'r') as source:
+                        with open(self.config.filepath, 'w') as target:
+                            target.write(source.read())
+                    print("Config restored from backup due to save failure")
+            except Exception as restore_error:
+                print(f"Failed to restore from backup: {str(restore_error)}")
+            raise Exception(f"Failed to save updated config: {str(e)}")
 
-def create_comments(config: Config):
-    config.create_comment("- <Server IDs>", "AI_AllowedServers",0)
-    return config
+def initialize_config() -> ConfigManager:
+    """Initialize the configuration system."""
+    config_manager = ConfigManager(".secrets/config.ini")
+    
+    try:
+        config_manager.config.load()
+        current_version = config_manager.config.data.get("General", {}).get("ConfigVersion")
+        
+        # Create default config
+        default_config = Bot_Config()
+        
+        # Check if config exists and version matches
+        if not current_version or current_version != VERSION:
+            print(f"Updating config from version {current_version} to {VERSION}")
+            config_manager.update_config(default_config)
+            
+        # Load the config into Bot_Config instance
+        config_manager.BotConfig = Bot_Config.from_dict(config_manager.config.data)
+            
+    except FileNotFoundError:
+        # Create new config with defaults
+        default_config = Bot_Config()
+        config_manager.config.data = default_config.to_dict()
+        config_manager.BotConfig = default_config
+        config_manager.config.save()
+    
+    return config_manager
 
-try:
-    config.load()
-except FileNotFoundError:
-    config.data = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou
-    config= create_comments(config)
-    config.save()
+# Initialize and export configuration
+config_manager = initialize_config()
+config = config_manager.config
+BotConfig = config_manager.BotConfig
 
-if config.data["General"]["ConfigVersion"] != VERSION:
-    print("Config Version Mismatch")
-    print("Backup Config File...")
-    os.makedirs(".secrets/backup", exist_ok=True)
-    os.rename(".secrets/config.ini", f".secrets/backup/config_{config["General"]["ConfigVersion"]}.ini")
-    print("Backup Done")
-    print("Creating New Config File...")
-    for section in layout:
-        if section not in config.data:
-            config[section] = {}
-        for key in configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section]:
-            if key not in config[section]:
-                config.data[section][key] = configDataAndIamTryingToMakeItHardToReplaceItByAccidentAnywayHowAreYou[section][key]
-    config= create_comments(config)
-    config.data["General"]["ConfigVersion"] = VERSION
-    config.save()
+# Export configuration values
+token = BotConfig.General.token
+prefix = BotConfig.General.prefix
+Presence = BotConfig.General.Presence
+send_to_owner_enabled = BotConfig.General.SendToOwnerThatIsOnline
+DisableAiClass = BotConfig.General.DisableAiClass
 
-#General
-token = config["General"]["token"]
-prefix = config["General"]["prefix"]
-Presence= config["General"]["Presence"]
-send_to_owner_enabled = config["General"]["SendToOwnerThatIsOnline"]
-owner_id = config["General"]["owner"]
-TESTING_GUILD_ID = config["General"]["GuildTestingID"]
-DisableAiClass = config["General"]["DisableAiClass"]
+Format = BotConfig.Logger.Format
+logForAI = BotConfig.Logger.logForAI
 
-#Logger
-Format = config["Logger"]["Format"]
-logForAI = config["Logger"]["logForAI"]
+# Colors/Colours
+for color_type in ["Debug", "Info", "Warn", "Error"]:
+    color_value = getattr(BotConfig.General_Embeds_Colour, color_type)
+    globals()[f"{color_type}_Color"] = color_value
+    globals()[f"{color_type}_Colour"] = color_value
 
-#US Color
-Debug_Color = color(config["General Embeds Colour"]["Debug"]).value
-Info_Color  = color(config["General Embeds Colour"]["Info"]).value
-Warn_Color  = color(config["General Embeds Colour"]["Warn"]).value
-Error_Color = color(config["General Embeds Colour"]["Error"]).value
-#UK Colour
-Debug_Colour = color(config["General Embeds Colour"]["Debug"]).value
-Info_Colour  = color(config["General Embeds Colour"]["Info"]).value
-Warn_Colour  = color(config["General Embeds Colour"]["Warn"]).value
-Error_Colour = color(config["General Embeds Colour"]["Error"]).value
+# Welcome Settings
+Welcome_enabled = BotConfig.Welcome_Settings.Enabled
+baseImagePath = BotConfig.Welcome_Settings.baseImagePath
+Font = BotConfig.Welcome_Settings.Font
+BackupFont = BotConfig.Welcome_Settings.BackupFont
+SizeFont = BotConfig.Welcome_Settings.SizeFont
+Resize = BotConfig.Welcome_Settings.Resize
+avatarPosition = BotConfig.Welcome_Settings.avatarPosition
+textPosition = BotConfig.Welcome_Settings.textPosition
+textColor = BotConfig.Welcome_Settings.textColor_RGB
 
-#Welcome Settings
-Welcome_enabled = config["Welcome Settings"]["Enabled"]
-baseImagePath   = config["Welcome Settings"]["baseImagePath"]
-Font            = config["Welcome Settings"]["Font"]
-BackupFont      = config["Welcome Settings"]["BackupFont"]
-SizeFont        = config["Welcome Settings"]["SizeFont"]
-Resize          = config["Welcome Settings"]["Resize"]
-avatarPosition  = config["Welcome Settings"]["avatarPosition"]
-textPosition    = config["Welcome Settings"]["textPosition"]
-textColor       = config["Welcome Settings"]["textColor_RGB"]
-
-#1274892436035993632
-#Advance 
-IpcPassword         = config["Advance"]["IpcPassword"]
-AI_AllowedServers   = config["AI_AllowedServers"]
+# Advanced Settings
+IpcPassword = BotConfig.Advance.IpcPassword
+TESTING_GUILD_ID = BotConfig.Advance.GuildTestingID
+AI_AllowedServers = BotConfig.AI_AllowedServers

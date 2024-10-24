@@ -5,13 +5,18 @@ import os
 
 
 class Color:
-    def __init__(self, value:int | str):
+    def __init__(self, value: int | str):
         self.value = value
-        if isinstance(value,str):
-            self.value = int(value.replace("#","0x"),16)
+        if isinstance(value, str):
+            self.value = int(value.replace("#", "0x"), 16)
 
     def __str__(self):
-        return f"{hex(self.value).replace('0x','#')}"
+        return f"{hex(self.value).replace('0x', '#')}"
+    
+    def __eq__(self, other):
+        if isinstance(other, Color):
+            return self.value == other.value
+        return False
 
 
 class Config:
@@ -35,6 +40,7 @@ class Config:
         self.__layout = []
         self.comments = {'top': []}
         self.data = {}
+        self.filepath = file
 
     def set_layout(self, layout: List[str]) -> None:
         """

@@ -77,9 +77,11 @@ class DataGlobal:
     def __init__(self,
                  name:str,
                  file:str="data",
-                 default: Union[Dict, List, None] = None):
+                 default: Union[Dict, List, None] = None,
+                 saveExit: bool = True):
         if name == ""   : self.path = f"Data/"
         else            : self.path = f"Data/{name}/"
+        self.__saveExit = saveExit
         self.file = f"{self.path}{file}.json"
         os.makedirs(self.path,exist_ok=True)
         self.default = default
@@ -136,5 +138,6 @@ class DataGlobal:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.save()
+        if self.__saveExit:
+            self.save()
         return False
