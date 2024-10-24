@@ -6,7 +6,7 @@ from nextcord import ApplicationCheckFailure, Embed, Guild, Member, PermissionOv
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check
 from nextcord.errors import ApplicationCheckFailure
-from .Data import Data
+from .Data import Data, DataGlobal
 
 
 def PermissionOverwriteWith(create_instant_invite: Optional[bool]= None,kick_members: Optional[bool]= None,ban_members: Optional[bool]= None,administrator: Optional[bool]= None,manage_channels: Optional[bool]= None,manage_guild: Optional[bool]= None,add_reactions: Optional[bool]= None,view_audit_log: Optional[bool]= None,priority_speaker: Optional[bool]= None,stream: Optional[bool]= None,read_messages: Optional[bool]= None,view_channel: Optional[bool]= None,send_messages: Optional[bool]= None,send_tts_messages: Optional[bool]= None,manage_messages: Optional[bool]= None,embed_links: Optional[bool]= None,attach_files: Optional[bool]= None,read_message_history: Optional[bool]= None,mention_everyone: Optional[bool]= None,external_emojis: Optional[bool]= None,use_external_emojis: Optional[bool]= None,view_guild_insights: Optional[bool]= None,connect: Optional[bool]= None,speak: Optional[bool]= None,mute_members: Optional[bool]= None,deafen_members: Optional[bool]= None,move_members: Optional[bool]= None,use_voice_activation: Optional[bool]= None,change_nickname: Optional[bool]= None,manage_nicknames: Optional[bool]= None,manage_roles: Optional[bool]= None,manage_permissions: Optional[bool]= None,manage_webhooks: Optional[bool]= None,manage_emojis: Optional[bool]= None,manage_emojis_and_stickers: Optional[bool]= None,use_slash_commands: Optional[bool]= None,request_to_speak: Optional[bool]= None,manage_events: Optional[bool]= None,manage_threads: Optional[bool]= None,create_public_threads: Optional[bool]= None,create_private_threads: Optional[bool]= None,send_messages_in_threads: Optional[bool]= None,external_stickers: Optional[bool]= None,use_external_stickers: Optional[bool]= None,start_embedded_activities: Optional[bool]= None,moderate_members: Optional[bool]= None):
@@ -152,10 +152,17 @@ class FeatureDisabled(commands.CheckFailure):
         super().__init__(message or "This command is disabled.")
 
 def feature():
-    def predicate(ctx) -> bool:
-        file = Data(ctx.guild.id, "Feature")
+    def predicate(ctx: init) -> bool:
+        file = DataGlobal("Feature", ctx.guild.id)
         applied_feature = file.data if file.data is not None else []
-        if ctx.cog is None or ctx.cog.__cog_name__ not in applied_feature:
-            raise FeatureDisabled(f"Feature '{ctx.cog.__cog_name__}' is disabled.",ctx.cog.__cog_name__)
+        name = ctx.application_command.parent_cog.__class__.__name__
+        if name.lower() not in applied_feature:
+            raise FeatureDisabled(f"Feature '{name}' is disabled.",name)
         return True  # Check passed
     return check(predicate)
+def featureInside(guildID: int, cogName: str):
+    file = Data(guildID, "Feature")
+    applied_feature = file.data if file.data is not None else []
+    if cogName not in applied_feature:
+        raise FeatureDisabled(f"Feature '{cogName}' is disabled.",cogName)
+    return True  # Check passed

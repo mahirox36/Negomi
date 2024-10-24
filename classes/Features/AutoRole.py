@@ -19,6 +19,7 @@ class AutoRole(commands.Cog):
 
     @role.subcommand(name="setup",
                    description="Setup auto role for members and bots")
+    @feature()
     async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
         file= Data(ctx.guild_id,"Auto role")
         file.data = {
@@ -32,6 +33,7 @@ class AutoRole(commands.Cog):
             
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
+        featureInside(member.guild.id)
         guild = member.guild
         if Data(member.guild.id,"Auto role").check():
             data = Data(member.guild.id,"Auto role").load()
