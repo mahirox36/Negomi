@@ -16,7 +16,7 @@ class ErrorHandling(commands.Cog):
     async def on_application_command_error(self, ctx: init, error: Exception):
         try:
             err = error.original
-        except:
+        except AttributeError:
             err = error
         if isinstance(err, SlashCommandOnCooldown):
             await ctx.send(
@@ -54,18 +54,25 @@ class ErrorHandling(commands.Cog):
                 embed=error_embed(f"This Feature is disabled",
                                   "Feature Disabled"))
             return 
-        await ctx.send(embed=error_embed(error,title="Error Occurred"))
+        await ctx.send(embed=error_embed(error,title="An unexpected error occurred"))
         LOGGER.error(error)
-        tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
-        error_details = "```vbnet\n"+"".join(tb_str)+"```"
+    
+        # Send detailed traceback to the bot owner
+        tb_str = traceback.format_exception(type(error), error, error.__traceback__)
+        error_details = "".join(tb_str)
         
+        with open("logs/error_traceback.py", "w") as f:
+            f.write(error_details)
+
+        # Send the file to the bot owner
         BotInfo: AppInfo = await self.client.application_info()
         if BotInfo.owner.name.startswith("team"):
-            user =  self.client.get_user(BotInfo.team.owner.id)
-            channel =await user.create_dm()
+            user = self.client.get_user(BotInfo.team.owner.id)
+            channel = await user.create_dm()
         else:
-            channel =await BotInfo.owner.create_dm()
-        await channel.send(f"New Error Master!\n{error_details}")
+            channel = await BotInfo.owner.create_dm()
+
+        await channel.send(content="New Error Master!", file=nextcord.File("logs/error_traceback.py"))
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
@@ -103,18 +110,25 @@ class ErrorHandling(commands.Cog):
             return
         elif isinstance(error,commands.errors.CommandNotFound):
             return
-        await ctx.reply(embed=error_embed(error,title="Error Occurred"))
+        await ctx.reply(embed=error_embed(error,title="An unexpected error occurred"))
         LOGGER.error(error)
-        tb_str = traceback.format_exception(error,value=error, tb=error.__traceback__)
-        error_details = "```vbnet\n"+"".join(tb_str)+"```"
+    
+        # Send detailed traceback to the bot owner
+        tb_str = traceback.format_exception(type(error), error, error.__traceback__)
+        error_details = "".join(tb_str)
         
+        with open("logs/error_traceback.py", "w") as f:
+            f.write(error_details)
+
+        # Send the file to the bot owner
         BotInfo: AppInfo = await self.client.application_info()
         if BotInfo.owner.name.startswith("team"):
-            user =  self.client.get_user(BotInfo.team.owner.id)
-            channel =await user.create_dm()
+            user = self.client.get_user(BotInfo.team.owner.id)
+            channel = await user.create_dm()
         else:
-            channel =await BotInfo.owner.create_dm()
-        await channel.send(f"New Error Master!\n{error_details}")
+            channel = await BotInfo.owner.create_dm()
+
+        await channel.send(content="New Error Master!", file=nextcord.File("logs/error_traceback.py"))
 
     
     

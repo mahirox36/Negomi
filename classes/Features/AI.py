@@ -21,6 +21,7 @@ class AI(commands.Cog):
     
     @slash_command(name="ask",description="ask an Advance AI")
     @cooldown(15)
+    @feature()
     async def Say(self,ctx:init,message:str,
                   model= SlashOption(
                       "model",
@@ -57,7 +58,10 @@ class AI(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message:Message):
-        if str(self.client.user.id) in message.content:  # Check if the bot is mentioned in the message
+        try: featureInside(message.guild.id,self)
+        except: return
+        if message.mention_everyone: return
+        elif self.client.user.mentioned_in(message):  # Check if the bot is mentioned in the message
             try: 
                 if message.guild.id not in AI_AllowedServers :return
             except:return
@@ -73,7 +77,7 @@ class AI(commands.Cog):
             name = message.author.global_name if message.author.global_name != None else\
                   message.author.display_name
             
-            if name == "HackedMahiro": name = "Mahiro"
+            if name == "HackedMahiro Hachiro": name = "Mahiro"
             channel = message.channel
             if (self.started == False) and (message.reference):
                 self.started = True
@@ -85,7 +89,7 @@ class AI(commands.Cog):
 
             # print(f"{name}: {message}")
             response= get_response(f"{name}: {message.content}",
-                                   message.content,previousContent,printHistory=True)
+                                   message.content,previousContent)
             if response == False:
                 await message.reply(embed=debug_embed("Cleared!"))
                 return
