@@ -43,7 +43,7 @@ class AI(commands.Cog):
         self.running = True
         # name = ctx.user.global_name if ctx.user.global_name != None else ctx.user.display_name
         # if name == "HackedMahiro": name = "Mahiro"
-        # print(f"{name}: {message}")
+        # logger.info(f"{name}: {message}")
         # response= get_response(f"{name}: {message}",message)
         if model == None: response= generate(message)
         else: response= generate(message,model)
@@ -87,7 +87,7 @@ class AI(commands.Cog):
                     previousContent= reference.content
             else: previousContent = None
 
-            # print(f"{name}: {message}")
+            # logger.info(f"{name}: {message}")
             response= get_response(f"{name}: {message.content}",
                                    message.content,previousContent)
             if response == False:

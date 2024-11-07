@@ -1,5 +1,4 @@
 from nextcord import AppInfo, TeamMember
-from rich import print
 from rich.console import Console
 from rich.traceback import install
 from Lib.richer import *
@@ -10,6 +9,7 @@ try:
     from nextcord.ext import commands, ipc
     from requests import request
     from Lib.Side import *
+    from rich import print
     import os
     from nextcord import Interaction as init
     from datetime import datetime

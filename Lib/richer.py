@@ -2,7 +2,6 @@ import rich as r
 from rich.console import Console
 from rich.progress import track
 from rich.columns import Columns
-from rich import print
 from rich.table import Table
 from rich.rule import Rule
 from rich.traceback import install

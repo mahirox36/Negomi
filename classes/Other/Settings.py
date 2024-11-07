@@ -66,7 +66,7 @@ class Settings(commands.Cog):
         except IndexError:
             try:target = os.path.join(base_path, folders[0] ,str(ctx.guild.id), folders[1])
             except IndexError:target = os.path.join(base_path, folders[0] ,str(ctx.guild.id))
-        print(target)
+        logger.info(target)
         if os.path.isdir(target):
             items = os.listdir(target)
             description = "\n".join(items)

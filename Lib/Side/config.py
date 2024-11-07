@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from .BetterID import create_code_ipc
 from Lib.config import Config, Color as color
+from .logger import logger
 
-VERSION = "0.16"
+VERSION = "0.17"
 
 @dataclass
 class GeneralConfig:
@@ -63,6 +64,9 @@ class WelcomeConfig:
 @dataclass
 class AdvanceConfig:
     IpcPassword: str = field(default_factory=create_code_ipc)
+    IpcEnabled: bool = False
+    IpcHost: str = 'localhost'
+    IpcPort:int = 8765
     GuildTestingID: int = 1080951710828220537
 
 @dataclass
@@ -180,9 +184,9 @@ class ConfigManager:
                     with open(backup_path, 'r') as source:
                         with open(self.config.filepath, 'w') as target:
                             target.write(source.read())
-                    print("Config restored from backup due to save failure")
+                    logger.info("Config restored from backup due to save failure")
             except Exception as restore_error:
-                print(f"Failed to restore from backup: {str(restore_error)}")
+                logger.error(f"Failed to restore from backup: {str(restore_error)}")
             raise Exception(f"Failed to save updated config: {str(e)}")
 
 def initialize_config() -> ConfigManager:
@@ -198,7 +202,7 @@ def initialize_config() -> ConfigManager:
         
         # Check if config exists and version matches
         if not current_version or current_version != VERSION:
-            print(f"Updating config from version {current_version} to {VERSION}")
+            logger.info(f"Updating config from version {current_version} to {VERSION}")
             config_manager.update_config(default_config)
             
         # Load the config into Bot_Config instance
@@ -247,5 +251,8 @@ textColor = BotConfig.Welcome_Settings.textColor_RGB
 
 # Advanced Settings
 IpcPassword = BotConfig.Advance.IpcPassword
+IpcEnabled= BotConfig.Advance.IpcEnabled
+IpcHost= BotConfig.Advance.IpcHost
+IpcPort= BotConfig.Advance.IpcPort
 TESTING_GUILD_ID = BotConfig.Advance.GuildTestingID
 AI_AllowedServers = BotConfig.AI_AllowedServers

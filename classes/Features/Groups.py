@@ -128,7 +128,7 @@ class DeleteSelect(ui.View):
     
                 except Exception as e:
                     # Log or handle exceptions that occur during deletion
-                    print(f"An error occurred while processing channel ID {i.get('channel')}: {e}")
+                    logger.error(f"An error occurred while processing channel ID {i.get('channel')}: {e}")
     
             # Save changes to the data files
             file_user.save()

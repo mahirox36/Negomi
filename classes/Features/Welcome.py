@@ -171,7 +171,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
                 await channel.send(message)
                 del welcome_image
                 gc.collect()
-        print("Finished All Missed Welcome Messages")
+        logger.info("Finished All Missed Welcome Messages")
             
             
         
