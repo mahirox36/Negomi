@@ -4,7 +4,7 @@ from nextcord import *
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from Lib.Side import *
+from modules.Side import *
 import os
 import json
 from requests import get, post
@@ -45,7 +45,7 @@ class Other(commands.Cog):
         title = meme_data['title']
         image_url = meme_data['url']
 
-        embed = Embed(title=title, colour=Info_Colour)
+        embed = Embed(title=title, colour=colour.Info)
         embed.set_image(url=image_url)
 
         await ctx.send(embed=embed)

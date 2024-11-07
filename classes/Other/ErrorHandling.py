@@ -4,8 +4,8 @@ from nextcord.ext import commands
 from nextcord import Interaction as init
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 from nextcord.ext.application_checks import *
-from Lib.Side import *
-from Lib.Logger import *
+from modules.Side import *
+from modules.Logger import *
 
 
 class ErrorHandling(commands.Cog):

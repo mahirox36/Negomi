@@ -5,8 +5,8 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from nextcord.utils import MISSING
-from Lib.Side import *
-from Lib.Logger import *
+from modules.Side import *
+from modules.Logger import *
 from typing import Dict, Optional
 import os
 import json

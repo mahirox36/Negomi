@@ -4,8 +4,8 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from Lib.Side import *
-from Lib.Logger import *
+from modules.Side import *
+from modules.Logger import *
 import emoji as emojis
 import re
 import os

@@ -3,7 +3,7 @@ import os
 import ollama
 from rich import print
 from json import dumps, loads
-from Lib.Side import logForAI
+from modules.Side import logForAI
 
 if __name__ == '__main__':
     with open("OllamaSetup/system") as f:

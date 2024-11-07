@@ -3,8 +3,8 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init, SlashOption
-from Lib.Side import *
-from Lib.config import Color
+from modules.Side import *
+from modules.config import Color
 import os
 import json
 

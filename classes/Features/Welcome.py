@@ -4,8 +4,8 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 import requests
-from Lib.Side import *
-from Lib.Logger import *
+from modules.Side import *
+from modules.Logger import *
 from PIL import Image, ImageDraw, ImageFont
 from nextcord.ext.application_checks import *
 import io

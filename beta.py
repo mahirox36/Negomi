@@ -13,7 +13,7 @@ from nextcord import AppInfo, TeamMember, Interaction
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
-from Lib.Side import *
+from modules.Side import *
 
 class DiscordBot(commands.Bot):
     def __init__(self):

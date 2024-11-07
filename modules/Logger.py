@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 import os
 import nextcord
-from Lib.Side import Format
+from modules.Side import Format
 
 
 handler = None

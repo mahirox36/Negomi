@@ -5,8 +5,8 @@ from nextcord.ext import commands, ipc
 from nextcord.ext.commands import Context, command
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
-from Lib.Side import *
-from Lib.Logger import *
+from modules.Side import *
+from modules.Logger import *
 import os
 import json
 

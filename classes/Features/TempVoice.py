@@ -5,7 +5,7 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord.ui import View, Button, TextInput, Modal
 from nextcord import Interaction as init
-from Lib.Side import *
+from modules.Side import *
 import os
 import json
 

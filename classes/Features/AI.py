@@ -4,11 +4,11 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init, SlashOption
-from Lib.Side import *
+from modules.Side import *
 import ollama
 import os
 import json
-from Lib.Negomi import get_response, generate
+from modules.Negomi import get_response, generate
 
 models = [model["name"].split(":")[0] for model in ollama.list()["models"]]
 

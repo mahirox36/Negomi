@@ -1,14 +1,14 @@
 from nextcord import AppInfo, TeamMember
 from rich.console import Console
 from rich.traceback import install
-from Lib.richer import *
-from Lib.Logger import *
+from modules.richer import *
+from modules.Logger import *
 install()
 try:
     import nextcord
     from nextcord.ext import commands, ipc
     from requests import request
-    from Lib.Side import *
+    from modules.Side import *
     from rich import print
     import os
     from nextcord import Interaction as init

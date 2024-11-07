@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from .BetterID import create_code_ipc
-from Lib.config import Config, Color as color
+from modules.config import Config, Color as color
 from .logger import logger
 
 VERSION = "0.17"
