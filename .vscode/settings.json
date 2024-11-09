@@ -45,4 +45,12 @@
             }
         },
         
-    ]}}
+    ]},
+    "material-icon-theme.folders.associations": {
+    "Features": "plugin",
+    "OllamaSetup": "download",
+    "Dashboard": "serverless",
+    "Working on Progress": "Ci",
+    "Side":"Quasar"
+}
+}

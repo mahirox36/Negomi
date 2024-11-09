@@ -1,95 +1,261 @@
-from nextcord import AppInfo, TeamMember
+from typing import Optional, List, Union
+import logging
+from pathlib import Path
+import asyncio
+from datetime import datetime
+import platform
+import signal
+
+import nextcord
+from nextcord.ext import commands, ipc, tasks
+from nextcord import AppInfo, TeamMember, Interaction
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.traceback import install
-from modules.richer import *
-from modules.Logger import *
-install()
-try:
-    import nextcord
-    from nextcord.ext import commands, ipc
-    from requests import request
-    from modules.Side import *
-    from rich import print
-    import os
-    from nextcord import Interaction as init
-    from datetime import datetime
-    import threading
-    import time
+from modules.Side import *
 
-    intents = nextcord.Intents.all()
-    client = commands.Bot(command_prefix=prefix, intents=intents)
-    BotInfo: AppInfo = None
-    global Bot
-    Bot = client
-
-    clear()
-
-    #On Bot Start
-    @client.event
-    async def on_ready():
-        await client.change_presence(activity=nextcord.Activity(type=nextcord.ActivityType.watching, name=Presence))
-        print(Rule(f'{client.user.display_name}  Is Online',style="bold green")) # type: ignore
-        if send_to_owner_enabled:
-            BotInfo: AppInfo = await client.application_info()
-            if BotInfo.owner.name.startswith("team"):
-                user =  client.get_user(BotInfo.team.owner.id)
-                channel =await user.create_dm()
-            else:
-                channel =await BotInfo.owner.create_dm()
-            await channel.send("Running ✅",embeds=[
-                info_embed("Bot is Online")])
-        await client.sync_all_application_commands()
-    ipc = ipc.Server(bot= client, secret_key=IpcPassword)
-    @client.event
-    async def on_ipc_ready():
-        print("Ipc is ready.")
-    @client.event
-    async def on_ipc_error(endpoint, error):
-        """Called upon an error being raised within an IPC route"""
-        print(endpoint, "raised", error)
-    #End
-
-    #Classes
-    def get_classes(folder="./classes", replace=True) -> List[str]:
-        folder_prefix = folder.strip("./").replace("\\", ".").replace("/", ".") + "." if replace else folder.strip("./").replace("\\", ".").replace("/", ".")
-        initial_extension = []
-
-        for root, _, files in os.walk(folder):
-            for file in files:
-                if file.endswith(".py"):
-                    if "__pycache__" in root or "Working on Progress" in root:
-                        continue
-                    if "." in file[:-3]:
-                        raise Exception("You can't have a dot in the class name")
-                    if DisableAiClass and file[:-3] == "AI":
-                        continue
-                    relative_path = os.path.relpath(os.path.join(root, file), folder).replace("\\", ".").replace("/", ".")
-                    initial_extension.append(folder_prefix + relative_path[:-3])
-
-        return initial_extension
+class DiscordBot(commands.Bot):
+    def __init__(self):
+        # Initialize with optimized intents
+        intents = nextcord.Intents.all()
+        super().__init__(
+            command_prefix=prefix,
+            intents=intents,
+            max_messages=1000,
+            heartbeat_timeout=150.0,
+            guild_ready_timeout=5.0,
+        )
         
-    initial_extension = get_classes()
-    print(f"Classes: {initial_extension}")
+        self.start_time = datetime.now()
+        self.app_info: Optional[AppInfo] = None
+        
+        # Connection monitoring
+        self.last_heartbeat = datetime.now()
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 5
+        self.latency_threshold = 5.0
+        self.connection_lock = asyncio.Lock()
+        self._cleanup_done = asyncio.Event()
+        
+        # Setup logging
+        self.console = Console()
+        self.logger = logger
+        
+        # IPC Server setup
+        if IpcEnabled:
+            self.ipc = ipc.Server(
+                bot=self,
+                secret_key=IpcPassword,
+                host=IpcHost,
+                port=IpcPort
+            )
+        
+        # Setup signal handlers and background tasks
+        self._setup_signal_handlers()
+        self.setup_hook()
+        
+        
+    def _setup_signal_handlers(self):
+        """Setup handlers for system signals"""
+        if platform.system() != 'Windows':
+            signal.signal(signal.SIGTERM, lambda s, f: asyncio.create_task(self.cleanup()))
+        signal.signal(signal.SIGINT, lambda s, f: asyncio.create_task(self.cleanup()))
 
-    for extension in initial_extension:
-        LOGGER.info(f"Loading Class: {extension}")
-        if (extension == "classes.Welcome") and (Welcome_enabled == False):
-            LOGGER.info(f"Failed to load Class: {extension}, Because Welcome Class isn't enabled")
-            continue
-        client.load_extension(extension)
-        LOGGER.info(f"Loaded Class: {extension}")
-    
-    if __name__ == '__main__':
+    @tasks.loop(seconds=30.0)
+    async def monitor_connection(self):
+        """Monitor bot connection health"""
         try:
-            # ipc.start()
-            client.run(token)
-        except nextcord.errors.LoginFailure:
-            LOGGER.error("Failed to Login")
-            print(Panel(f"""Here's the step to check if you Have put your Token right:
-            1- Add your token in the config file in `.secrets/config.ini`
-            2- see if it didn't change back to "Your Bot Token" and if is change it to your token
-            3- Reset your token in https://discord.com/developers/applications""",
-            title="Invalid Token",style="bold red",border_style="bold red"))
-except Exception as e:
-    LOGGER.error(e)
-    console.print_exception()
+            if self.is_ws_ratelimited():
+                self.logger.warning("WebSocket is being rate limited!")
+                
+            current_latency = self.latency
+            if current_latency > self.latency_threshold:
+                self.logger.warning(f"High latency detected: {current_latency:.2f}s")
+                
+            time_since_heartbeat = (datetime.now() - self.last_heartbeat).total_seconds()
+            if time_since_heartbeat > self.latency_threshold:
+                self.logger.warning(f"Connection issues detected. Time since last heartbeat: {time_since_heartbeat:.2f}s")
+                await self._handle_connection_issue()
+                
+        except Exception as e:
+            self.logger.error(f"Error in connection monitoring: {str(e)}")
+
+    async def _handle_connection_issue(self):
+        """Handle connection issues"""
+        async with self.connection_lock:
+            if self.reconnect_attempts >= self.max_reconnect_attempts:
+                self.logger.error("Max reconnection attempts reached. Starting cleanup...")
+                await self.cleanup()
+                return
+
+            self.reconnect_attempts += 1
+            self.logger.info(f"Attempting to reconnect... Attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
+            
+            try:
+                await self.close()
+                await asyncio.sleep(5)
+                await self.start(token)
+            except Exception as e:
+                self.logger.error(f"Reconnection failed: {str(e)}")
+
+    def start_background_tasks(self):
+        """Start background monitoring tasks"""
+        self.monitor_connection.start()
+
+    async def cleanup(self):
+        """Cleanup bot resources"""
+        if self._cleanup_done.is_set():
+            return
+
+        self.logger.info("Starting cleanup process...")
+        
+        self.monitor_connection.cancel()
+        
+        for vc in self.voice_clients:
+            try:
+                await vc.disconnect(force=True)
+            except:
+                pass
+
+        try:
+            await self.close()
+        except:
+            pass
+
+        self._cleanup_done.set()
+        self.logger.info("Cleanup completed")
+
+    @staticmethod
+    def _setup_logging() -> logging.Logger:
+        """Setup Rich logging with proper formatting"""
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",
+            datefmt="[%X]",
+            handlers=[RichHandler(logging.INFO,rich_tracebacks=True)]
+        )
+        logger = logging.getLogger("discord_bot")
+        return logger
+
+    def setup_hook(self) -> None:
+        """Setup hook that runs before the bot starts"""
+        self._load_extensions()
+        self.start_background_tasks()
+        
+    def _load_extensions(self) -> None:
+        """Load all extension modules"""
+        extensions_path = Path("./classes")
+        for ext_path in extensions_path.rglob("*.py"):
+            if ext_path.stem == "__init__":
+                continue
+                
+            if "pycache" in str(ext_path) or "Working on Progress" in str(ext_path):
+                continue
+                
+            if "." in ext_path.stem:
+                self.logger.error(f"Invalid extension name: {ext_path.stem} (contains dots)")
+                continue
+                
+            if DisableAiClass and ext_path.stem == "AI":
+                continue
+                
+            if not Welcome_enabled and ext_path.stem == "Welcome":
+                continue
+
+            try:
+                ext_name = f"{str(ext_path.parent).replace("\\",".")}.{ext_path.stem}"
+                self.load_extension(ext_name)
+                self.logger.info(f"Loaded extension: {ext_name}")
+            except Exception as e:
+                self.logger.error(f"Failed to load extension {ext_name}: {str(e)}")
+
+    async def on_ready(self) -> None:
+        """Handler for when the bot is ready."""
+        if not hasattr(self, '_ready_called'):
+            self._ready_called = True
+            self.app_info = await self.application_info()
+            
+            await self.change_presence(
+                activity=nextcord.Activity(
+                    type=nextcord.ActivityType.watching,
+                    name=Presence
+                )
+            )
+            
+            await self.sync_all_application_commands()
+            
+            self.logger.info(f"{self.user.display_name} is online!")
+            
+            if send_to_owner_enabled:
+                await self._send_startup_message()
+    
+    async def on_socket_raw_receive(self, msg):
+        """Handle raw socket messages"""
+        self.last_heartbeat = datetime.now()
+
+    async def on_socket_response(self, msg):
+        """Handle socket responses"""
+        try:
+            if msg and msg.get('op') == 11:  # Heartbeat ACK
+                self.last_heartbeat = datetime.now()
+                self.reconnect_attempts = 0
+        except:
+            pass
+
+    async def _send_startup_message(self) -> None:
+        """Send startup notification to bot owner"""
+        try:
+            if self.app_info.owner.name.startswith("team"):
+                user = self.get_user(self.app_info.team.owner.id)
+            else:
+                user = self.app_info.owner
+                
+            if user:
+                channel = await user.create_dm()
+                await channel.send(
+                    "Bot is Online ✅",
+                    embed=nextcord.Embed(
+                        title="Status Update",
+                        description="Bot has successfully started",
+                        color=nextcord.Color.green()
+                    )
+                )
+        except Exception as e:
+            self.logger.error(f"Failed to send startup message: {str(e)}")
+
+    async def on_ipc_ready(self) -> None:
+        """Handler for when IPC server is ready"""
+        self.logger.info("IPC server is ready")
+
+    async def on_ipc_error(self, endpoint: str, error: Exception) -> None:
+        """Handler for IPC errors"""
+        self.logger.error(f"IPC endpoint {endpoint} raised: {str(error)}")
+
+def main():
+    bot = DiscordBot()
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        if platform.system() == 'Windows':
+            asyncio.set_event_loop(asyncio.ProactorEventLoop())
+        
+        loop.slow_callback_duration = 0.25
+        
+        loop.run_until_complete(bot.start(token))
+    except nextcord.LoginFailure:
+        bot.logger.error("""
+        Failed to login. Please check:
+        1. Your token in the config file
+        2. Token validity at https://discord.com/developers/applications
+        3. Reset token if necessary
+        """)
+    except Exception as e:
+        bot.logger.exception("An error occurred while running the bot")
+    finally:
+        loop.run_until_complete(bot.cleanup())
+        loop.close()
+
+if __name__ == "__main__":
+    install()  # Install Rich traceback handler
+    main()

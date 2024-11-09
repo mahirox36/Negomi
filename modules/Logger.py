@@ -10,8 +10,8 @@ current_datetime = datetime.now()
 date = str(current_datetime.strftime("%Y-%m-%d"))
 timed = str(current_datetime.strftime("%H-%M-%S-%f"))
 # Create a LOGGER
-Logger = logging.getLogger('nextcord')
-Logger.setLevel(logging.DEBUG)
+Logger = logging.getLogger("discord_bot")
+Logger.setLevel(logging.INFO)
 os.makedirs(f"logs/{date}" ,exist_ok=True)
 # Create a file handler
 handler = logging.FileHandler(f'logs/{date}/output_{timed}.log')
