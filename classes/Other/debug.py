@@ -2,7 +2,7 @@ import platform
 import psutil
 import nextcord
 from nextcord import slash_command, Message, Member, Embed
-from modules.Side import *
+from modules.Nexon import *
 from nextcord.ext import commands, application_checks as check
 import time
 

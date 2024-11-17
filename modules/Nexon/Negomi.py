@@ -3,24 +3,11 @@ import os
 import ollama
 from rich import print
 from json import dumps, loads
-from modules.Side import logForAI
-
-if __name__ == '__main__':
-    with open("OllamaSetup/system") as f:
-        sys= f.read().replace("\n"," ")
-    System = sys
-    num_max = 2000
-    modelfile=f'''
-    FROM llama3.1
-    PARAMETER num_ctx {num_max}
-    SYSTEM {System}
-    '''
-    ollama.create(model='NegomiX', modelfile=modelfile)
 
 conversation_history = []
 def get_response(user_message,originalText:str,previousContent:str=None,previousRole:str = "assistant") -> str:
     global conversation_history
-    if (originalText.startswith("/clear")) and (logForAI):
+    if originalText.startswith("/clear"):
         current_datetime = datetime.datetime.now()
         date = str(current_datetime.strftime("%Y-%m-%d"))
         timed = str(current_datetime.strftime("%H-%M-%S-%f"))

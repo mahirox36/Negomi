@@ -2,7 +2,7 @@ from nextcord import *
 import nextcord as discord
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from modules.Side import *
+from modules.Nexon import *
 import os
 import json
 

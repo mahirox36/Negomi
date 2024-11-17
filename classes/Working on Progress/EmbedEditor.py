@@ -5,8 +5,7 @@ from nextcord.ext import commands
 from nextcord.ext.commands import Context, command
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 import os
 import json
 

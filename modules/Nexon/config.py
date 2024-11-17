@@ -6,7 +6,7 @@ from .BetterID import create_code_ipc
 from modules.config import Config, Color as color
 from .logger import logger
 
-VERSION = "0.17"
+VERSION = "0.18"
 
 @dataclass
 class GeneralConfig:
@@ -15,6 +15,7 @@ class GeneralConfig:
     Presence: str = "My Master Mahiro"
     SendToOwnerThatIsOnline: bool = True
     DisableAiClass: bool = True
+    ownerOverwrite: int = None
     ConfigVersion: str = VERSION
 
 @dataclass
@@ -171,8 +172,13 @@ class ConfigManager:
                 for key, default_value in new_data[section].items():
                     if section not in self.config.data or key not in self.config.data[section]:
                         self.config.data[section][key] = default_value
+            self.config.data[self.layout[0]]["ConfigVersion"] = VERSION
             
             # Update BotConfig with the merged data
+            temp = Bot_Config.from_dict(self.config.data)
+            self.config.data = temp.to_dict()
+            del temp
+            
             self.BotConfig = Bot_Config.from_dict(self.config.data)
             self.config.save()
             
@@ -203,6 +209,7 @@ def initialize_config() -> ConfigManager:
         # Check if config exists and version matches
         if not current_version or current_version != VERSION:
             logger.info(f"Updating config from version {current_version} to {VERSION}")
+            default_config.General.ConfigVersion = VERSION
             config_manager.update_config(default_config)
             
         # Load the config into Bot_Config instance
@@ -228,6 +235,7 @@ prefix = BotConfig.General.prefix
 Presence = BotConfig.General.Presence
 send_to_owner_enabled = BotConfig.General.SendToOwnerThatIsOnline
 DisableAiClass = BotConfig.General.DisableAiClass
+overwriteOwner = BotConfig.General.ownerOverwrite
 
 Format = BotConfig.Logger.Format
 logForAI = BotConfig.Logger.logForAI

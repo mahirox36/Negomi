@@ -5,8 +5,7 @@ from nextcord.ext import commands
 from nextcord.ext.commands import Context, command
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 import os
 import json
 #TODO: Add a way to add and remove moderators easily
@@ -16,7 +15,7 @@ import json
 class moderatormanager(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.logger = LOGGER
+        self.logger = logger
     
     @slash_command(name="mod",default_member_permissions=Permissions(administrator=True))
     async def moded(self, ctx:init):

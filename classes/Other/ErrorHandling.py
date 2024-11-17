@@ -4,8 +4,7 @@ from nextcord.ext import commands
 from nextcord import Interaction as init
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 from nextcord.ext.application_checks import *
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 
 
 class ErrorHandling(commands.Cog):
@@ -55,7 +54,7 @@ class ErrorHandling(commands.Cog):
                                   "Feature Disabled"))
             return 
         await ctx.send(embed=error_embed(error,title="An unexpected error occurred"))
-        LOGGER.error(error)
+        logger.error(error)
     
         # Send detailed traceback to the bot owner
         tb_str = traceback.format_exception(type(error), error, error.__traceback__)
@@ -64,15 +63,10 @@ class ErrorHandling(commands.Cog):
         with open("logs/error_traceback.py", "w") as f:
             f.write(error_details)
 
-        # Send the file to the bot owner
-        BotInfo: AppInfo = await self.client.application_info()
-        if BotInfo.owner.name.startswith("team"):
-            user = self.client.get_user(BotInfo.team.owner.id)
-            channel = await user.create_dm()
-        else:
-            channel = await BotInfo.owner.create_dm()
 
-        await channel.send(content="New Error Master!", file=nextcord.File("logs/error_traceback.py"))
+            channel = await owner.create_dm()
+
+        await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
@@ -111,7 +105,7 @@ class ErrorHandling(commands.Cog):
         elif isinstance(error,commands.errors.CommandNotFound):
             return
         await ctx.reply(embed=error_embed(error,title="An unexpected error occurred"))
-        LOGGER.error(error)
+        logger.error(error)
     
         # Send detailed traceback to the bot owner
         tb_str = traceback.format_exception(type(error), error, error.__traceback__)
@@ -121,14 +115,9 @@ class ErrorHandling(commands.Cog):
             f.write(error_details)
 
         # Send the file to the bot owner
-        BotInfo: AppInfo = await self.client.application_info()
-        if BotInfo.owner.name.startswith("team"):
-            user = self.client.get_user(BotInfo.team.owner.id)
-            channel = await user.create_dm()
-        else:
-            channel = await BotInfo.owner.create_dm()
+        channel = await owner.create_dm()
 
-        await channel.send(content="New Error Master!", file=nextcord.File("logs/error_traceback.py"))
+        await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
 
     
     

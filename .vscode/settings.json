@@ -4,6 +4,7 @@
         "cooldowns",
         "customemoji",
         "levelname",
+        "Nexon",
         "putalpha",
         "roleplay",
         "Rolez",
@@ -51,6 +52,6 @@
     "OllamaSetup": "download",
     "Dashboard": "serverless",
     "Working on Progress": "Ci",
-    "Side":"Quasar"
+    "Nexon":"Quasar"
 }
 }

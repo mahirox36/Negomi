@@ -3,8 +3,7 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 import os
 import json
 from pathlib import Path

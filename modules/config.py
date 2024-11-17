@@ -41,6 +41,12 @@ class Config:
         self.comments = {'top': []}
         self.data = {}
         self.filepath = file
+        self.none = [
+        "none", "None", "null", "Null", "nil", "Nil", 
+        "undefined", "Undefined", "empty", "Empty", 
+        "void", "Void", "n/a", "N/A", "na", "NA", 
+        "nan", "NaN", "-", "--", "null_value", "NULL"
+]
 
     def set_layout(self, layout: List[str]) -> None:
         """
@@ -76,6 +82,8 @@ class Config:
                             lines.append(f"# {comment}\n")
                     if isinstance(value, str):
                         value = f"\"{value}\""
+                    elif value is None:
+                        value = "None"
                     elif not isinstance(value, (int, float, bool,Color,tuple)):
                         raise ValueError("Invalid value: must be a boolean, string, int, float, or tuple")
                     lines.append(f"{key} = {value}\n")
@@ -119,6 +127,8 @@ class Config:
                     value = True
                 elif (value == "false") or (value == "False"):
                     value = False
+                elif value in self.none:
+                    value = None
                 elif (value.startswith("(")) and (value.endswith(")")):
                     # Assuming the tuple contains only integers
                     value = tuple(map(int, value[1:-1].split(",")))

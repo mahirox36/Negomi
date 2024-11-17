@@ -3,7 +3,8 @@ from datetime import datetime
 import logging
 import os
 from rich.logging import RichHandler
-from ..richer import console
+from rich.console import Console
+console = Console()
 class InfoAndErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         # Allow only INFO and ERROR level messages

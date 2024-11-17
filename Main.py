@@ -12,7 +12,7 @@ from nextcord import AppInfo, TeamMember, Interaction
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
-from modules.Side import *
+from modules.Nexon import *
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -24,10 +24,12 @@ class DiscordBot(commands.Bot):
             max_messages=1000,
             heartbeat_timeout=150.0,
             guild_ready_timeout=5.0,
+            owner_id=overwriteOwner if overwriteOwner else None
         )
         
         self.start_time = datetime.now()
-        self.app_info: Optional[AppInfo] = None
+        
+        self.owner: Optional[User] = owner
         
         # Connection monitoring
         self.last_heartbeat = datetime.now()
@@ -172,8 +174,10 @@ class DiscordBot(commands.Bot):
     async def on_ready(self) -> None:
         """Handler for when the bot is ready."""
         if not hasattr(self, '_ready_called'):
+            global owner
+            self.owner = await set_owner(self)
+            logger.info(f"Owner Have been set to {get_name(self.owner)}")
             self._ready_called = True
-            self.app_info = await self.application_info()
             
             await self.change_presence(
                 activity=nextcord.Activity(
@@ -205,21 +209,17 @@ class DiscordBot(commands.Bot):
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
         try:
-            if self.app_info.owner.name.startswith("team"):
-                user = self.get_user(self.app_info.team.owner.id)
-            else:
-                user = self.app_info.owner
-                
-            if user:
-                channel = await user.create_dm()
+            if self.owner != None:
+                channel = await self.owner.create_dm()
                 await channel.send(
-                    "Bot is Online ✅",
                     embed=nextcord.Embed(
                         title="Status Update",
                         description="Bot has successfully started",
                         color=nextcord.Color.green()
                     )
                 )
+            else:
+                logger.error("There is no Owner")
         except Exception as e:
             self.logger.error(f"Failed to send startup message: {str(e)}")
 

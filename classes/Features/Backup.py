@@ -5,7 +5,7 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord.ext.commands import Context, command
 from nextcord import Interaction as init
-from modules.Side import *
+from modules.Nexon import *
 import json
 import os
 __version__ = 1.3

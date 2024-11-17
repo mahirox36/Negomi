@@ -1,8 +1,10 @@
 import time
 from typing import Any, Callable, List, Optional, Union
+
+from modules.Nexon import logger
 from .other import remove_numbers, url
-from .config import BotConfig
-from nextcord import ApplicationCheckFailure, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions
+from .config import BotConfig, overwriteOwner
+from nextcord import AppInfo, ApplicationCheckFailure, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, User
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check
 from nextcord.errors import ApplicationCheckFailure
@@ -13,10 +15,11 @@ def PermissionOverwriteWith(create_instant_invite: Optional[bool]= None,kick_mem
     return PermissionOverwrite(create_instant_invite= create_instant_invite,kick_members= kick_members,ban_members= ban_members,administrator= administrator,manage_channels= manage_channels,manage_guild= manage_guild,add_reactions= add_reactions,view_audit_log= view_audit_log,priority_speaker= priority_speaker,stream= stream,read_messages= read_messages,view_channel= view_channel,send_messages= send_messages,send_tts_messages= send_tts_messages,manage_messages= manage_messages,embed_links= embed_links,attach_files= attach_files,read_message_history= read_message_history,mention_everyone= mention_everyone,external_emojis= external_emojis,use_external_emojis= use_external_emojis,view_guild_insights= view_guild_insights,connect= connect,speak= speak,mute_members= mute_members,deafen_members= deafen_members,move_members= move_members,use_voice_activation= use_voice_activation,change_nickname= change_nickname,manage_nicknames= manage_nicknames,manage_roles= manage_roles,manage_permissions= manage_permissions,manage_webhooks= manage_webhooks,manage_emojis= manage_emojis,manage_emojis_and_stickers= manage_emojis_and_stickers,use_slash_commands= use_slash_commands,request_to_speak= request_to_speak,manage_events= manage_events,manage_threads= manage_threads,create_public_threads= create_public_threads,create_private_threads= create_private_threads,send_messages_in_threads= send_messages_in_threads,external_stickers= external_stickers,use_external_stickers= use_external_stickers,start_embedded_activities= start_embedded_activities,moderate_members= moderate_members)
 def PermissionsWith(create_instant_invite: Optional[bool]= None,kick_members: Optional[bool]= None,ban_members: Optional[bool]= None,administrator: Optional[bool]= None,manage_channels: Optional[bool]= None,manage_guild: Optional[bool]= None,add_reactions: Optional[bool]= None,view_audit_log: Optional[bool]= None,priority_speaker: Optional[bool]= None,stream: Optional[bool]= None,read_messages: Optional[bool]= None,view_channel: Optional[bool]= None,send_messages: Optional[bool]= None,send_tts_messages: Optional[bool]= None,manage_messages: Optional[bool]= None,embed_links: Optional[bool]= None,attach_files: Optional[bool]= None,read_message_history: Optional[bool]= None,mention_everyone: Optional[bool]= None,external_emojis: Optional[bool]= None,use_external_emojis: Optional[bool]= None,view_guild_insights: Optional[bool]= None,connect: Optional[bool]= None,speak: Optional[bool]= None,mute_members: Optional[bool]= None,deafen_members: Optional[bool]= None,move_members: Optional[bool]= None,use_voice_activation: Optional[bool]= None,change_nickname: Optional[bool]= None,manage_nicknames: Optional[bool]= None,manage_roles: Optional[bool]= None,manage_permissions: Optional[bool]= None,manage_webhooks: Optional[bool]= None,manage_emojis: Optional[bool]= None,manage_emojis_and_stickers: Optional[bool]= None,use_slash_commands: Optional[bool]= None,request_to_speak: Optional[bool]= None,manage_events: Optional[bool]= None,manage_threads: Optional[bool]= None,create_public_threads: Optional[bool]= None,create_private_threads: Optional[bool]= None,send_messages_in_threads: Optional[bool]= None,external_stickers: Optional[bool]= None,use_external_stickers: Optional[bool]= None,start_embedded_activities: Optional[bool]= None,moderate_members: Optional[bool]= None):
     return Permissions(create_instant_invite= create_instant_invite,kick_members= kick_members,ban_members= ban_members,administrator= administrator,manage_channels= manage_channels,manage_guild= manage_guild,add_reactions= add_reactions,view_audit_log= view_audit_log,priority_speaker= priority_speaker,stream= stream,read_messages= read_messages,view_channel= view_channel,send_messages= send_messages,send_tts_messages= send_tts_messages,manage_messages= manage_messages,embed_links= embed_links,attach_files= attach_files,read_message_history= read_message_history,mention_everyone= mention_everyone,external_emojis= external_emojis,use_external_emojis= use_external_emojis,view_guild_insights= view_guild_insights,connect= connect,speak= speak,mute_members= mute_members,deafen_members= deafen_members,move_members= move_members,use_voice_activation= use_voice_activation,change_nickname= change_nickname,manage_nicknames= manage_nicknames,manage_roles= manage_roles,manage_permissions= manage_permissions,manage_webhooks= manage_webhooks,manage_emojis= manage_emojis,manage_emojis_and_stickers= manage_emojis_and_stickers,use_slash_commands= use_slash_commands,request_to_speak= request_to_speak,manage_events= manage_events,manage_threads= manage_threads,create_public_threads= create_public_threads,create_private_threads= create_private_threads,send_messages_in_threads= send_messages_in_threads,external_stickers= external_stickers,use_external_stickers= use_external_stickers,start_embedded_activities= start_embedded_activities,moderate_members= moderate_members)
-  
+
+owner: Optional[User] = None
 
 def get_name(user:Member):
-    return user.global_name if user.global_name != None else user.display_name
+    return user.global_name if user.global_name else user.display_name
 
 def everyone(guild:Guild):
     return guild.default_role
@@ -167,3 +170,19 @@ def featureInside(guildID: int, cog: object):
     if cogName in applied_feature:
         raise FeatureDisabled(f"Feature '{cogName}' is disabled.",cogName)
     return True  # Check passed
+
+
+async def set_owner(bot: commands.Bot):
+    global owner
+    if overwriteOwner:
+        owner = bot.get_user(overwriteOwner)
+        return owner
+    try:
+        app_info= await bot.application_info()
+        if app_info.owner.name.startswith("team"):
+            user = bot.get_user(app_info.team.owner.id)
+        else:
+            user = app_info.owner
+        owner = user
+        return owner
+    except: pass

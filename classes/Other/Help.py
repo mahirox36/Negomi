@@ -5,8 +5,7 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from nextcord.utils import MISSING
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 from typing import Dict, Optional
 import os
 import json
@@ -140,7 +139,6 @@ class HelpSelect(ui.View):
         self.options[RealNum].default = True
         self.select.options = self.options
         global home_embed
-        owner = ctx.client.get_user(self.client.owner_id)
         if selected_value == "home" : embed = home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
         if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client)
         if selected_value == "temp" : embed= embed_builder("TempVoice","🎤 Temp Voice", ctx.client,
@@ -182,7 +180,6 @@ class Help(commands.Cog):
         global home_embed
         admin= ctx.user.guild_permissions.administrator
         view = HelpSelect(self.client,admin)
-        owner = self.client.get_user(self.client.owner_id)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
     # @commands.command(name = "help")

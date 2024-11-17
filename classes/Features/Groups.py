@@ -4,8 +4,7 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 import emoji as emojis
 import re
 import os
@@ -53,26 +52,26 @@ class GroupEditModal(ui.Modal):
             self.file.save()
 
             # Log the action
-            LOGGER.info(f"{ctx.user} edited the group in {self.group["channel"]}")
+            logger.info(f"{ctx.user} edited the group in {self.group["channel"]}")
 
             await ctx.send(embed=info_embed(f"Group updated to {name} with {emoji}", "Group Edited"), ephemeral=True)
 
         except HTTPException as e:
             if e.status == 429:
                 retry_after = e.retry_after or 5  # If no retry_after, wait for a few seconds
-                LOGGER.warning(f"Rate limited. Retrying in {retry_after} seconds.")
+                logger.warning(f"Rate limited. Retrying in {retry_after} seconds.")
                 await asyncio.sleep(retry_after)
                 await self.callback(ctx)  # Retry after delay
             else:
-                LOGGER.error(f"HTTP Exception: {e}")
+                logger.error(f"HTTP Exception: {e}")
                 await ctx.send(embed=error_embed("Error occurred, please try again later.", "Error"), ephemeral=True)
         
         except Forbidden:
-            LOGGER.error("Bot lacks permission to edit the channel.")
+            logger.error("Bot lacks permission to edit the channel.")
             await ctx.send(embed=error_embed("I lack permissions to edit this channel.", "Permission Error"), ephemeral=True)
         
         except Exception as e:
-            LOGGER.error(f"Unexpected error: {e}")
+            logger.error(f"Unexpected error: {e}")
             await ctx.send(embed=error_embed("An unexpected error occurred.", "Error"), ephemeral=True)
 
 class DeleteSelect(ui.View):
@@ -124,7 +123,7 @@ class DeleteSelect(ui.View):
                         await channel.delete()
                     else:
                         # Optionally log or notify if the channel was not found
-                        LOGGER.warn(f"Channel with ID {channel_id} not found.")
+                        logger.warn(f"Channel with ID {channel_id} not found.")
     
                 except Exception as e:
                     # Log or handle exceptions that occur during deletion
@@ -296,7 +295,7 @@ class Groups(commands.Cog):
         group["Members"].append(member.id)
         file.save()
         await ctx.send(embed=info_embed(f"{member.mention} has been added to this group", "Member Added"))
-        LOGGER.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
+        logger.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
 
     @group.subcommand(name="kick", description="Remove a member from this group")
     @feature()
@@ -322,7 +321,7 @@ class Groups(commands.Cog):
         group["Members"].remove(member.id)
         file.save()
         await ctx.send(embed=info_embed(f"{member.mention} has been removed from this group", "Member Removed"))
-        LOGGER.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
+        logger.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
 
     @group.subcommand(name="transfer", description="Transfer group ownership to another member in this group")
     @feature()
@@ -354,7 +353,7 @@ class Groups(commands.Cog):
         
         file["groups"][str(group["channel"])] = member.id
         await ctx.send(embed=info_embed(f"{member.mention} is now the owner of this group", "Ownership Transferred"))
-        LOGGER.info(f"{ctx.user} transferred ownership of the group in {ctx.channel_id} to {member}")
+        logger.info(f"{ctx.user} transferred ownership of the group in {ctx.channel_id} to {member}")
 
         user_file.data.remove(group)
         user_file.data[0]["count"] -= 1

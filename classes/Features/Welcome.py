@@ -4,8 +4,7 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 import requests
-from modules.Side import *
-from modules.Logger import *
+from modules.Nexon import *
 from PIL import Image, ImageDraw, ImageFont
 from nextcord.ext.application_checks import *
 import io
@@ -139,6 +138,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
         GlobalFile= DataGlobal("Welcome","Guilds")
         guilds = GlobalFile.data
         if guilds == None:return
+        anyJoin= False
         for guild in guilds:
             featureInside(guild, self)
             file= Data(guild,"Welcome")
@@ -159,7 +159,8 @@ Setup a welcome message in a specific Channel, in the message option you can use
             
             members.data = newMembers
             members.save()
-            
+            if joined_members != []:
+                anyJoin= True
             for member in joined_members:
                 member= guild.get_member(member)
                 name = get_name(member)
@@ -171,7 +172,8 @@ Setup a welcome message in a specific Channel, in the message option you can use
                 await channel.send(message)
                 del welcome_image
                 gc.collect()
-        logger.info("Finished All Missed Welcome Messages")
+        if anyJoin == True:
+            logger.info("Finished All Missed Welcome Messages")
             
             
         

@@ -16,11 +16,8 @@
 
 ## 📚 Custom Libraries for This Bot:
 
-- [config.py](https://github.com/mahirox36/Negomi/blob/main/Lib/config.py): Configuration Management
-- [Logger.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Logger.py): Java-Inspired Logging (Inspired by Minecraft Modding)
-- [Negomi.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Negomi.py): AI System and Functions
-- [richer.py](https://github.com/mahirox36/Negomi/blob/main/Lib/richer.py): Rich Library Features
-- [Side.py](https://github.com/mahirox36/Negomi/blob/main/Lib/Side.py): Core Library with Functions, Classes, Bot Config, Embeds, and Nextcord Shortcuts
+- [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
+- [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcord Shortcuts
 
 ### ⚙️ Compatibility:
 
