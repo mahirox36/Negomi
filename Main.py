@@ -68,15 +68,15 @@ class DiscordBot(commands.Bot):
         """Monitor bot connection health"""
         try:
             if self.is_ws_ratelimited():
-                self.logger.warning("WebSocket is being rate limited!")
+                self.logger.error("WebSocket is being rate limited!")
                 
             current_latency = self.latency
             if current_latency > self.latency_threshold:
-                self.logger.warning(f"High latency detected: {current_latency:.2f}s")
+                self.logger.error(f"High latency detected: {current_latency:.2f}s")
                 
             time_since_heartbeat = (datetime.now() - self.last_heartbeat).total_seconds()
             if time_since_heartbeat > self.latency_threshold:
-                self.logger.warning(f"Connection issues detected. Time since last heartbeat: {time_since_heartbeat:.2f}s")
+                self.logger.error(f"Connection issues detected. Time since last heartbeat: {time_since_heartbeat:.2f}s")
                 await self._handle_connection_issue()
                 
         except Exception as e:
@@ -215,11 +215,11 @@ class DiscordBot(commands.Bot):
                     embed=nextcord.Embed(
                         title="Status Update",
                         description="Bot has successfully started",
-                        color=nextcord.Color.green()
+                        color=colour.Info.value
                     )
                 )
             else:
-                logger.error("There is no Owner")
+                logger.error("There is no owner")
         except Exception as e:
             self.logger.error(f"Failed to send startup message: {str(e)}")
 
@@ -255,6 +255,8 @@ def main():
     finally:
         loop.run_until_complete(bot.cleanup())
         loop.close()
+        input()
+    
 
 if __name__ == "__main__":
     install()  # Install Rich traceback handler

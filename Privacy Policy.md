@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last Updated: 10/22/2024
+Last Updated: 11/19/2024
 
 ## 1. Information We Collect
 
@@ -10,6 +10,19 @@ Negomi<3 ("the Bot") collects and stores the following information:
 * Server IDs
 * Command usage data like channels IDs, Server IDs, or Discord User IDs
 
+### Self-Hosted Instances
+If you are running a self-hosted instance of the Bot using our source code or executable:
+* We collect anonymous usage metrics including:
+  * Bot activity data
+  * Command usage statistics
+  * User interaction patterns
+  * Performance metrics
+* We do NOT collect sensitive information such as:
+  * Bot tokens
+  * Personal identification information
+  * Server-specific configurations
+  * Private messages or content
+
 ## 2. How We Use Information
 
 We use the collected information to:
@@ -18,6 +31,8 @@ We use the collected information to:
 * Respond to user commands
 * Improve user experience
 * Track command usage for optimization
+* Monitor and improve self-hosted instance performance
+* Analyze usage patterns to enhance features
 
 ## 3. Information Sharing
 
@@ -28,6 +43,7 @@ We do not sell, trade, or transfer your information to third parties. Your infor
 * All collected data is stored securely
 * We implement reasonable security measures to protect your information
 * Data is retained only as long as necessary for providing our services
+* Self-hosted instance metrics are anonymized before storage
 
 ## 5. User Rights
 
@@ -36,6 +52,7 @@ You have the right to:
 * Request access to your data
 * Request deletion of your data
 * Opt-out of data collection (by stopping use of the Bot)
+* For self-hosted instances, disable metrics collection in the configuration
 
 ## 6. Changes to Privacy Policy
 
