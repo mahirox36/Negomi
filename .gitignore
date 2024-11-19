@@ -1,10 +1,13 @@
 .secrets/
 logs/
 __pycache__/
-.Idea/
 test*
 data/
 *.bat
-systemxx
 Todo*
 Dashboard
+dist/
+main.spec
+build/
+*.exe
+update.py

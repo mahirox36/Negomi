@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from .BetterID import create_code_ipc
 from modules.config import Config, Color as color
-from .logger import logger
+from rich import print as pprint
 
 VERSION = "0.18"
 
@@ -25,8 +25,8 @@ class LoggerConfig:
 
 @dataclass
 class ColorConfig:
-    Debug: color = field(default_factory=lambda: color(0x00FF00))
-    Info: color = field(default_factory=lambda: color(0x1E90FF))
+    Debug: color = field(default_factory=lambda: color(0x6a5acd))
+    Info: color = field(default_factory=lambda: color(0xff69b4))
     Warn: color = field(default_factory=lambda: color(0xFFD700))
     Error: color = field(default_factory=lambda: color(0xB22222))
 
@@ -190,9 +190,9 @@ class ConfigManager:
                     with open(backup_path, 'r') as source:
                         with open(self.config.filepath, 'w') as target:
                             target.write(source.read())
-                    logger.info("Config restored from backup due to save failure")
+                    pprint("Config restored from backup due to save failure")
             except Exception as restore_error:
-                logger.error(f"Failed to restore from backup: {str(restore_error)}")
+                pprint(f"Failed to restore from backup: {str(restore_error)}")
             raise Exception(f"Failed to save updated config: {str(e)}")
 
 def initialize_config() -> ConfigManager:
@@ -208,7 +208,7 @@ def initialize_config() -> ConfigManager:
         
         # Check if config exists and version matches
         if not current_version or current_version != VERSION:
-            logger.info(f"Updating config from version {current_version} to {VERSION}")
+            pprint(f"Updating config from version {current_version} to {VERSION}")
             default_config.General.ConfigVersion = VERSION
             config_manager.update_config(default_config)
             

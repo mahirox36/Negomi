@@ -70,7 +70,7 @@ class AI(commands.Cog):
             message.content = message.content.replace("<@1251656934960922775>","Negomi")\
                 .replace("  ", " ").replace("  ", " ")
             await message.channel.trigger_typing()
-            emoji = "<a:loading:1268004524426006578>"
+            emoji = "<a:loading:1308521205308854353>"
             await message.add_reaction(emoji)
 
             name = message.author.global_name if message.author.global_name != None else\
