@@ -15,7 +15,6 @@ models = [model["name"].split(":")[0] for model in ollama.list()["models"]]
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.running = False
         self.started = False
     
     @slash_command(name="ask",description="ask an Advance AI")
@@ -35,11 +34,7 @@ class AI(commands.Cog):
         except:
             await ctx.send(embed=error_embed("Sorry But this Only Works on The Owner's Server\n"+
         "If you want this feature please run your [own bot here](https://github.com/mahirox36/Negomi) and your own AI Using Ollama"), ephemeral=True)
-        if self.running == True:
-            await ctx.send(embed=warn_embed("The AI is thinking right now, You can't talk to her while she is thinking"), ephemeral=True)
-            return
         await ctx.response.defer(ephemeral=True)
-        self.running = True
         # name = ctx.user.global_name if ctx.user.global_name != None else ctx.user.display_name
         # if name == "HackedMahiro": name = "Mahiro"
         # logger.info(f"{name}: {message}")
@@ -53,48 +48,68 @@ class AI(commands.Cog):
             "The output will not save in the history of the AI or any kinda of a File."+
             " If you don't Believe me You can Check The Source code of the Bot",
             author=[self.client.user.display_name,self.client.user.avatar.url]), ephemeral=True)
-        self.running = False
 
     @commands.Cog.listener()
     async def on_message(self, message:Message):
-        try: featureInside(message.guild.id,self)
-        except: return
         if message.mention_everyone: return
-        elif self.client.user.mentioned_in(message):  # Check if the bot is mentioned in the message
+        elif not self.client.user.mentioned_in(message): return  # Check if the bot is mentioned in the message
+        skip = True if isinstance(message.channel, nextcord.DMChannel) and message.author.id in AI_AllowedUsersID else False
+        if not skip:
+            try: featureInside(message.guild.id,self)
+            except: return
             try: 
                 if message.guild.id not in AI_AllowedServers :return
-            except:return
-            if self.running == True:
-                await message.reply(embed=warn_embed("The AI is thinking right now, You can't talk to her while she is thinking"), ephemeral=True)
-                return
-            message.content = message.content.replace("<@1251656934960922775>","Negomi")\
-                .replace("  ", " ").replace("  ", " ")
-            await message.channel.trigger_typing()
-            emoji = "<a:loading:1308521205308854353>"
+            except: return
+        content = message.content.replace(f"<@{self.client.user.id}>","Negomi")\
+            .replace("  ", " ").replace("  ", " ")
+        await message.channel.trigger_typing()  # Ensure this always runs
+        emoji = "<a:loading:1308521205308854353>"
+        if not skip:
             await message.add_reaction(emoji)
 
-            name = message.author.global_name if message.author.global_name != None else\
-                  message.author.display_name
-            
-            if name == "HackedMahiro Hachiro": name = "Mahiro"
+        try:
+            name = get_name(message.author)
+            if name == "HackedMahiro Hachiro":
+                name = "Mahiro"
+
             channel = message.channel
+            previousContent = None
             if (self.started == False) and (message.reference):
                 self.started = True
                 reference = await channel.fetch_message(message.reference.message_id)
-                if  reference.author.id ==\
-                      self.client.user.id:
-                    previousContent= reference.content
-            else: previousContent = None
+                if reference.author.id == self.client.user.id:
+                    previousContent = reference.content
 
-            # logger.info(f"{name}: {message}")
-            response= get_response(f"{name}: {message.content}",
-                                   message.content,previousContent)
-            if response == False:
-                await message.reply(embed=debug_embed("Cleared!"))
+            # Generate response
+            response = get_response(
+                message.author.id, f"{name}: {content}", content, previousContent
+                )
+
+            if response is False:
+                await message.reply(embed=debug_embed("Conversation history cleared!"))
                 return
+            
+            if not response:  # Handle empty or invalid responses
+                await message.reply(embed=error_embed("I couldn't generate a response, sorry!"))
+                return
+
+            logger.info(response)
             await message.reply(response)
-            await message.remove_reaction(emoji,self.client.user)
-    
+
+        except Exception as e:
+            logger.error(f"Error in talk: {e}")
+            await message.reply(embed=error_embed("Something went wrong!"))
+
+        finally:
+            # Always remove reaction
+            logger.info("Do this")
+            if not skip:
+                logger.info("Remove")
+                await message.remove_reaction(emoji, self.client.user)
+            logger.info("Do this 2")
+
+        
+
     
         
 

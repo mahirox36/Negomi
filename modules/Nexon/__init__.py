@@ -9,4 +9,4 @@ from .config import *
 from .sidecord import *
 from .other import *
 from .logger import logger, print
-from .Negomi import get_response, generate, conversation_history
+from .Negomi import get_response, generate, conversation_histories

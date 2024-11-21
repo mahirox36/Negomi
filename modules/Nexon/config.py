@@ -6,7 +6,7 @@ from .BetterID import create_code_ipc
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.18"
+VERSION = "0.19"
 
 @dataclass
 class GeneralConfig:
@@ -77,7 +77,8 @@ class Bot_Config:
     General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     Advance: AdvanceConfig = field(default_factory=AdvanceConfig)
-    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234])
+    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234,43214321])
+    AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321,12341234])
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the config to a dictionary format."""
@@ -95,7 +96,8 @@ class Bot_Config:
             "Advance": {
                 k: v for k, v in self.Advance.__dict__.items()
             },
-            "AI_AllowedServers": self.AI_AllowedServers
+            "AI_AllowedServers": self.AI_AllowedServers,
+            "AI_AllowedUsersID": self.AI_AllowedUsersID
         }
     
     @classmethod
@@ -107,7 +109,8 @@ class Bot_Config:
             General_Embeds_Colour=ColorConfig.from_dict(data.get("General Embeds Colour", {})),
             Welcome_Settings=WelcomeConfig(**data.get("Welcome Settings", {})),
             Advance=AdvanceConfig(**data.get("Advance", {})),
-            AI_AllowedServers=data.get("AI_AllowedServers", [12341234])
+            AI_AllowedServers=data.get("AI_AllowedServers", []),
+            AI_AllowedUsersID=data.get("AI_AllowedUsersID", [])
         )
 
 @dataclass
@@ -125,7 +128,8 @@ class ConfigManager:
             "General Embeds Colour",
             "Welcome Settings",
             "Advance",
-            "AI_AllowedServers"
+            "AI_AllowedServers",
+            "AI_AllowedUsersID"
         ]
         self.config.set_layout(self.layout)
         self.BotConfig: Optional[Bot_Config] = None
@@ -264,3 +268,4 @@ IpcHost= BotConfig.Advance.IpcHost
 IpcPort= BotConfig.Advance.IpcPort
 TESTING_GUILD_ID = BotConfig.Advance.GuildTestingID
 AI_AllowedServers = BotConfig.AI_AllowedServers
+AI_AllowedUsersID = BotConfig.AI_AllowedUsersID
