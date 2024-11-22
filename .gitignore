@@ -11,3 +11,5 @@ main.spec
 build/
 *.exe
 update.py
+backup/
+builds/
