@@ -17,10 +17,6 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from .config import Format
 
-class InfoAndErrorFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.levelno in (logging.INFO, logging.ERROR, logging.DEBUG)
-
 class CommandLineInterface:
     def __init__(self, commands: List[str] = None, command_handler: Optional[Callable] = None):
         """
@@ -108,10 +104,11 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
     """
     # Create custom theme for Rich
     custom_theme = Theme({
-        "info": "cyan",
-        "warning": "yellow",
-        "error": "red bold",
-        "debug": "green",
+        "logging.level.debug": "#6a5acd",
+        "logging.level.info": "#ff69b4",
+        "logging.level.warning": "#ffd700",
+        "logging.level.error": "#b22222",
+        "logging.level.critical": "#b22222 bold",
     })
     
     console = Console(theme=custom_theme, force_terminal=True)
@@ -127,7 +124,6 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
         rich_tracebacks=True,
         level=logging.INFO,
     )
-    rich_handler.addFilter(InfoAndErrorFilter())
     
     file_handler = logging.FileHandler(f'logs/{date}/output_{timed}.log', encoding='utf-8')
     file_handler.setLevel(logging.INFO)

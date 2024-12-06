@@ -6,7 +6,7 @@ from .BetterID import create_code_ipc
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.19"
+VERSION = "0.20"
 
 @dataclass
 class GeneralConfig:
@@ -68,7 +68,6 @@ class AdvanceConfig:
     IpcEnabled: bool = False
     IpcHost: str = 'localhost'
     IpcPort:int = 8765
-    GuildTestingID: int = 1080951710828220537
 
 @dataclass
 class Bot_Config:
@@ -77,6 +76,7 @@ class Bot_Config:
     General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     Advance: AdvanceConfig = field(default_factory=AdvanceConfig)
+    Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234,43214321])
     AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234,43214321])
     AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321,12341234])
     
@@ -96,6 +96,7 @@ class Bot_Config:
             "Advance": {
                 k: v for k, v in self.Advance.__dict__.items()
             },
+            "TESTING GUILDS ID": self.Testing_guilds_id,
             "AI_AllowedServers": self.AI_AllowedServers,
             "AI_AllowedUsersID": self.AI_AllowedUsersID
         }
@@ -109,6 +110,7 @@ class Bot_Config:
             General_Embeds_Colour=ColorConfig.from_dict(data.get("General Embeds Colour", {})),
             Welcome_Settings=WelcomeConfig(**data.get("Welcome Settings", {})),
             Advance=AdvanceConfig(**data.get("Advance", {})),
+            Testing_guilds_id=data.get("TESTING GUILDS ID", []),
             AI_AllowedServers=data.get("AI_AllowedServers", []),
             AI_AllowedUsersID=data.get("AI_AllowedUsersID", [])
         )
@@ -128,6 +130,7 @@ class ConfigManager:
             "General Embeds Colour",
             "Welcome Settings",
             "Advance",
+            "TESTING GUILDS ID",
             "AI_AllowedServers",
             "AI_AllowedUsersID"
         ]
@@ -266,6 +269,7 @@ IpcPassword = BotConfig.Advance.IpcPassword
 IpcEnabled= BotConfig.Advance.IpcEnabled
 IpcHost= BotConfig.Advance.IpcHost
 IpcPort= BotConfig.Advance.IpcPort
-TESTING_GUILD_ID = BotConfig.Advance.GuildTestingID
+TESTING_GUILD_ID = BotConfig.Testing_guilds_id
+print(TESTING_GUILD_ID)
 AI_AllowedServers = BotConfig.AI_AllowedServers
 AI_AllowedUsersID = BotConfig.AI_AllowedUsersID
