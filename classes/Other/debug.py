@@ -21,7 +21,7 @@ class Debug(commands.Cog):
         # await self.client.process_commands(message)
     
     def debugEmbed(self, user: Member):
-        embed = Embed(title="🔧 Bot Debug Information", color=colour.Debug)
+        embed = Embed(title="🔧 Bot Debug Information", color=colors.Debug)
         
         # Uptime
         uptime = time.time() - self.start_time

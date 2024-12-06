@@ -118,7 +118,7 @@ class DiscordBot(commands.Bot):
                     embed=nextcord.Embed(
                         title="Status Update",
                         description="Bot has successfully started",
-                        color=colour.Info.value
+                        color=colors.Info.value
                     )
                 )
             else:

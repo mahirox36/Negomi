@@ -248,10 +248,8 @@ Format = BotConfig.Logger.Format
 logForAI = BotConfig.Logger.logForAI
 
 # Colors/Colours
-for color_type in ["Debug", "Info", "Warn", "Error"]:
-    color_value = getattr(BotConfig.General_Embeds_Colour, color_type)
-    globals()[f"{color_type}_Color"] = color_value
-    globals()[f"{color_type}_Colour"] = color_value
+colors = BotConfig.General_Embeds_Colour
+colours = BotConfig.General_Embeds_Colour
 
 # Welcome Settings
 Welcome_enabled = BotConfig.Welcome_Settings.Enabled
