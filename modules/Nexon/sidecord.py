@@ -1,5 +1,7 @@
+import asyncio
+import functools
 import time
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Coroutine
 
 from modules.Nexon import logger
 from .other import remove_numbers, url
@@ -186,3 +188,49 @@ async def set_owner(bot: commands.Bot):
         owner = user
         return owner
     except: pass
+    
+class TypingManager:
+    def __init__(self, client):
+        self.client = client
+        self.active_typing = {}  # Store active typing tasks
+        self.typing_locks = {}   # Prevent multiple typing indicators in same channel
+
+    async def start_typing(self, channel_id: int):
+        """Start typing indicator in a channel with proper cleanup."""
+        if channel_id in self.active_typing:
+            return  # Already typing in this channel
+
+        channel = self.client.get_channel(channel_id)
+        if not channel:
+            return
+
+        self.active_typing[channel_id] = True
+        
+        try:
+            while self.active_typing.get(channel_id):
+                async with channel.typing():
+                    await asyncio.sleep(5)  # Discord typing indicator lasts ~10s, refresh every 5s
+        except Exception as e:
+            logger.error(f"Error in typing loop for channel {channel_id}: {e}")
+        finally:
+            self.stop_typing(channel_id)
+
+    def stop_typing(self, channel_id: int):
+        """Stop typing indicator in a channel."""
+        self.active_typing.pop(channel_id, None)
+        self.typing_locks.pop(channel_id, None)
+
+    async def trigger_typing(self, channel_id: int):
+        """Trigger typing indicator with proper locking and task management."""
+        if channel_id in self.typing_locks:
+            return
+
+        self.typing_locks[channel_id] = True
+        
+        try:
+            typing_task = asyncio.create_task(self.start_typing(channel_id))
+            self.active_typing[channel_id] = typing_task
+            return typing_task
+        except Exception as e:
+            logger.error(f"Error creating typing task for channel {channel_id}: {e}")
+            self.stop_typing(channel_id)
