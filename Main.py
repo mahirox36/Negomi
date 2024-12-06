@@ -150,7 +150,7 @@ async def main():
     except Exception as e:
         bot.logger.exception("An error occurred while running the bot")
     finally:
-        bot.cleanup()
+        await bot.cleanup()
         input()
     
 
