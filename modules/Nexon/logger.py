@@ -15,7 +15,7 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
-from .config import Format
+from .config import Format, colors
 
 class CommandLineInterface:
     def __init__(self, commands: List[str] = None, command_handler: Optional[Callable] = None):
@@ -104,11 +104,11 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
     """
     # Create custom theme for Rich
     custom_theme = Theme({
-        "logging.level.debug": "#6a5acd",
-        "logging.level.info": "#ff69b4",
-        "logging.level.warning": "#ffd700",
-        "logging.level.error": "#b22222",
-        "logging.level.critical": "#b22222 bold",
+        "logging.level.debug": f"{colors.Debug}",
+        "logging.level.info": f"{colors.Info}",
+        "logging.level.warning": f"{colors.Warn}",
+        "logging.level.error": f"{colors.Error}",
+        "logging.level.critical": f"{colors.Error} bold",
     })
     
     console = Console(theme=custom_theme, force_terminal=True)
