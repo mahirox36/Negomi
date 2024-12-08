@@ -1,0 +1,30 @@
+{
+    "Optional": [
+        {
+            "name": "AI",
+            "link": "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\AI.py"
+        },
+        {
+            "name": "Welcome",
+            "link": "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\Welcome.py"
+        },
+        {
+            "name": "debug",
+            "link": "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Other\\debug.py"
+        },
+        {
+            "name": "Help",
+            "link": "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Other\\Help.py"
+        }
+    ],
+    "Classes": [
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\AutoRole.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\Backup.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\Groups.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\Role.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Features\\TempVoice.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Other\\ErrorHandling.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Other\\Other.py",
+        "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes\\Other\\Settings.py"
+    ]
+}

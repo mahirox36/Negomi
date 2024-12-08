@@ -70,7 +70,7 @@ class DiscordBot(commands.Bot):
                 else:
                     JsonData["Classes"].append(fileLink)
             with open("classes/classes.json", "w") as f:
-                json.dump(JsonData, f)
+                json.dump(JsonData, f, indent= 4)
         
     
     
