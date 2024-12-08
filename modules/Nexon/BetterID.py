@@ -51,6 +51,3 @@ class BetterID:
 
     def __delitem__(self, key: str) -> None:
         del self.data[key]
-
-def create_code_ipc():
-    return "uhqlmzmd0pfvs7tmpgr84ji8mg"#BetterID(max=26).create_random_id()

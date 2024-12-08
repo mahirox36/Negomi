@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from typing import NewType
 
 
@@ -73,3 +74,18 @@ def convert_to_seconds(time_string: str):
 
 def remove_numbers(text):
     return re.sub(r'\d+', '', text)
+
+def get_resource_path(relative_path):
+    """Get the absolute path to a resource."""
+    # If running as a PyInstaller bundle, use the _MEIPASS directory.
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        # Otherwise, use the script's directory.
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    return os.path.join(base_path, relative_path)
+
+def is_bundled():
+    """Check if the script is running as a bundled executable or a normal script."""
+    return hasattr(sys, '_MEIPASS')

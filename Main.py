@@ -1,11 +1,13 @@
-from typing import Optional
+from typing import Generator, Optional
 from pathlib import Path
 import asyncio
 from datetime import datetime
 import nextcord
-from nextcord.ext import commands, ipc
+from nextcord.ext import commands
 from rich.traceback import install
 from modules.Nexon import *
+
+#TODO: Make the app if it was builded download the classes and check their version and updated if needed
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -27,15 +29,6 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
-        # IPC Server setup
-        if IpcEnabled:
-            self.ipc = ipc.Server(
-                bot=self,
-                secret_key=IpcPassword,
-                host=IpcHost,
-                port=IpcPort
-            )
-        
         self.setup_hook()
 
     async def cleanup(self):
@@ -56,33 +49,55 @@ class DiscordBot(commands.Bot):
         self.logger.info("Cleanup completed")
 
     def setup_hook(self) -> None:
-        """Setup hook that runs before the bot starts"""
-        self._load_extensions()
+        """Overridden setup hook to handle bundled and non-bundled extensions."""
+        if is_bundled():
+            self._setup_bundled()
+        else:
+            data = [i for i in self._load_extensions(get=True)]
+            github = "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/"
+            OptionalClasses = ["AI", "debug", "Help", "Welcome"]
+            discarded = ["ipc"]
+            JsonData = {
+                "Optional": [],
+                "Classes": []
+            }
+            for file in data:
+                if file.stem in discarded:
+                    continue
+                fileLink = github + str(file)
+                if file.stem in OptionalClasses:
+                    JsonData["Optional"].append({"name": file.stem, "link": fileLink})
+                else:
+                    JsonData["Classes"].append(fileLink)
+            with open("classes/classes.json", "w") as f:
+                json.dump(JsonData, f)
         
-    def _load_extensions(self) -> None:
-        """Load all extension modules"""
+    
+    
+    def _setup_bundled(self):
+        FeaturesPath = Path("classes/Features/")
+        OtherPath = Path("classes/Other/")
+        #TODO: make it download the file from the github file "Classes"
+
+    
+    
+    def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
+        """Load all extension modules."""
         extensions_path = Path("./classes")
         for ext_path in extensions_path.rglob("*.py"):
-            if ext_path.stem == "__init__":
+            if (ext_path.stem == "__init__" or
+                "pycache" in str(ext_path) or "Working on Progress" in str(ext_path) or
+                "." in ext_path.stem or
+                (DisableAiClass and ext_path.stem == "AI") or
+                (not Welcome_enabled and ext_path.stem == "Welcome") or
+                (get and ext_path.stem == "testShadow")):
                 continue
-                
-            if "pycache" in str(ext_path) or "Working on Progress" in str(ext_path):
-                continue
-                
-            if "." in ext_path.stem:
-                self.logger.error(f"Invalid extension name: {ext_path.stem} (contains dots)")
-                continue
-                
-            if DisableAiClass and ext_path.stem == "AI":
-                continue
-                
-            if not Welcome_enabled and ext_path.stem == "Welcome":
-                continue
-
+            
             try:
-                ext_name = f"{str(ext_path.parent).replace("\\",".")}.{ext_path.stem}"
+                ext_name = f"{str(ext_path.parent).replace('\\', '.')}.{ext_path.stem}"
                 self.load_extension(ext_name)
                 self.logger.info(f"Loaded extension: {ext_name}")
+                yield ext_path
             except Exception as e:
                 self.logger.warning(f"Failed to load extension {ext_name}: {str(e)}")
 
