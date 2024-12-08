@@ -48,12 +48,13 @@ def UserSettings(member):
 
 class EditMaxModal(Modal):
     def __init__(self, channel:VoiceChannel,ctx:init):
-        super().__init__(title="Edit Name")
+        super().__init__(title="Edit Max Number of users")
         self.user = UserSettings(ctx.user)
         self.channel = channel
 
         self.max = TextInput(label="Enter the Max number Of User",
-                               placeholder="0 for Unlimited", required=True)
+                               placeholder="0 for Unlimited",
+                               max_length=2, required=True)
         self.add_item(self.max)
 
     async def callback(self, ctx: nextcord.Interaction):
@@ -80,7 +81,7 @@ class EditNameModal(Modal):
         self.channel = channel
 
         self.name = TextInput(label="New Name", placeholder=ctx.user.global_name + "'s Chat" if ctx.user.global_name != None
-            else ctx.user.display_name + "'s Chat", required=True)
+            else ctx.user.display_name + "'s Chat", required=True, max_length=100, min_length=1)
         self.add_item(self.name)
 
     async def callback(self, interaction: nextcord.Interaction):
@@ -340,7 +341,10 @@ class TempVoice(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                  before:discord.VoiceState, after:discord.VoiceState):
-        featureInside(after.channel.guild.id,self)
+        try: featureInside(after.channel.guild.id,self)
+        except AttributeError:
+            try: featureInside(before.channel.guild.id,self)
+            except AttributeError: return
         try:guild = after.channel.guild
         except AttributeError:return
         file = Data(guild.id,"TempVoice")
@@ -393,7 +397,11 @@ class TempVoice2(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                      before:discord.VoiceState, after:discord.VoiceState):
-        featureInside(after.channel.guild.id,self)
+        try: featureInside(after.channel.guild.id,self)
+        except AttributeError:
+            try: featureInside(before.channel.guild.id,self)
+            except AttributeError: return
+
         try: before.channel.id
         except AttributeError: return
         guild = before.channel.guild
