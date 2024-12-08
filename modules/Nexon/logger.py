@@ -91,6 +91,7 @@ class CommandLineInterface:
         """Stop the input loop"""
         self.running = False
 
+#TODO: make the level changeable in the config
 def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging.INFO) -> Dict[str, logging.Logger]:
     """
     Set up comprehensive loggers with Rich formatting and file logging
@@ -122,7 +123,7 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
         console=console,
         markup=True,
         rich_tracebacks=True,
-        level=logging.INFO,
+        level=level,
     )
     
     file_handler = logging.FileHandler(f'logs/{date}/output_{timed}.log', encoding='utf-8')
