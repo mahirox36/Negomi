@@ -4,9 +4,10 @@ import asyncio
 from datetime import datetime
 import nextcord
 from nextcord.ext import commands
+from requests import get
 from rich.traceback import install
 from modules.Nexon import *
-
+from modules.Installer import InstallClasses
 #TODO: Make the app if it was builded download the classes and check their version and updated if needed
 
 class DiscordBot(commands.Bot):
@@ -57,7 +58,21 @@ class DiscordBot(commands.Bot):
             github = "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/"
             OptionalClasses = ["AI", "debug", "Help", "Welcome"]
             discarded = ["ipc"]
+            url= "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes/classes.json"
+            try:
+                dataFiles:Dict[str,List[Union[str, Dict[str, str]]]] = get(url).json()
+            except:
+                del url
+                return
+            if os.path.exists("data/version.txt"):
+                with open("data/version.txt") as f:
+                    try:
+                        version = json.loads(f.read()) + 0.1
+                    except: version = 1.0
+            else: 
+                version = 1.0
             JsonData = {
+                "Version": version,
                 "Optional": [],
                 "Classes": []
             }
@@ -69,15 +84,19 @@ class DiscordBot(commands.Bot):
                     JsonData["Optional"].append({"name": file.stem, "link": fileLink})
                 else:
                     JsonData["Classes"].append(fileLink)
+            if dataFiles["Classes"] == JsonData["Classes"] and\
+                dataFiles["Optional"] == JsonData["Optional"]:
+                    return
             with open("classes/classes.json", "w") as f:
                 json.dump(JsonData, f, indent= 4)
+            with open("data/version.txt", "w") as f:
+                f.write(str(version))
         
     
     
     def _setup_bundled(self):
-        FeaturesPath = Path("classes/Features/")
-        OtherPath = Path("classes/Other/")
-        #TODO: make it download the file from the github file "Classes"
+        InstallClasses()
+        self._load_extensions()
 
     
     
@@ -140,14 +159,6 @@ class DiscordBot(commands.Bot):
                 logger.warning("There is no owner")
         except Exception as e:
             self.logger.warning(f"Failed to send startup message: {str(e)}")
-
-    async def on_ipc_ready(self) -> None:
-        """Handler for when IPC server is ready"""
-        self.logger.info("IPC server is ready")
-
-    async def on_ipc_error(self, endpoint: str, error: Exception) -> None:
-        """Handler for IPC errors"""
-        self.logger.error(f"IPC endpoint {endpoint} raised: {str(error)}")
 
 
 

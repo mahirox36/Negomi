@@ -8,6 +8,8 @@ from modules.config import Color
 import os
 import json
 
+#TODO: Make it that u can enable an option that Only Boosters can Create Roles
+
 class Request(ui.View):
     def __init__(self,guild_id,client: commands.Bot, fromUser: Member):
         super().__init__(timeout=None)
