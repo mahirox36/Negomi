@@ -1,9 +1,9 @@
 import asyncio
 import time
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 from modules.Nexon import logger
 from .other import remove_numbers, url
-from nextcord import ApplicationCheckFailure, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, User
+from nextcord import ApplicationCheckFailure, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, User, Client, TextChannel
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check
 from nextcord.errors import ApplicationCheckFailure
@@ -202,47 +202,47 @@ async def get_owner(bot: commands.Bot):
     except: pass
     
 class TypingManager:
-    def __init__(self, client):
+    def __init__(self, client: Client):
         self.client = client
-        self.active_typing = {}  # Store active typing tasks
-        self.typing_locks = {}   # Prevent multiple typing indicators in same channel
-
-    async def start_typing(self, channel_id: int):
-        """Start typing indicator in a channel with proper cleanup."""
-        if channel_id in self.active_typing:
-            return  # Already typing in this channel
-
+        self.active_typing: Dict[int, asyncio.Task] = {}
+    
+    async def start_typing(self, channel_id: int) -> None:
+        """Start typing indicator in a channel."""
         channel = self.client.get_channel(channel_id)
-        if not channel:
+        if not channel or not isinstance(channel, TextChannel):
+            logger.warning(f"Invalid channel ID: {channel_id}")
             return
 
-        self.active_typing[channel_id] = True
-        
         try:
-            while self.active_typing.get(channel_id):
-                async with channel.typing():
-                    await asyncio.sleep(5)  # Discord typing indicator lasts ~10s, refresh every 5s
+            async with channel.typing():
+                while channel_id in self.active_typing:
+                    await asyncio.sleep(5)  # Refresh typing indicator every 5 seconds
         except Exception as e:
-            logger.error(f"Error in typing loop for channel {channel_id}: {e}")
+            logger.error(f"Error in typing loop for channel {channel_id}: {str(e)}")
         finally:
-            self.stop_typing(channel_id)
+            await self.stop_typing(channel_id)
 
-    def stop_typing(self, channel_id: int):
+    async def stop_typing(self, channel_id: int) -> None:
         """Stop typing indicator in a channel."""
-        self.active_typing.pop(channel_id, None)
-        self.typing_locks.pop(channel_id, None)
+        if channel_id in self.active_typing:
+            task = self.active_typing.pop(channel_id)
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
-    async def trigger_typing(self, channel_id: int):
-        """Trigger typing indicator with proper locking and task management."""
-        if channel_id in self.typing_locks:
-            return
-
-        self.typing_locks[channel_id] = True
+    async def trigger_typing(self, channel_id: int) -> None:
+        """Trigger typing indicator for a channel."""
+        # Stop any existing typing indicator
+        await self.stop_typing(channel_id)
         
-        try:
-            typing_task = asyncio.create_task(self.start_typing(channel_id))
-            self.active_typing[channel_id] = typing_task
-            return typing_task
-        except Exception as e:
-            logger.error(f"Error creating typing task for channel {channel_id}: {e}")
-            self.stop_typing(channel_id)
+        # Create and store new typing task
+        task = asyncio.create_task(self.start_typing(channel_id))
+        self.active_typing[channel_id] = task
+
+    async def cleanup(self) -> None:
+        """Clean up all typing indicators."""
+        for channel_id in list(self.active_typing.keys()):
+            await self.stop_typing(channel_id)

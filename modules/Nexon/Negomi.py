@@ -155,7 +155,7 @@ Previous conversation:
 
         return text
 
-def generate(prompt, model="NegomiX") -> str:
+def generate(prompt, model="Negomi") -> str:
     response = ollama.generate(model, prompt)
     return response["response"]
 

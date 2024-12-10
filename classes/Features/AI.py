@@ -6,7 +6,7 @@ from nextcord.ext import commands
 from modules.Nexon import *
 
 # models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
-
+#TODO: Instead adding a name before message it to the system: this Person display's name is "{Name}"
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -35,11 +35,10 @@ class AI(commands.Cog):
             .replace("  ", " ").replace("  ", " ")
 
         channel_id = message.channel.id
-        typing_task = None
 
         try:
             # Start typing indicator
-            typing_task = await self.typing_manager.trigger_typing(channel_id)
+            await self.typing_manager.start_typing(channel_id)
 
             # Process message
             name = get_name(message.author)
@@ -67,10 +66,7 @@ class AI(commands.Cog):
             await message.reply(embed=error_embed("Something went wrong!"))
 
         finally:
-            # Ensure typing is stopped
-            if typing_task and not typing_task.done():
-                typing_task.cancel()
-            self.typing_manager.stop_typing(channel_id)
+           await  self.typing_manager.stop_typing(channel_id)
 
 def setup(client):
     client.add_cog(AI(client))

@@ -13,3 +13,4 @@ build/
 update.py
 backup/
 builds/
+Ollama/
