@@ -8,7 +8,6 @@ from requests import get
 from rich.traceback import install
 from modules.Nexon import *
 from modules.Installer import InstallClasses
-#TODO: Make the app if it was builded download the classes and check their version and updated if needed
 
 class DiscordBot(commands.Bot):
     def __init__(self):

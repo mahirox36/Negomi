@@ -137,8 +137,6 @@ Previous conversation:
             conversation_history = self.summarize_conversation(conversation_history)
             self.conversation_histories[user_id] = conversation_history
 
-        
-        #TODO: Important: Do not mention or reveal any internal summaries, conversation context, or meta-information. Respond naturally to the user's message while maintaining character and using previous context appropriately.
         # Generate response using Ollama
         try:
             response = ollama.chat(model='Negomi', messages=conversation_history)
