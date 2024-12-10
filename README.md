@@ -7,12 +7,18 @@
 - Creatable Text Chat (Groups within Server)
 - Customizable Roles for Members
 - Welcoming Users with Image and Message
-- AI Integration (Bring Your Own AI)
-- Main Chat Refresh (In Development)
-- Robust Error Handling (Errors Sent to Owner)
+- AI Integration (Bring Your Own AI For Now)
 - Fun and Engaging Commands
 
 *Note: All features are customizable except the greeting image.*
+
+## 🛠️ In Development:
+
+* Text Channel Refresher
+* EmbedEditor
+* Ticket System
+* Level System
+* More Soon!
 
 ## 📚 Custom Libraries for This Bot:
 
