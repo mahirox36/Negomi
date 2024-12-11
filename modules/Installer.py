@@ -159,6 +159,3 @@ def InstallClasses():
     except Exception as e:
         error(description=f"Installation failed: {str(e)}")
         return False
-
-if __name__ == "__main__":
-    InstallClasses()

@@ -15,6 +15,11 @@ class Settings(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.featuresPath = Path("classes/Features")
+        if is_executable():
+            # When running as exe, we need to check sys._MEIPASS
+            if hasattr(sys, '_MEIPASS'): base_path = Path(sys._MEIPASS)
+            else: base_path = Path.cwd()
+            self.featuresPath = base_path / "classes" / "Features"
         self.features = [f.stem.lower() for f in self.featuresPath.iterdir() if f.is_file() if f.name.endswith(".py")]
     @commands.command(name = "advance-viewing", aliases=["view-x", "view"],description= description)
     @commands.guild_only()
