@@ -1,14 +1,10 @@
 import asyncio
-import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from modules.Nexon import *
 import emoji as emojis
 import re
-import os
-import json
 
 
 class GroupEditModal(ui.Modal):

@@ -1,12 +1,9 @@
 import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init, SlashOption
 from modules.Nexon import *
 from modules.config import Color
-import os
-import json
 
 #TODO: Make it that u can enable an option that Only Boosters can Create Roles
 

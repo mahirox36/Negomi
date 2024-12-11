@@ -9,8 +9,6 @@ from PIL import Image, ImageDraw, ImageFont
 from nextcord.ext.application_checks import *
 import io
 import gc
-import os
-import json
 "\
 Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):\
 {server}  : For the name of the server\

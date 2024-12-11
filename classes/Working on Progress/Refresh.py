@@ -1,6 +1,4 @@
 """From time to time It Refresh the Main Chat With 3 Methods"""
-import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord.ext.commands import Context, command

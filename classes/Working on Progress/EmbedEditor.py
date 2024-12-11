@@ -1,13 +1,8 @@
-import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
-from nextcord.ext.commands import Context, command
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
 from modules.Nexon import *
-import os
-import json
 
 class EmbedEditorModal(ui.Modal):
     def __init__(self,code):

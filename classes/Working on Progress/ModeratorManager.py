@@ -1,13 +1,8 @@
-import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
-from nextcord.ext.commands import Context, command
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
 from modules.Nexon import *
-import os
-import json
 #TODO: Add a way to add and remove moderators easily
 #TODO: Make it easy to Upgrade and Downgrade moderators
 #TODO: If the Mod got hacked, and want to return to the server, we should have a way to get him back and the hacker get banned

@@ -1,14 +1,9 @@
-from typing import List
 import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
-from nextcord.utils import MISSING
 from modules.Nexon import *
 from typing import Dict, Optional
-import os
-import json
 
 class descriptionNone:
     def __init__(self) -> None:

@@ -1,5 +1,4 @@
 #TODO: add a way to make all the servers or all the users allowed
-from asyncio import sleep
 import nextcord
 from nextcord import *
 from nextcord.ext import commands

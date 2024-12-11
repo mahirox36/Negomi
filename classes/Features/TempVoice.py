@@ -6,8 +6,6 @@ from nextcord.ext import commands
 from nextcord.ui import View, Button, TextInput, Modal
 from nextcord import Interaction as init
 from modules.Nexon import *
-import os
-import json
 
 #TODO: Add Kick, Ban Commands
 

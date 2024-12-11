@@ -1,13 +1,9 @@
-import nextcord
-import nextcord as discord
 from nextcord import *
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from modules.Nexon import *
-import os
-import json
-from requests import get, post
+from requests import get
 import random
 
 class Other(commands.Cog):
