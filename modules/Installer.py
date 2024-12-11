@@ -7,7 +7,6 @@ import tkinter as tk
 from tkinter import messagebox
 import json
 import shutil
-import os
 import ollama
 
 def ask(title: str = "Confirmation", description:str = "Do you want to continue?"):
@@ -74,8 +73,7 @@ def installAI():
 
 def check_version(data):
     try:
-        appdata = Path(os.getenv('APPDATA'))
-        version_path = appdata / "Mahiro" / "Negomi" / "version.json"
+        version_path = Path("data") / "Negomi" / "version.json"
         
         if version_path.exists():
             with open(version_path) as f:
