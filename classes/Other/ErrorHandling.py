@@ -53,6 +53,8 @@ class ErrorHandling(commands.Cog):
                 embed=error_embed(f"This Feature is disabled",
                                   "Feature Disabled"))
             return 
+        elif isinstance(error, CommandDisabled):
+            return
         await ctx.send(embed=error_embed(error,title="An unexpected error occurred"))
         logger.error(error)
     
@@ -103,6 +105,8 @@ class ErrorHandling(commands.Cog):
                 ephemeral=True)
             return
         elif isinstance(error,commands.errors.CommandNotFound):
+            return
+        elif isinstance(error, CommandDisabled):
             return
         await ctx.reply(embed=error_embed(error,title="An unexpected error occurred"))
         logger.error(error)

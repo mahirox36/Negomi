@@ -18,9 +18,9 @@ class Settings(commands.Cog):
         self.client = client
         self.featuresPath = Path("classes/Features")
         self.features = [f.stem.lower() for f in self.featuresPath.iterdir() if f.is_file() if f.name.endswith(".py")]
-    #TODO: add a way to disable this command in the config
-    @commands.command(name = "advance-viewing", aliases=["view-x"],description= description)
+    @commands.command(name = "advance-viewing", aliases=["view-x", "view"],description= description)
     @commands.guild_only()
+    @enableByConfig(EnableAdvanceViewing)
     async def advance_viewing(self, ctx:commands.Context, *folders):
         data = {}
         base_path = "./data"

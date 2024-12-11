@@ -246,3 +246,14 @@ class TypingManager:
         """Clean up all typing indicators."""
         for channel_id in list(self.active_typing.keys()):
             await self.stop_typing(channel_id)
+
+class CommandDisabled(commands.CheckFailure):
+    def __init__(self, message: Optional[str] = None) -> None:
+        super().__init__(message or "This command is disabled.")
+
+def enableByConfig(configOption: bool):
+    async def predicate(ctx):
+        if not configOption:
+            raise CommandDisabled()
+        return True
+    return commands.check(predicate)
