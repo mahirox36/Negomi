@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last Updated: 11/19/2024
+Last Updated: 12/12/2024
 
 ## 1. Information We Collect
 
@@ -8,6 +8,7 @@ Negomi<3 ("the Bot") collects and stores the following information:
 
 * Discord User IDs
 * Server IDs
+* AI Conversation
 * Command usage data like channels IDs, Server IDs, or Discord User IDs
 
 ### Self-Hosted Instances
