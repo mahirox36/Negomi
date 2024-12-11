@@ -50,7 +50,7 @@ class DiscordBot(commands.Bot):
 
     def setup_hook(self) -> None:
         """Overridden setup hook to handle bundled and non-bundled extensions."""
-        if is_bundled():
+        if is_executable():
             self._setup_bundled()
         else:
             data = [i for i in self._load_extensions(get=True)]

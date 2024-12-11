@@ -86,6 +86,5 @@ def get_resource_path(relative_path):
     
     return os.path.join(base_path, relative_path)
 
-def is_bundled():
-    """Check if the script is running as a bundled executable or a normal script."""
-    return hasattr(sys, '_MEIPASS')
+def is_executable():
+    return getattr(sys, 'frozen', False)
