@@ -5,8 +5,6 @@ from nextcord import Interaction as init, SlashOption
 from modules.Nexon import *
 from modules.config import Color
 
-#TODO: Make it that u can enable an option that Only Boosters can Create Roles
-
 class Request(ui.View):
     def __init__(self,guild_id,client: commands.Bot, fromUser: Member):
         super().__init__(timeout=None)
@@ -53,15 +51,57 @@ class Rolez(commands.Cog):
     async def role(self,ctx:init):
         pass
     
-    @role.subcommand(name="setup",description="Create a role for your self")
+    @slash_command(name="mode",description="Change the mode of role creation", default_member_permissions=Permissions(administrator=True))
     @feature()
-    async def setup(self,ctx:init):
-        ctx.guild.integrations()
+    async def setup(self, ctx: init, mode: str = SlashOption(
+        name="mode",
+        description="Select who can create roles",
+        choices={"Everyone": "everyone", "Only Boosters": "boosters"},
+        required=True
+    )):
+        guild = ctx.guild
+        file = Data(guild.id, "Roles", "Settings")
+        
+        try:
+            if not file.data:
+                file.data = {}
+        except AttributeError:
+            file.data = {}
+            
+        file.data["creation_mode"] = mode
+        file.save()
+        
+        mode_text = "everyone" if mode == "everyone" else "only server boosters"
+        await ctx.send(
+            embed=info_embed(
+                title="Role Creation Mode Updated",
+                description=f"Role creation is now available to {mode_text}."
+            ),
+            ephemeral=True
+        )
     @role.subcommand(name="create",description="Create a role for your self")
     @feature()
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
+        
+        # Check role creation mode
+        settings_file = Data(guild.id, "Roles", "Settings")
+        try:
+            mode = settings_file.data.get("creation_mode", "everyone")
+        except AttributeError:
+            mode = "everyone"
+            
+        # If mode is boosters, check if user is a booster
+        if mode == "boosters" and not ctx.user.premium_since:
+            await ctx.send(
+                embed=error_embed(
+                    "Only server boosters can create roles. Boost the server to unlock this feature!"
+                ),
+                ephemeral=True
+            )
+            return
+        
         try:color = self.colors[color.capitalize()]
         except KeyError:color= Color("#"+color if not color.startswith("#") else color)
         file = Data(guild.id,"Roles","MembersRoles")
