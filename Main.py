@@ -25,13 +25,13 @@ class DiscordBot(commands.Bot):
         
         self.start_time = datetime.now()
         
-        self.owner: Optional[User] = owner
+        self.owner: Optional[User] = owner # type: ignore
         self._cleanup_done = asyncio.Event()
         
         # Setup logging
         self.logger = logger
         
-        self.version = "0.6.0"  # Set your current version
+        self.version = "0.6.2"  # Set your current version
         self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
         
         self.setup_hook()
@@ -154,9 +154,9 @@ class DiscordBot(commands.Bot):
         """Handler for when the bot is ready."""
         if not hasattr(self, '_ready_called'):
             global owner
-            self.owner = await set_owner(self)
+            self.owner = await set_owner(self) # type: ignore
             owner = self.owner
-            logger.info(f"Owner Have been set to {get_name(self.owner)}")
+            logger.info(f"Owner Have been set to {get_name(self.owner)}") # type: ignore
             self._ready_called = True
             
             await self.change_presence(

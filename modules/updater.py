@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -88,31 +89,37 @@ class AutoUpdater:
             self.logger.error(f"Failed to download update: {e}")
             return None
     
-    def apply_update(self, new_exe_path: Path) -> bool:
-        """Apply the update by replacing the current exe."""
+    async def apply_update(self, new_exe_path: Path) -> bool:
+        """Apply the update by replacing the current exe after process exits."""
         if not new_exe_path.exists():
             return False
-            
+
         try:
             current_exe = Path(sys.executable)
+            current_pid = os.getpid()
             update_script = self.temp_dir / "update.bat"
-            
-            # Create a batch script to:
-            # 1. Wait for current process to end
-            # 2. Replace old exe with new one
-            # 3. Start new exe
-            # 4. Clean up
+
+            # Create a batch script that:
+            # 1. Waits for the current process to end
+            # 2. Replaces the old exe with the new one
+            # 3. Starts the new exe
+            # 4. Cleans up
             with open(update_script, 'w') as f:
                 f.write(f'''@echo off
-timeout /t 2 /nobreak
+:loop
+tasklist | find "{current_pid}" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto loop
+)
 move /y "{new_exe_path}" "{current_exe}"
 start "" "{current_exe}"
 del "%~f0"
 ''')
-            
+
             # Run the update script
             subprocess.Popen(['start', str(update_script)], shell=True)
-            
+
             # Exit current process
             sys.exit(0)
             
