@@ -13,16 +13,7 @@ By using Negomi<3 ("the Bot"), you agree to be bound by these Terms of Service (
 * You must not use the Bot for any illegal purposes
 * You must not attempt to abuse, exploit, or harm the Bot's functionality
 
-## 3. Use of Self-Hosting
-
-If you use the self-hosted version of the Bot:
-
-* You must not disable or interfere with data uploads required for analytics and improvement, unless explicitly permitted by the configuration settings
-* You agree that the Bot will collect and upload non-sensitive usage data, as outlined in the Privacy Policy
-* You are responsible for ensuring your use of the Bot complies with local laws and regulations
-* The developers are not responsible for any issues, damages, or misuse arising from self-hosted instances
-
-## 4. User Behavior
+## 3. User Behavior
 
 Users agree to:
 
@@ -31,16 +22,16 @@ Users agree to:
 * Not use the Bot to harass, bully, or harm others
 * Not attempt to damage or disrupt the Bot's services
 
-## 5. Limitations of Liability
+## 4. Limitations of Liability
 
 * The Bot developers are not responsible for any damages or losses related to your use of the Bot
 * We reserve the right to modify, suspend, or terminate the Bot's services at any time
 * We are not liable for any unauthorized access to your data
 
-## 6. Changes to Terms
+## 5. Changes to Terms
 
 We reserve the right to modify these terms at any time. We will notify users of any changes by updating the "Last Updated" date.
 
-## 7. Contact Information
+## 6. Contact Information
 
 For any questions about these Terms, please contact `mahiroc36@gmail.com`.

@@ -9,7 +9,7 @@ import ollama
 from requests import get
 from rich.traceback import install
 from modules.Nexon import *
-from modules.updater import AutoUpdater
+# from modules.updater import AutoUpdater
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -31,8 +31,8 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
-        self.version = "0.6.2"  # Set your current version
-        self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
+        # self.version = "0.7.0"  # Set your current version
+        # self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
         
         self.setup_hook()
 
