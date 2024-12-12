@@ -41,7 +41,7 @@ class Other(commands.Cog):
         title = meme_data['title']
         image_url = meme_data['url']
 
-        embed = Embed(title=title, colour=colors.Info)
+        embed = Embed(title=title, colour=colors.Info.value)
         embed.set_image(url=image_url)
 
         await ctx.send(embed=embed)
