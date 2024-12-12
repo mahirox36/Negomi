@@ -74,7 +74,7 @@ class Welcome(commands.Cog):
     @welcome.subcommand("how", "How to setup the Welcoming Message")
     @feature()
     async def how(self, ctx:init):
-        ctx.send(embed=info_embed("""
+        await ctx.send(embed=info_embed("""
 Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):
 {server}  : For the name of the server
 {count}   : For the count of members in the server
