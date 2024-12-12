@@ -65,8 +65,9 @@ class ErrorHandling(commands.Cog):
         with open("logs/error_traceback.py", "w") as f:
             f.write(error_details)
 
-
-            channel = await owner.create_dm()
+            
+            user = await get_owner(self.client)
+            channel = await user.create_dm()
 
         await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
 
@@ -119,10 +120,10 @@ class ErrorHandling(commands.Cog):
             f.write(error_details)
 
         # Send the file to the bot owner
-        channel = await owner.create_dm()
+        user = await get_owner(self.client)
+        channel = await user.create_dm()
 
         await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
-
     
     
 

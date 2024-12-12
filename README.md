@@ -1,4 +1,4 @@
-# Negomi Discord Bot 0.6.0
+# Negomi Discord Bot 0.6.1
 
 ## 🚀 Features:
 

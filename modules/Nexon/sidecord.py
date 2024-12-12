@@ -1,14 +1,15 @@
 import asyncio
 import time
 from typing import Dict, List, Optional, Union
-from modules.Nexon import logger
+from modules.Nexon import *
 from .other import remove_numbers, url
-from nextcord import ApplicationCheckFailure, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, User, Client, TextChannel
+from nextcord import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, Thread, User, Client, TextChannel, VoiceChannel
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check
 from nextcord.errors import ApplicationCheckFailure
 from .Data import DataGlobal
 from .config import colors, overwriteOwner
+from .logger import logger
 
 
 def PermissionOverwriteWith(create_instant_invite: Optional[bool]= None,kick_members: Optional[bool]= None,ban_members: Optional[bool]= None,administrator: Optional[bool]= None,manage_channels: Optional[bool]= None,manage_guild: Optional[bool]= None,add_reactions: Optional[bool]= None,view_audit_log: Optional[bool]= None,priority_speaker: Optional[bool]= None,stream: Optional[bool]= None,read_messages: Optional[bool]= None,view_channel: Optional[bool]= None,send_messages: Optional[bool]= None,send_tts_messages: Optional[bool]= None,manage_messages: Optional[bool]= None,embed_links: Optional[bool]= None,attach_files: Optional[bool]= None,read_message_history: Optional[bool]= None,mention_everyone: Optional[bool]= None,external_emojis: Optional[bool]= None,use_external_emojis: Optional[bool]= None,view_guild_insights: Optional[bool]= None,connect: Optional[bool]= None,speak: Optional[bool]= None,mute_members: Optional[bool]= None,deafen_members: Optional[bool]= None,move_members: Optional[bool]= None,use_voice_activation: Optional[bool]= None,change_nickname: Optional[bool]= None,manage_nicknames: Optional[bool]= None,manage_roles: Optional[bool]= None,manage_permissions: Optional[bool]= None,manage_webhooks: Optional[bool]= None,manage_emojis: Optional[bool]= None,manage_emojis_and_stickers: Optional[bool]= None,use_slash_commands: Optional[bool]= None,request_to_speak: Optional[bool]= None,manage_events: Optional[bool]= None,manage_threads: Optional[bool]= None,create_public_threads: Optional[bool]= None,create_private_threads: Optional[bool]= None,send_messages_in_threads: Optional[bool]= None,external_stickers: Optional[bool]= None,use_external_stickers: Optional[bool]= None,start_embedded_activities: Optional[bool]= None,moderate_members: Optional[bool]= None):
@@ -172,35 +173,31 @@ def featureInside(guildID: int, cog: object):
     return True  # Check passed
 
 
-async def set_owner(bot: commands.Bot):
+async def set_owner(bot: commands.Bot) -> Optional[User]:
     global owner
     if overwriteOwner:
-        owner = bot.get_user(overwriteOwner)
+        owner = await bot.fetch_user(overwriteOwner)  # Use fetch_user instead of get_user
         return owner
     try:
-        app_info= await bot.application_info()
-        if app_info.owner.name.startswith("team"):
-            user = bot.get_user(app_info.team.owner.id)
+        app_info = await bot.application_info()
+        if hasattr(app_info, 'team') and app_info.team:
+            owner = await bot.fetch_user(app_info.team.owner_id)
         else:
-            user = app_info.owner
-        owner = user
+            owner = app_info.owner
+        
         return owner
-    except: pass
+    except Exception as e:
+        print(f"Error in set_owner: {e}")
+        return None
+
+async def get_owner(bot: commands.Bot) -> Optional[User]:
+    global owner
     
-async def get_owner(bot: commands.Bot):
-    if overwriteOwner:
-        owner = bot.get_user(overwriteOwner)
+    # If owner is already set, return it
+    if owner is not None:
         return owner
-    try:
-        app_info= await bot.application_info()
-        if app_info.owner.name.startswith("team"):
-            user = bot.get_user(app_info.team.owner.id)
-        else:
-            user = app_info.owner
-        owner = user
-        return owner
-    except: pass
-    
+    # Otherwise, set and return the owner
+    return await set_owner(bot)
 class TypingManager:
     def __init__(self, client: Client):
         self.client = client
@@ -209,9 +206,11 @@ class TypingManager:
     async def start_typing(self, channel_id: int) -> None:
         """Start typing indicator in a channel."""
         channel = self.client.get_channel(channel_id)
-        if not channel or not isinstance(channel, TextChannel):
-            logger.warning(f"Invalid channel ID: {channel_id}")
-            return
+        if not channel:
+            channel = await self.client.fetch_channel(channel_id)
+            if not channel:
+                logger.warning(f"Invalid channel ID: {channel_id}")
+                return
 
         try:
             async with channel.typing():

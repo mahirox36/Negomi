@@ -134,6 +134,7 @@ class HelpSelect(ui.View):
         self.options[RealNum].default = True
         self.select.options = self.options
         global home_embed
+        owner = await get_owner(self.client)
         if selected_value == "home" : embed = home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
         if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client)
         if selected_value == "temp" : embed= embed_builder("TempVoice","🎤 Temp Voice", ctx.client,
@@ -175,6 +176,7 @@ class Help(commands.Cog):
         global home_embed
         admin= ctx.user.guild_permissions.administrator
         view = HelpSelect(self.client,admin)
+        owner = await get_owner(self.client)
         await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
     # @commands.command(name = "help")

@@ -1,26 +1,26 @@
 import os
 from datetime import datetime
+import sys
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.22"
+VERSION = "0.25"
 
 @dataclass
 class GeneralConfig:
     prefix: str = "u."
     token: str = "Your Bot Token"
-    Presence: str = "My Master Mahiro"
-    SendToOwnerThatIsOnline: bool = True
-    DisableAiClass: bool = True
-    ownerOverwrite: int = None
+    presence : str = "My Master Mahiro"
+    send_to_online_owner : bool = True
+    owner_id : int = None
     ConfigVersion: str = VERSION
 
 @dataclass
 class LoggerConfig:
-    Format: str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
-    logForAI: bool = False
+    format : str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
+    level : str = "Info"
 
 @dataclass
 class ColorConfig:
@@ -51,19 +51,25 @@ class ColorConfig:
 
 @dataclass
 class WelcomeConfig:
-    Enabled: bool = True
-    baseImagePath: str = "Assets/img/Welcome.png"
-    Font: str = "Assets/font/MonsterFriendFore.otf"
-    BackupFont: str = "Assets/font/arial.ttf"
-    SizeFont: int = 30
-    Resize: tuple[int, int] = (99, 99)
-    avatarPosition: tuple[int, int] = (47, 47)
-    textPosition: tuple[int, int] = (190, 195)
-    textColor_RGB: tuple[int, int, int] = (70, 243, 243)
+    enabled : bool = True
+    base_image_path : str = "Assets/img/Welcome.png"
+    font : str = "Assets/font/MonsterFriendFore.otf"
+    backup_font : str = "Assets/font/arial.ttf"
+    font_size : int = 30
+    resize_dimensions : tuple[int, int] = (99, 99)
+    avatar_position : tuple[int, int] = (47, 47)
+    text_position : tuple[int, int] = (190, 195)
+    text_color_rgb : tuple[int, int, int] = (70, 243, 243)
 
 @dataclass
 class CommandsSettings:
-    EnableAdvanceViewing: bool = True
+    enable_advanced_viewing : bool = True
+
+@dataclass
+class AISettings:
+    enable : bool = False
+    allow_all_servers: bool = False
+    allow_all_users: bool = False
 
 @dataclass
 class Bot_Config:
@@ -72,6 +78,7 @@ class Bot_Config:
     General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     Commands_Settings: CommandsSettings = field(default_factory=CommandsSettings)
+    AI: AISettings = field(default_factory=AISettings)
     Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234,43214321])
     AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234,43214321])
     AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321,12341234])
@@ -85,12 +92,15 @@ class Bot_Config:
             "Logger": {
                 k: v for k, v in self.Logger.__dict__.items()
             },
-            "General Embeds Colour": self.General_Embeds_Colour.to_dict(),
-            "Welcome Settings": {
+            "Embeds Colour": self.General_Embeds_Colour.to_dict(),
+            "Welcome": {
                 k: v for k, v in self.Welcome_Settings.__dict__.items()
             },
-            "Commands Settings": {
+            "Commands": {
                 k: v for k, v in self.Commands_Settings.__dict__.items()
+            },
+            "AI": {
+                k: v for k, v in self.AI.__dict__.items()
             },
             "TESTING GUILDS ID": self.Testing_guilds_id,
             "AI_AllowedServers": self.AI_AllowedServers,
@@ -103,9 +113,10 @@ class Bot_Config:
         return cls(
             General=GeneralConfig(**data.get("General", {})),
             Logger=LoggerConfig(**data.get("Logger", {})),
-            General_Embeds_Colour=ColorConfig.from_dict(data.get("General Embeds Colour", {})),
-            Welcome_Settings=WelcomeConfig(**data.get("Welcome Settings", {})),
-            Commands_Settings=CommandsSettings(**data.get("Commands Settings", {})),
+            General_Embeds_Colour=ColorConfig.from_dict(data.get("Embeds Colour", {})),
+            Welcome_Settings=WelcomeConfig(**data.get("Welcome", {})),
+            Commands_Settings=CommandsSettings(**data.get("Commands", {})),
+            AI=AISettings(**data.get("AI", {})),
             Testing_guilds_id=data.get("TESTING GUILDS ID", []),
             AI_AllowedServers=data.get("AI_AllowedServers", []),
             AI_AllowedUsersID=data.get("AI_AllowedUsersID", [])
@@ -123,9 +134,10 @@ class ConfigManager:
         self.layout = [
             "General",
             "Logger",
-            "General Embeds Colour",
-            "Welcome Settings",
-            "Commands Settings",
+            "Embeds Colour",
+            "Welcome",
+            "Commands",
+            "AI",
             "TESTING GUILDS ID",
             "AI_AllowedServers",
             "AI_AllowedUsersID"
@@ -227,6 +239,60 @@ def initialize_config() -> ConfigManager:
     
     return config_manager
 
+def reload_config():
+    """Dynamically reload configuration from file and update all exported variables."""
+    global config_manager, config, BotConfig
+    
+    try:
+        # Reload configuration from file
+        config_manager.config.load()
+        
+        # Update BotConfig instance
+        config_manager.BotConfig = Bot_Config.from_dict(config_manager.config.data)
+        BotConfig = config_manager.BotConfig
+        
+        # Get the current module
+        current_module = sys.modules[__name__]
+        
+        # Dynamically update all module-level variables that reference BotConfig values
+        for var_name in dir(current_module):
+            if var_name.startswith('__'):  # Skip built-in attributes
+                continue
+                
+            # Get the original value
+            original_value = getattr(current_module, var_name)
+            
+            # Find and update variables that match config values
+            new_value = None
+            
+            # Check General settings
+            if hasattr(BotConfig.General, var_name):
+                new_value = getattr(BotConfig.General, var_name)
+            # Check Logger settings
+            elif hasattr(BotConfig.Logger, var_name):
+                new_value = getattr(BotConfig.Logger, var_name)
+            # Check color settings (handle both spellings)
+            elif var_name in ['colors', 'colours']:
+                new_value = BotConfig.General_Embeds_Colour
+            # Check Commands settings
+            elif hasattr(BotConfig.Commands_Settings, var_name):
+                new_value = getattr(BotConfig.Commands_Settings, var_name)
+            # Check AI settings
+            elif hasattr(BotConfig.AI, var_name):
+                new_value = getattr(BotConfig.AI, var_name)
+            # Check Welcome settings
+            elif hasattr(BotConfig.Welcome_Settings, var_name):
+                new_value = getattr(BotConfig.Welcome_Settings, var_name)
+                
+            # Update the variable if we found a new value
+            if new_value is not None:
+                setattr(current_module, var_name, new_value)
+        
+        return True
+    except Exception as e:
+        pprint(f"Failed to reload config: {str(e)}")
+        return False
+
 # Initialize and export configuration
 config_manager = initialize_config()
 config = config_manager.config
@@ -235,31 +301,35 @@ BotConfig = config_manager.BotConfig
 # Export configuration values
 token = BotConfig.General.token
 prefix = BotConfig.General.prefix
-Presence = BotConfig.General.Presence
-send_to_owner_enabled = BotConfig.General.SendToOwnerThatIsOnline
-DisableAiClass = BotConfig.General.DisableAiClass
-overwriteOwner = BotConfig.General.ownerOverwrite
+Presence = BotConfig.General.presence
+send_to_owner_enabled = BotConfig.General.send_to_online_owner
+overwriteOwner = BotConfig.General.owner_id
 
-Format = BotConfig.Logger.Format
-logForAI = BotConfig.Logger.logForAI
-
+Format = BotConfig.Logger.format
+Level = BotConfig.Logger.level
+ 
 # Colors/Colours
 colors = BotConfig.General_Embeds_Colour
 colours = BotConfig.General_Embeds_Colour
 
-# Commands Settings
-EnableAdvanceViewing = BotConfig.Commands_Settings.EnableAdvanceViewing
+# Commands
+EnableAdvanceViewing = BotConfig.Commands_Settings.enable_advanced_viewing
 
-# Welcome Settings
-Welcome_enabled = BotConfig.Welcome_Settings.Enabled
-baseImagePath = BotConfig.Welcome_Settings.baseImagePath
-Font = BotConfig.Welcome_Settings.Font
-BackupFont = BotConfig.Welcome_Settings.BackupFont
-SizeFont = BotConfig.Welcome_Settings.SizeFont
-Resize = BotConfig.Welcome_Settings.Resize
-avatarPosition = BotConfig.Welcome_Settings.avatarPosition
-textPosition = BotConfig.Welcome_Settings.textPosition
-textColor = BotConfig.Welcome_Settings.textColor_RGB
+#AI
+enableAI = BotConfig.AI.enable
+allowAllServers = BotConfig.AI.allow_all_servers
+allowAllUsers  = BotConfig.AI.allow_all_users
+
+# Welcome
+Welcome_enabled = BotConfig.Welcome_Settings.enabled
+baseImagePath = BotConfig.Welcome_Settings.base_image_path
+Font = BotConfig.Welcome_Settings.font
+BackupFont = BotConfig.Welcome_Settings.backup_font
+SizeFont = BotConfig.Welcome_Settings.font_size
+Resize = BotConfig.Welcome_Settings.resize_dimensions
+avatarPosition = BotConfig.Welcome_Settings.avatar_position
+textPosition = BotConfig.Welcome_Settings.text_position
+textColor = BotConfig.Welcome_Settings.text_color_rgb
 
 # Advanced Settings
 TESTING_GUILD_ID = BotConfig.Testing_guilds_id

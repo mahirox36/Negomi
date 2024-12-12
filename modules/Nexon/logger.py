@@ -15,7 +15,8 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
-from .config import Format, colors
+from .config import Format, colors, Level, reload_config
+from .other import is_executable
 
 class CommandLineInterface:
     def __init__(self, commands: List[str] = None, command_handler: Optional[Callable] = None):
@@ -91,7 +92,6 @@ class CommandLineInterface:
         """Stop the input loop"""
         self.running = False
 
-#TODO: make the level changeable in the config
 def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging.INFO) -> Dict[str, logging.Logger]:
     """
     Set up comprehensive loggers with Rich formatting and file logging
@@ -145,7 +145,15 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
     return loggers
 
 # Create logger instances
-loggers = setup_logger()
+Level = Level.lower()
+if Level.startswith("n"): Level = logging.NOTSET
+elif Level.startswith("d"): Level = logging.DEBUG
+elif Level.startswith("i"): Level = logging.INFO
+elif Level.startswith("w"): Level = logging.WARNING
+elif Level.startswith("e"): Level = logging.ERROR
+elif Level.startswith("c"): Level = logging.CRITICAL
+else: Level = logging.INFO
+loggers = setup_logger(level=Level)
 logger = loggers['negomi']
 nextcord_logger = loggers['nextcord']
 
@@ -171,12 +179,19 @@ def handle_command(cmd: str):
     elif cmd == "help":
         logger.info("Available commands:")
         logger.info("   help    - Show this help message")
-        logger.info("   clear   - Clear the screen")
+        logger.info("   reload  - reload all the config vars")
+        logger.info("   clear   - Clear console")
+    elif cmd == "reload":
+        if reload_config():
+            logger.info("Configuration reloaded successfully")
+            logger.warning(f"Some Vars only will reloaded when the {"app" if is_executable() else "Script"} restart")
+        else:
+            logger.error("Failed to reload configuration")
     else:
         logger.error(f"{cmd} Not Found")
 
 cli = CommandLineInterface(
-        commands=["help", "clear"],
+        commands=["help", "clear", "reload"],
         command_handler=handle_command
     )
 """

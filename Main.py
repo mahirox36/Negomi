@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime
 import nextcord
 from nextcord.ext import commands
+import ollama
 from requests import get
 from rich.traceback import install
 from modules.Nexon import *
@@ -62,48 +63,14 @@ class DiscordBot(commands.Bot):
                 if new_exe := self.updater.download_update():
                     self.logger.info("Applying update...")
                     self.updater.apply_update(new_exe)
+            else:
+                self.logger.info("Up to date!")
 
             # Load extensions normally
             data = [i for i in self._load_extensions(get=True)]
             
         else:
             data = [i for i in self._load_extensions    (get=True)]
-            github = "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/"
-            OptionalClasses = ["AI", "debug", "Help", "Welcome"]
-            discarded = ["ipc"]
-            url= "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/classes/classes.json"
-            try:
-                dataFiles:Dict[str,List[Union[str, Dict[str, str]]]] = get(url).json()
-            except:
-                del url
-                return
-            if os.path.exists("data/version.txt"):
-                with open("data/version.txt") as f:
-                    try:
-                        version = json.loads(f.read()) + 0.1
-                    except: version = 1.0
-            else: 
-                version = 1.0
-            JsonData = {
-                "Version": version,
-                "Optional": [],
-                "Classes": []
-            }
-            for file in data:
-                if file.stem in discarded:
-                    continue
-                fileLink = github + str(file)
-                if file.stem in OptionalClasses:
-                    JsonData["Optional"].append({"name": file.stem, "link": fileLink})
-                else:
-                    JsonData["Classes"].append(fileLink)
-            if dataFiles["Classes"] == JsonData["Classes"] and\
-                dataFiles["Optional"] == JsonData["Optional"]:
-                    return
-            with open("classes/classes.json", "w") as f:
-                json.dump(JsonData, f, indent= 4)
-            with open("data/version.txt", "w") as f:
-                f.write(str(version))
     
     def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
         """Load all extension modules with executable-aware path handling."""
@@ -142,11 +109,18 @@ class DiscordBot(commands.Bot):
                     "pycache" in str(ext_path) or 
                     "Working on Progress" in str(ext_path) or
                     "." in ext_path.stem or
-                    (DisableAiClass and ext_path.stem == "AI") or
+                    (not enableAI and ext_path.stem == "AI") or
                     (not Welcome_enabled and ext_path.stem == "Welcome") or
                     (get and ext_path.stem == "testShadow")):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
+                
+                if enableAI: 
+                    try:
+                        ollama.list()
+                    except: 
+                        logger.error("Ollama isn't installed, skipping AI\nTo Install Ollama Go to this link: https://ollama.com/download")
+                        continue
                 
                 try:
                     # Construct module name relative to the classes directory
@@ -181,6 +155,7 @@ class DiscordBot(commands.Bot):
         if not hasattr(self, '_ready_called'):
             global owner
             self.owner = await set_owner(self)
+            owner = self.owner
             logger.info(f"Owner Have been set to {get_name(self.owner)}")
             self._ready_called = True
             

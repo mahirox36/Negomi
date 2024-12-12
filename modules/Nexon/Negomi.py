@@ -5,7 +5,42 @@ import ollama
 from rich import print
 from json import dumps, loads
 from .logger import logger
+from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 from pathlib import Path
+
+def download_model(model_name: str) -> None:
+    """
+    Download an Ollama model with a progress bar.
+    
+    Args:
+        model_name (str): Name of the model to download
+    """
+    with Progress(
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(bar_width=40),
+        DownloadColumn(),
+        TransferSpeedColumn(),
+    ) as progress:
+        current_digest, tasks = '', {}
+        
+        for status in ollama.pull(model_name, stream=True):
+            digest = status.get('digest', '')
+            
+            if not digest:
+                logger.info(status.get('status'))
+                continue
+                
+            if digest != current_digest and current_digest in tasks:
+                progress.update(tasks[current_digest], completed=progress.tasks[tasks[current_digest]].total)
+                
+            if digest not in tasks and (total := status.get('total')):
+                task_id = progress.add_task(f"[cyan]Pulling {digest[7:19]}", total=total)
+                tasks[digest] = task_id
+                
+            if completed := status.get('completed'):
+                progress.update(tasks[digest], completed=completed)
+                
+            current_digest = digest
 
 class ConversationManager:
     def __init__(self):
@@ -33,7 +68,6 @@ class ConversationManager:
         try:
             with open(self.history_file, 'w', encoding='utf-8') as f:
                 f.write(dumps(self.conversation_histories, indent=4, ensure_ascii=False))
-            logger.info("Successfully saved conversation histories")
         except Exception as e:
             logger.error(f"Error saving conversation histories: {e}")
 
