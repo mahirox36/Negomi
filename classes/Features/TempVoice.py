@@ -4,6 +4,7 @@ import nextcord as discord
 from nextcord import *
 from nextcord.ext import commands
 from nextcord.ui import View, Button, TextInput, Modal
+from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
 from modules.Nexon import *
 
@@ -314,21 +315,16 @@ class TempVoice(commands.Cog):
         
 
 
-
-    @commands.command(name = "setup-voice",
-                    aliases=["create voice"],
-                    description = "Setup temp voice")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.cooldown(1, 10, commands.BucketType.member)
-    async def setup(self, ctx:commands.Context, Category:CategoryChannel):
+    @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
+    @guild_only()
+    async def setup(self, ctx:init, category:CategoryChannel):
         featureInside(ctx.guild.id,self)
         file = Data(ctx.guild.id,"TempVoice")
         createChannel = await ctx.guild.create_voice_channel("➕・Create",
-            reason=f"Used setup Temp Voice by {ctx.author}", category=Category)
+            reason=f"Used setup Temp Voice by {ctx.user}", category=category)
         data = {
             "CreateChannel"     : createChannel.id,
-            "categoryChannel"   : Category.id
+            "categoryChannel"   : category.id
         }
         file.data = data
         file.save()

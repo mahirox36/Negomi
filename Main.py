@@ -20,7 +20,8 @@ class DiscordBot(commands.Bot):
             max_messages=1000,
             heartbeat_timeout=150.0,
             guild_ready_timeout=5.0,
-            owner_id=overwriteOwner if overwriteOwner else None
+            owner_id=overwriteOwner if overwriteOwner else None,
+            help_command=None
         )
         
         self.start_time = datetime.now()

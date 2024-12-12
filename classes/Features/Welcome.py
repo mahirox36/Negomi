@@ -67,19 +67,27 @@ class Welcome(commands.Cog):
 
         return buffer
 
-    @commands.command(name = "setup-welcome-message",
-                    aliases=["setup-welcome"],
-                    description = """
+    @slash_command(name="welcome",default_member_permissions=Permissions(administrator=True))
+    async def welcome(self, ctx:init):
+        pass
+
+    @welcome.subcommand("how", "How to setup the Welcoming Message")
+    @feature()
+    async def how(self, ctx:init):
+        ctx.send(embed=info_embed("""
 Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):
 {server}  : For the name of the server
 {count}   : For the count of members in the server
 {mention} : Mention the user
 {name}    : Just the name of the user
-""")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.cooldown(1, 10, commands.BucketType.member)
-    async def setupWelcome(self, ctx:commands.Context,message: str, channel:TextChannel):
+"""),ephemeral=True)
+        
+    
+    @welcome.subcommand("setup", "Setup the Welcoming Message, check '/welcome how' to know how to set it up ")
+    @feature()
+    @guild_only()
+    @cooldown(10)
+    async def setupWelcome(self, ctx:init, message: str, channel:TextChannel):
         featureInside(ctx.guild.id,self)
         file = Data(ctx.guild.id,"Welcome")
         file.data= {
