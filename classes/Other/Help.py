@@ -3,7 +3,6 @@ from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
 from modules.Nexon import *
-from typing import Dict, Optional
 
 class descriptionNone:
     def __init__(self) -> None:
@@ -11,178 +10,146 @@ class descriptionNone:
     def __str__(self):
         return "No description Provided"
 
-home_embed= info_embed("Hello, I am Negomi Made By my master/papa Mahiro\n\
-                            What Can I do you ask? Well a lot of stuff.\n\n\
-                            To get started Check Select List Below!", title="🏠 Home")
+home_embed = info_embed(
+    "Hello, I am Negomi Made By my master/papa Mahiro\n\
+    What Can I do you ask? Well a lot of stuff.\n\n\
+    To get started Check Select List Below!", 
+    title="🏠 Home"
+)
+homeAdmin_embed = info_embed(
+    "Welcome Admin! Here's' stuff that only shows for admins.\n\n\
+    To get started Check Select List Below!", 
+    title="🏠 Admin Home"
+)
 
-def dynamic_cog_getter(cogName: str, client: commands.Bot) -> Optional[Dict]:
-    cog = client.get_cog(cogName)
-    data= {}
-    for command in cog.application_commands:
-        name = command.name
-        description= command.description if command.description != None else descriptionNone()
-        data.update({name:description})
-    if data== {}:
-        return None
-    return data
-
-def embed_builder(CogName: str, title: str, client: commands.Bot, extraInfo:str = None):
-    data = dynamic_cog_getter(CogName, client)
-    if not data: return
-    embed = info_embed(extraInfo,title)
-    for name, description in data.items():
-        embed.add_field(name=f"`{name}`",value="This Is User Command" if description == "" else description)
+def embed_builder_static(title: str, description: str, commands: dict):
+    embed = info_embed(description=description, title=title)
+    for name, description in commands.items():
+        embed.add_field(name=f"`{name}`", value=f"{description}")
     return embed
-
-def dynamic_cog_getter_Context(cogName: str, client: commands.Bot) -> Optional[Dict]:
-    cog = client.get_cog(cogName)
-    data= {}
-    for command in cog.walk_commands():
-        name = command.name
-        description= command.description if command.description != None else descriptionNone()
-        data.update({name:description})
-    if data== {}:
-        return None
-    return data
-
-def dynamic_commands_getter(startswith: str, client: commands.Bot) -> Optional[Dict]:
-    commands = client.commands
-    data= {}
-    for command in commands:
-        if not command.name.startswith(startswith):
-            continue
-        name = command.name
-        description= command.description if command.description != None else descriptionNone()
-        data.update({name:description})
-    if data== {}:
-        return None
-    return data
-
-def embed_builder_Context(CogName: str, title: str, client: commands.Bot, extraInfo:str = None):
-    data = dynamic_cog_getter_Context(CogName, client)
-    if not data: return
-    embed = info_embed(title=title, description=extraInfo)
-    for name, description in data.items():
-        embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`")
-    return embed
-
 
 class HelpSelectAdmin(ui.View):
-    def __init__(self,appliedPlugins:list) -> None:
+    def __init__(self):
         super().__init__(timeout=None)
         self.options = [
-            SelectOption(label="Setups", value="setup",emoji="🔮",default=True),
-            SelectOption(label="Plugins Manager", value="plugin",emoji="🛠️"),
-            SelectOption(label="Other", value="other",emoji="🗿")
-        ]+[SelectOption(label=f"{plugin}", value=f"{plugin.lower()}") for plugin in appliedPlugins]
-        self.select = ui.Select(placeholder="Choose an option...",options=self.options)
+            SelectOption(label="Home", value="home", emoji="🏠", default=True),
+            SelectOption(label="Setups", value="setup", emoji="🔮"),
+            SelectOption(label="Plugins Manager", value="plugin", emoji="🛠️"),
+            SelectOption(label="Other", value="other", emoji="🗿")
+        ]
+        self.select = ui.Select(placeholder="Choose an option...", options=self.options)
         self.select.callback = self.callback
         self.add_item(self.select)
+
     async def callback(self, ctx: Interaction):
         selected_value = self.select.values[0]
-        num = 0
-        for option in self.options:
-            if option.value == self.select.values[0]:
-                RealNum = num
-            else:
-                self.options[num].default = None
-            num+=1
-        self.options[RealNum].default = True
-        self.select.options = self.options
-        if selected_value == "setup": 
-            data = dynamic_commands_getter("setup",ctx.client)
-            if not data: return
-            embed = info_embed(title="🔮 Setups")
-            for name, description in data.items():
-                embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`",inline=False)
-        elif selected_value == "plugin" : embed= embed_builder_Context("PluginsManager","🛠️ Plugins Manager" ,ctx.client)
-        elif selected_value == "other" : embed= embed_builder_Context("Debug","🗿 Other", ctx.client)
-        else:
-            embed= embed_builder_Context(selected_value.capitalize(),selected_value.capitalize(), ctx.client)
-        
-        
-        await ctx.response.edit_message(embed=embed,view=self)
+        embeds = {
+            "home": home_embed,
+            "setup": embed_builder_static(
+                "🔮 Setups",
+                "Here are the setup commands:",
+                {"auto role setup": "Setup auto role for members and bots",
+             "mod manager setup": "Setup the Moderator Manager"}
+            ),
+            "plugin": embed_builder_static(
+                "🛠️ Plugins Manager",
+                "Here are the plugin manager commands:",
+                {"plugin_command1": "Description of plugin_command1",
+                 "plugin_command2": "Description of plugin_command2"}
+            ),
+            "other": embed_builder_static(
+                "🗿 Other",
+                "Here are other commands:",
+                {"other_command1": "Description of other_command1",
+                 "other_command2": "Description of other_command2"}
+            )
+        }
+        embed = embeds.get(selected_value, home_embed)
+        await ctx.response.edit_message(embed=embed, view=self)
 
 class HelpSelect(ui.View):
-    def __init__(self, client: commands.Bot,admin: bool=False) -> None:
+    def __init__(self, admin: bool = False):
         super().__init__(timeout=None)
-        self.client = client
         self.options = [
-            SelectOption(label="Home", value="home",emoji="🏠",default=True),
-            SelectOption(label="Role", value="role",emoji="👥"),
-            SelectOption(label="Temp Voice", value="temp",emoji="🎤"),
-            SelectOption(label="Groups", value="groups",emoji="💀"),
-            SelectOption(label="AI", value="ai",emoji="😈"),
-            SelectOption(label="Other", value="other",emoji="⚙️")
+            SelectOption(label="Home", value="home", emoji="🏠", default=True),
+            SelectOption(label="Role", value="role", emoji="👥"),
+            SelectOption(label="Temp Voice", value="temp", emoji="🎤"),
+            SelectOption(label="Groups", value="groups", emoji="💀"),
+            SelectOption(label="Other", value="other", emoji="⚙️")
         ]
-        self.select = ui.Select(placeholder="Choose an option...",options=self.options)
+        self.select = ui.Select(placeholder="Choose an option...", options=self.options)
         self.select.callback = self.callback
         self.add_item(self.select)
         if admin:
-            self.adminButton = ui.Button(style=ButtonStyle.green,label="🧑‍💻 Admin")
+            self.adminButton = ui.Button(style=ButtonStyle.green, label="🧑‍💻 Admin")
             self.adminButton.callback = self.adminButtonCallback
             self.add_item(self.adminButton)
+
     async def callback(self, ctx: Interaction):
         selected_value = self.select.values[0]
-        num = 0
-        for option in self.options:
-            if option.value == self.select.values[0]:
-                RealNum = num
-            else:
-                self.options[num].default = None
-            num+=1
-        self.options[RealNum].default = True
-        self.select.options = self.options
-        global home_embed
-        owner = await get_owner(self.client)
-        if selected_value == "home" : embed = home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url)
-        if selected_value == "role" : embed= embed_builder("Rolez","👥 Role" ,          ctx.client)
-        if selected_value == "temp" : embed= embed_builder("TempVoice","🎤 Temp Voice", ctx.client,
-        extraInfo="You can create a channel by Join the Create Channel ")
-        if selected_value == "groups" : embed= embed_builder("Groups","💀 Groups", ctx.client)
-        if selected_value == "ai"   : embed= embed_builder("AI", "😈 AI"     ,          ctx.client,
-        extraInfo="You can Talk to her by mention her or reply to her message")
-        if selected_value == "other": embed= embed_builder("Other", "⚙️ Other",         ctx.client)
-        await ctx.response.edit_message(embed=embed,view=self)
+        embeds = {
+            "home": home_embed,
+            "role": embed_builder_static(
+                "👥 Role",
+                "Here are the role commands:",
+                {"role create": "Create a role for your self",
+                 "role edit": "Edit your own role like the name or role or both!",
+                 "role delete": "delete your own role",
+                 "Role: Add User": "Add the role to a user, (Shows when right click on user)",
+                 "Role: Remove User": "delete your own role, (Shows when right click on user)",
+                 "role add": "Add the role to a user",
+                 "role remove": "Remove the role from a user",
+                 }
+            ),
+            "temp": embed_builder_static(
+                "🎤 Temp Voice",
+                "Here are the temp voice commands:",
+                {"voice panel": "Bring the Control Panel for the TempVoice chat",
+                 "voice invite": "Invite a member to Voice chat,",
+                 "Invite Voice": "Invite a member to Voice chat, (Shows when right click on user)"
+                 }
+            ),
+            "groups": embed_builder_static(
+                "💀 Groups",
+                "Here are the group commands:",
+                {"group create": "Create a group (AKA Text Channels) For you and your friends",
+                 "group edit": "Edit this group's details",
+                 "group delete": "Delete a group",
+                 "group add": "Add a member to this group",
+                 "group kick": "Remove a member from this group",
+                 "group transfer": "Transfer group ownership to another member in this group",
+                 }
+            ),
+            "other": embed_builder_static(
+                "⚙️ Other",
+                "Here are other commands:",
+                {"uwu": "What Does this thing do?",
+                 "joke": "Get a Random Joke",
+                 "meme": "Get a random Meme",
+                 "roll": "Roll a Dice",
+                 "8ball": "Ask the magic 8-ball a question",
+                 "server-info": "Gives This server Information",
+                 "ping": "Ping the Bot",
+                 "debug": "Displays detailed debug information about the bot.",
+                 }
+            )
+        }
+        embed = embeds.get(selected_value, home_embed)
+        await ctx.response.edit_message(embed=embed, view=self)
+
     async def adminButtonCallback(self, ctx: init):
-        data = dynamic_commands_getter("setup", self.client)
-        if not data: return
-        embed = info_embed("🔮 Setups")
-        for name, description in data.items():
-            embed.add_field(name=f"`{prefix}{name}`",value=f"`{description}`",inline=False)
-        data= Data(ctx.guild.id, "Plugins", "Applied Plugins")
-        data= data.data if data.data != None else []
-        await ctx.response.edit_message(embed=embed,view=HelpSelectAdmin(data))
-        
-       
-    
-    async def disable(self, ctx: nextcord.Interaction):
-        buttons = [
-            self.button1,self.button2,self.button3,
-            self.button4,self.button5,self.button6]
-        for button in buttons:
-            button.disabled = True
-        self.stop()
-        await ctx.response.edit_message(view=self)
-
-
+        await ctx.response.edit_message(embed=homeAdmin_embed, view=HelpSelectAdmin())
 
 class Help(commands.Cog):
-    def __init__(self, client:Client):
+    def __init__(self, client: Client):
         self.client = client
-        
-    @slash_command(name="help",description="Help command")
-    async def help(self,ctx:init):
-        global home_embed
-        admin= ctx.user.guild_permissions.administrator
-        view = HelpSelect(self.client,admin)
-        owner = await get_owner(self.client)
-        await ctx.send(embed=home_embed.set_author(name=get_name(owner),icon_url=owner.avatar.url),view=view,ephemeral=True)
 
-    # @commands.command(name = "help")
-    # async def helpPlease(self, ctx:commands.Context):
-    #     await ctx.reply(embed= warn_embed("Sorry UwU, But the Help Command Moved to `/help` and if you are admin there's Secret Button OwO","No Longer Available"))
-    
+    @slash_command(name="help", description="Help command")
+    async def help(self, ctx: init):
+        global home_embed
+        admin = ctx.user.guild_permissions.administrator
+        view = HelpSelect(admin)
+        await ctx.send(embed=home_embed, view=view, ephemeral=True)
 
 def setup(client):
     client.add_cog(Help(client))
