@@ -95,7 +95,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
             "channel":channel.id
         }
         file.save()
-        await ctx.reply(embed=info_embed(f"The message was: ``` {message}```",title="Done!"))
+        await ctx.send(embed=info_embed(f"The message was: ``` {message}```",title="Done!"), ephemeral=True)
         file= Data(ctx.guild.id,"Welcome","Members")
         file.data = [member.id for member in ctx.guild.members]
         file.save()
