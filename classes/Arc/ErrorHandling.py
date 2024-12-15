@@ -11,6 +11,10 @@ from modules.Nexon import *
 class ErrorHandling(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
+        
+    @slash_command(name="test",description="gives u error")
+    async def testerror(self,ctx:init):
+        0/0
 
     @commands.Cog.listener()
     async def on_application_command_error(self, ctx: init, error: Exception):
