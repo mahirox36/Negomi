@@ -1,3 +1,4 @@
+import io
 import traceback
 from nextcord import *
 from nextcord.ext import commands
@@ -49,9 +50,8 @@ class ErrorHandling(commands.Cog):
                 ephemeral=True)
             return
         elif isinstance(error, FeatureDisabled):
-            await ctx.send(
-                embed=error_embed(f"This Feature is disabled",
-                                  "Feature Disabled"))
+            if error.send_error: await ctx.send(
+                embed=error_embed(error.message,"Feature Disabled",))
             return 
         elif isinstance(error, CommandDisabled):
             return
@@ -62,14 +62,16 @@ class ErrorHandling(commands.Cog):
         tb_str = traceback.format_exception(type(error), error, error.__traceback__)
         error_details = "".join(tb_str)
         
-        with open("logs/error_traceback.py", "w") as f:
-            f.write(error_details)
-
+        # with open("logs/error_traceback.py", "w") as f:
+        #     f.write(error_details)
+        buffer = io.BytesIO()
+        buffer.write(error_details.encode('utf-8'))
+        buffer.seek(0)
             
-            user = await get_owner(self.client)
-            channel = await user.create_dm()
+        user = await get_owner(self.client)
+        channel = await user.create_dm()
 
-        await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
+        await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
@@ -86,7 +88,7 @@ class ErrorHandling(commands.Cog):
                 embed=error_embed(f"You are not the owner of the bot", "Not Owner"))
             return
         elif isinstance(error, FeatureDisabled):
-            await ctx.send(
+            if error.send_error: await ctx.send(
                 embed=error_embed(f"This Feature is disabled",
                                   "Feature Disabled"))
             return 
@@ -116,14 +118,14 @@ class ErrorHandling(commands.Cog):
         tb_str = traceback.format_exception(type(error), error, error.__traceback__)
         error_details = "".join(tb_str)
         
-        with open("logs/error_traceback.py", "w") as f:
-            f.write(error_details)
-
-        # Send the file to the bot owner
+        buffer = io.BytesIO()
+        buffer.write(error_details.encode('utf-8'))
+        buffer.seek(0)
+            
         user = await get_owner(self.client)
         channel = await user.create_dm()
 
-        await channel.send(content="New Error Master!", file=File("logs/error_traceback.py"))
+        await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
     
     
 

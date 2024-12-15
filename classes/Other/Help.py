@@ -49,19 +49,21 @@ class HelpSelectAdmin(ui.View):
                 "🔮 Setups",
                 "Here are the setup commands:",
                 {"auto role setup": "Setup auto role for members and bots",
-             "mod manager setup": "Setup the Moderator Manager"}
+                "mod manager setup": "Setup the Moderator Manager",
+                "welcome setup": "Setup the Welcoming Message, check '/welcome how' to know how to set it up",
+                "voice-setup": "Setup temp voice",
+                }
             ),
             "plugin": embed_builder_static(
                 "🛠️ Plugins Manager",
                 "Here are the plugin manager commands:",
-                {"plugin_command1": "Description of plugin_command1",
-                 "plugin_command2": "Description of plugin_command2"}
+                {"feature enable": "Enable a feature in your server",
+                 "feature disable": "Disable a feature in your server"}
             ),
             "other": embed_builder_static(
                 "🗿 Other",
                 "Here are other commands:",
-                {"other_command1": "Description of other_command1",
-                 "other_command2": "Description of other_command2"}
+                {"debug": "Displays detailed debug information about the bot. (Not Really Admin Only Command)"}
             )
         }
         embed = embeds.get(selected_value, home_embed)

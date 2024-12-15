@@ -58,7 +58,7 @@ class moderatormanager(commands.Cog):
 
     def get_mod_data(self, guild_id: int):
         """Get moderator data file"""
-        return Data(guild_id, "Moderator Manager", "users", default={})
+        return Data(guild_id, "Moderator Manager", "users")
 
     async def create_backup_data(self, guild_id: int, user_id: str):
         """Create backup of moderator data"""
@@ -125,12 +125,16 @@ class moderatormanager(commands.Cog):
     @feature()
     async def add(self, ctx: init, member: Member, role: Role = None):
         file = self.get_mod_data(ctx.guild_id)
-        data = file.load()
+        mods = file.load()
+        data = Data(ctx.guild_id, "Moderator Manager").data
         
         if data is None:
             await ctx.send(embed=error_embed("Moderator Manager is not setup yet", "Moderator Manager"))
             return
 
+        logger.info(data)
+        logger.info(data.values())
+        logger.info(role.id)
         if role.id not in data.values():
             await ctx.send(embed=error_embed("This role is not a Moderator role", "Moderator Manager"))
             return
@@ -150,7 +154,7 @@ class moderatormanager(commands.Cog):
             "pastRoles": []
         }
         
-        data[str(member.id)] = mod_data
+        mods[str(member.id)] = mod_data
         file.save()
         
         # DM the token to the new moderator

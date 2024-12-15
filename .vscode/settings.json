@@ -13,8 +13,6 @@
         "unmuted",
         "Untimeout"
     ],
-    "python.analysis.autoImportCompletions": false,
-    "python.analysis.typeCheckingMode": "off",
     "todo-tree.tree.showCountsInTree": true,
     "editor.tokenColorCustomizations": {
     "textMateRules": [
@@ -49,10 +47,10 @@
         
     ]},
     "material-icon-theme.folders.associations": {
-    "Features": "plugin",
-    "OllamaSetup": "download",
-    "Dashboard": "serverless",
-    "Working on Progress": "Ci",
-    "Nexon":"Quasar"
-}
+        "Features": "plugin",
+        "OllamaSetup": "download",
+        "Dashboard": "serverless",
+        "Working on Progress": "Ci",
+        "Nexon":"Quasar"
+    }
 }

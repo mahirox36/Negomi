@@ -12,7 +12,7 @@ class Data:
                  file:str="data",
                  subFolder: str = None,
                  default: Union[Dict, List, None] = None):
-        self.path = f"Data/{name}/{server_id}" 
+        self.path = f"Data/{name}/{server_id}/{subFolder}" if subFolder else f"Data/{name}/{server_id}"
         self.file = f"{self.path}/{file}.json" if subFolder == None else f"{self.path}/{subFolder}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
         if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
@@ -24,7 +24,7 @@ class Data:
         with open(self.file, "w") as f:
             json.dump(self.data,f,indent=4)
     
-    def load(self) -> Any:
+    def load(self) -> Union[Dict, List, Any]:
         try:
             with open(self.file, "r") as f:
                 self.data = json.load(f)
@@ -78,11 +78,13 @@ class DataGlobal:
                  name:str,
                  file:str="data",
                  default: Union[Dict, List, None] = None,
-                 saveExit: bool = True):
-        if name == ""   : self.path = f"Data/"
-        else            : self.path = f"Data/{name}/"
+                 saveExit: bool = True,
+                 subFolder: str = None):
+        if name == ""   : self.path = f"Data"
+        elif subFolder  : self.path = f"Data/{name}/{subFolder}"
+        else            : self.path = f"Data/{name}"
         self.__saveExit = saveExit
-        self.file = f"{self.path}{file}.json"
+        self.file = f"{self.path}/{file}.json" if not subFolder else f"{self.path}/{subFolder}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
         self.default = default
         self.data = default
@@ -93,7 +95,7 @@ class DataGlobal:
             json.dump(self.data,f)
         return self
     
-    def load(self) -> Any:
+    def load(self) -> Union[Dict, List, Any]:
         try:
             with open(self.file, "r") as f:
                 self.data = json.load(f)

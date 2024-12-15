@@ -30,7 +30,8 @@ class AutoRole(commands.Cog):
             
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        featureInside(member.guild.id, self)
+        try:await check_feature_inside(member.guild.id, self)
+        except: return
         guild = member.guild
         if Data(member.guild.id,"Auto role").check():
             data = Data(member.guild.id,"Auto role").load()

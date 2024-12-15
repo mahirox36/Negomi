@@ -1,4 +1,3 @@
-__UserSettingsVersion__ = 1
 import nextcord
 import nextcord as discord
 from nextcord import *
@@ -7,6 +6,7 @@ from nextcord.ui import View, Button, TextInput, Modal
 from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
 from modules.Nexon import *
+__UserSettingsVersion__ = 1
 
 #TODO: Add Kick, Ban Commands
 
@@ -317,8 +317,8 @@ class TempVoice(commands.Cog):
 
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
     @guild_only()
+    @feature()
     async def setup(self, ctx:init, category:CategoryChannel):
-        featureInside(ctx.guild.id,self)
         file = Data(ctx.guild.id,"TempVoice")
         createChannel = await ctx.guild.create_voice_channel("➕・Create",
             reason=f"Used setup Temp Voice by {ctx.user}", category=category)
@@ -335,9 +335,9 @@ class TempVoice(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                  before:discord.VoiceState, after:discord.VoiceState):
-        try: featureInside(after.channel.guild.id,self)
+        try: await check_feature_inside(after.channel.guild.id,self)
         except AttributeError:
-            try: featureInside(before.channel.guild.id,self)
+            try: await check_feature_inside(before.channel.guild.id,self)
             except AttributeError: return
         try:guild = after.channel.guild
         except AttributeError:return
@@ -391,9 +391,9 @@ class TempVoice2(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                      before:discord.VoiceState, after:discord.VoiceState):
-        try: featureInside(after.channel.guild.id,self)
+        try: await check_feature_inside(after.channel.guild.id,self)
         except AttributeError:
-            try: featureInside(before.channel.guild.id,self)
+            try: await check_feature_inside(before.channel.guild.id,self)
             except AttributeError: return
 
         try: before.channel.id

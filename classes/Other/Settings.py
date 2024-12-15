@@ -1,3 +1,4 @@
+from typing import Set
 from nextcord import *
 from nextcord.ext import commands
 from nextcord import Interaction as init
@@ -12,15 +13,22 @@ description= f"Advance viewing is hard but if you understand it, it's easy\n\
         and if you said '{prefix}view-x show' it will give you the entire data"
 
 class Settings(commands.Cog):
-    def __init__(self, client:Client):
+    def __init__(self, client: Client):
         self.client = client
-        self.featuresPath = Path("classes/Features")
+        self.features_path = Path("classes/Features")
+        
+        # Handle executable path resolution
         if is_executable():
-            # When running as exe, we need to check sys._MEIPASS
-            if hasattr(sys, '_MEIPASS'): base_path = Path(sys._MEIPASS)
-            else: base_path = Path.cwd()
-            self.featuresPath = base_path / "classes" / "Features"
-        self.features = [f.stem.lower() for f in self.featuresPath.iterdir() if f.is_file() if f.name.endswith(".py")]
+            base_path = Path(sys._MEIPASS) if hasattr(sys, '_MEIPASS') else Path.cwd()
+            self.features_path = base_path / "classes" / "Features"
+        
+        # Get all Python files in features directory
+        self.features = [
+            f.stem.lower() 
+            for f in self.features_path.iterdir() 
+            if f.is_file() and f.name.endswith(".py")
+        ]
+        logger.info(self.features)
     @commands.command(name = "advance-viewing", aliases=["view-x", "view"],description= description)
     @commands.guild_only()
     @enableByConfig(EnableAdvanceViewing)
@@ -80,65 +88,96 @@ class Settings(commands.Cog):
         else:
             await ctx.reply(embed=error_embed(description=f"`{folders[-1]}` is not a valid folder or file."))
     
-    def get_disabled(self, serverID) -> List[str]:
-        with DataGlobal("Feature", serverID, [], False) as data:
-            return data.data
+    def get_disabled_features(self, server_id: str) -> List[str]:
+        """Get list of disabled features for a server."""
+        with DataGlobal("Feature", server_id, [], False) as file:
+            return file.data
     
-    def get_enabled(self, serverID) -> List[str]:
-        with DataGlobal("Feature", serverID, [], False) as data:
-            result = set(self.features) - set(data.data)
-        return result
-        
-    
+    def get_enabled_features(self, server_id: str) -> Set[str]:
+        """Get set of enabled features for a server."""
+        with DataGlobal("Feature", server_id, [], False) as file:
+            return set(self.features) - set(file.data)
     @slash_command("feature", default_member_permissions=Permissions(administrator=True))
     async def feature(self, ctx):
+        """Base command for feature management."""
         pass
-    
-    @feature.subcommand("disable")
-    async def disable(self, ctx:init, feature: str =SlashOption("feature", "Select a feature to disable", True,autocomplete=True)):
-        feature= feature.lower()
-        if feature in self.get_disabled(ctx.guild_id):
-            await ctx.send(embed=error_embed(f"{feature} is Already Disabled", "Already disabled"), ephemeral=True)
-            return
-        elif feature not in self.features:
-            await ctx.send(embed=error_embed(f"There is not feature called {feature}"))
-            return
-        data = self.get_disabled(ctx.guild.id)
-        data.append(feature)
-        with DataGlobal("Feature", ctx.guild_id) as file:
-            file.data = data
-        await ctx.send(embed=info_embed(f"{feature.capitalize()} got disabled!","Feature disabled"))
-    
-    @feature.subcommand("enable")
-    async def enable(self, ctx:init, feature: str =SlashOption("feature", "Select a feature to disable", True,autocomplete=True)):
-        feature= feature.lower()
-        if feature in self.get_enabled(ctx.guild_id):
-            await ctx.send(embed=error_embed(f"{feature} is Already enabled", "Already enabled"), ephemeral=True)
-            return
-        elif feature not in self.features:
-            await ctx.send(embed=error_embed(f"There is not feature called {feature}"))
-            return
-        data = self.get_disabled(ctx.guild.id)
-        data.remove(feature)
-        with DataGlobal("Feature", ctx.guild_id) as file:
-            file.data = data
-        await ctx.send(embed=info_embed(f"{feature.capitalize()} got enabled!","Feature enabled"))
-    
-    @disable.on_autocomplete("feature")
-    async def feature_autocomplete(self, interaction: Interaction, current: str):
-        available_features:List[str] = self.get_enabled(interaction.guild_id)
-        # Filter features based on the current input
-        suggestions = [name for name in available_features if name.lower().startswith(current.lower())]
 
-        # Respond with the filtered choices
-        await interaction.response.send_autocomplete(suggestions)
+    @feature.subcommand("disable", "Disable a feature in your server")
+    async def disable(self, ctx: init, 
+                     feature: str = SlashOption("feature", "Select a feature to disable", 
+                                              required=True, autocomplete=True)):
+        feature = feature.lower()
+        disabled_features = self.get_disabled_features(ctx.guild_id)
+
+        if feature in disabled_features:
+            await ctx.send(
+                embed=error_embed("Feature Already Disabled", f"{feature} is already disabled"),
+                ephemeral=True
+            )
+            return
         
-    @enable.on_autocomplete("feature")
-    async def feature_autocomplete(self, interaction: Interaction, current: str):
-        available_features = self.get_disabled(interaction.guild_id)
-        suggestions = [name for name in available_features if name.lower().startswith(current.lower())]
+        if feature not in self.features:
+            await ctx.send(
+                embed=error_embed("Invalid Feature", f"Feature '{feature}' does not exist")
+            )
+            return
 
-        # Respond with the filtered choices
+        disabled_features.append(feature)
+        with DataGlobal("Feature", ctx.guild_id) as file:
+            file.data = disabled_features
+        
+        await ctx.send(
+            embed=info_embed("Feature Disabled", f"{feature.capitalize()} has been disabled")
+        )
+
+    @feature.subcommand("enable", "Enable a feature in your server")
+    async def enable(self, ctx: init,
+                    feature: str = SlashOption("feature", "Select a feature to enable",
+                                             required=True, autocomplete=True)):
+        feature = feature.lower()
+        enabled_features = self.get_enabled_features(ctx.guild_id)
+
+        if feature in enabled_features:
+            await ctx.send(
+                embed=error_embed("Feature Already Enabled", f"{feature} is already enabled"),
+                ephemeral=True
+            )
+            return
+        
+        if feature not in self.features:
+            await ctx.send(
+                embed=error_embed("Invalid Feature", f"Feature '{feature}' does not exist")
+            )
+            return
+
+        disabled_features = self.get_disabled_features(ctx.guild_id)
+        disabled_features.remove(feature)
+        
+        with DataGlobal("Feature", ctx.guild_id) as file:
+            file.data = disabled_features
+        
+        await ctx.send(
+            embed=info_embed("Feature Enabled", f"{feature.capitalize()} has been enabled")
+        )
+
+    @disable.on_autocomplete("feature")
+    async def disable_autocomplete(self, interaction: Interaction, current: str):
+        """Autocomplete for disable command showing enabled features."""
+        available_features = self.get_enabled_features(interaction.guild_id)
+        suggestions = [
+            name for name in available_features 
+            if name.lower().startswith(current.lower())
+        ]
+        await interaction.response.send_autocomplete(suggestions)
+
+    @enable.on_autocomplete("feature")
+    async def enable_autocomplete(self, interaction: Interaction, current: str):
+        """Autocomplete for enable command showing disabled features."""
+        available_features = self.get_disabled_features(interaction.guild_id)
+        suggestions = [
+            name for name in available_features 
+            if name.lower().startswith(current.lower())
+        ]
         await interaction.response.send_autocomplete(suggestions)
     
 

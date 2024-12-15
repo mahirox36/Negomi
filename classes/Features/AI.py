@@ -3,7 +3,6 @@ from nextcord import *
 from nextcord.ext import commands
 from modules.Nexon import *
 import ollama
-import time
 from modules.Nexon.Negomi import download_model
 
 # models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
@@ -61,11 +60,12 @@ class AI(commands.Cog):
         # Then handle guild messages
         else:
             try:
-                featureInside(message.guild.id, self)
+                check_feature_inside(message.guild.id, self)
                 if not allowAllServers and message.guild.id not in AI_AllowedServers:
                     return
             except Exception as e:
                 return
+            
         
 
         content = message.content.replace(f"<@{self.client.user.id}>", "Negomi")\

@@ -1,7 +1,7 @@
 import platform
 import psutil
 import nextcord
-from nextcord import slash_command, Message, Member, Embed
+from nextcord import slash_command, Message, Member, Embed, Interaction as init
 from modules.Nexon import *
 from nextcord.ext import commands
 import time

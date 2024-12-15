@@ -45,7 +45,7 @@ def download_model(model_name: str) -> None:
 class ConversationManager:
     def __init__(self):
         self.conversation_histories:Dict[str, List[Dict[str, str]]] = {}
-        self.history_file = Path("data/AI/history.json")
+        self.history_file = Path("Data/AI/history.json")
         self.summary_threshold = 15  # Increased threshold for summarization
         self.keep_recent = 5  # Number of recent messages to keep
         self.load_histories()

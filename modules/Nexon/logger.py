@@ -194,26 +194,3 @@ cli = CommandLineInterface(
         commands=["help", "clear", "reload"],
         command_handler=handle_command
     )
-"""
-def main():
-    # Create CLI instance with custom commands and handler
-    
-    
-    try:
-        logger.info("Application started! Type 'help' for available commands.")
-        while cli.running:
-            # Your application logic here
-            time.sleep(0.1)  # Prevent CPU overuse
-            
-            # Example of periodic status update
-            # logger.info("Processing...")
-            
-    except Exception as e:
-        logger.error(f"Application error: {e}")
-    finally:
-        cli.stop()
-        logger.info("Application shutting down...")
-
-if __name__ == "__main__":
-    main()
-"""
