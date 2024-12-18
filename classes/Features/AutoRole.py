@@ -33,14 +33,17 @@ class AutoRole(commands.Cog):
         try:await check_feature_inside(member.guild.id, self)
         except: return
         guild = member.guild
-        if Data(member.guild.id,"Auto role").check():
-            data = Data(member.guild.id,"Auto role").load()
-            if data == None:
-                return
-            if (member.bot) and (data["bot_role"] != None):
-                await member.add_roles(guild.get_role(data["bot_role"]))
-            if member.bot == False:
-                await member.add_roles(guild.get_role(data["member_role"]))
+        try:
+            if Data(member.guild.id,"Auto role").check():
+                data = Data(member.guild.id,"Auto role").load()
+                if data == None:
+                    return
+                if (member.bot) and (data["bot_role"] != None):
+                    await member.add_roles(guild.get_role(data["bot_role"]))
+                if member.bot == False:
+                    await member.add_roles(guild.get_role(data["member_role"]))
+        except:
+            return
 
 
 def setup(client):

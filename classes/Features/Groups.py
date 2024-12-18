@@ -47,9 +47,6 @@ class GroupEditModal(ui.Modal):
             # Save changes
             self.file.save()
 
-            # Log the action
-            logger.info(f"{ctx.user} edited the group in {self.group["channel"]}")
-
             await ctx.send(embed=info_embed(f"Group updated to {name} with {emoji}", "Group Edited"), ephemeral=True)
 
         except HTTPException as e:
@@ -291,7 +288,6 @@ class Groups(commands.Cog):
         group["Members"].append(member.id)
         file.save()
         await ctx.send(embed=info_embed(f"{member.mention} has been added to this group", "Member Added"))
-        logger.info(f"{ctx.user} added {member} to the group in {ctx.channel_id}")
 
     @group.subcommand(name="kick", description="Remove a member from this group")
     @feature()
@@ -317,7 +313,6 @@ class Groups(commands.Cog):
         group["Members"].remove(member.id)
         file.save()
         await ctx.send(embed=info_embed(f"{member.mention} has been removed from this group", "Member Removed"))
-        logger.info(f"{ctx.user} removed {member} from the group in {ctx.channel_id}")
 
     @group.subcommand(name="transfer", description="Transfer group ownership to another member in this group")
     @feature()
@@ -349,7 +344,6 @@ class Groups(commands.Cog):
         
         file["groups"][str(group["channel"])] = member.id
         await ctx.send(embed=info_embed(f"{member.mention} is now the owner of this group", "Ownership Transferred"))
-        logger.info(f"{ctx.user} transferred ownership of the group in {ctx.channel_id} to {member}")
 
         user_file.data.remove(group)
         user_file.data[0]["count"] -= 1

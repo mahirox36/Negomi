@@ -28,7 +28,7 @@ class Settings(commands.Cog):
             for f in self.features_path.iterdir() 
             if f.is_file() and f.name.endswith(".py")
         ]
-        logger.info(self.features)
+        logger.debug(self.features)
     @commands.command(name = "advance-viewing", aliases=["view-x", "view"],description= description)
     @commands.guild_only()
     @enableByConfig(EnableAdvanceViewing)

@@ -332,6 +332,7 @@ class TempVoice(commands.Cog):
     
 
     #Listener If a Person Created a Channel
+    #TODO: Fix Problem Disconnect u sometimes
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member,
                  before:discord.VoiceState, after:discord.VoiceState):

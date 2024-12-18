@@ -93,7 +93,7 @@ class DiscordBot(commands.Bot):
             else:
                 extensions_path = Path("classes")
 
-            self.logger.info(f"Using extensions path: {extensions_path.resolve()}")
+            self.logger.debug(f"Using extensions path: {extensions_path.resolve()}")
 
             # Verify extensions directory exists
             if not extensions_path.exists():
@@ -105,7 +105,7 @@ class DiscordBot(commands.Bot):
             # Modify the import path to include our extensions directory
             if str(extensions_path.parent) not in sys.path:
                 sys.path.insert(0, str(extensions_path.parent))
-                self.logger.info(f"Added to sys.path: {extensions_path.parent}")
+                self.logger.debug(f"Added to sys.path: {extensions_path.parent}")
 
             loaded_extensions = []
             for ext_path in extensions_path.rglob("*.py"):
@@ -113,6 +113,7 @@ class DiscordBot(commands.Bot):
                 if (ext_path.stem == "__init__" or
                     "pycache" in str(ext_path) or 
                     "Working on Progress" in str(ext_path) or
+                    "Arc" in str(ext_path) or
                     "." in ext_path.stem or
                     (not enableAI and ext_path.stem == "AI") or
                     (not Welcome_enabled and ext_path.stem == "Welcome") or

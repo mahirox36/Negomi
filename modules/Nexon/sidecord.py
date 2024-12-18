@@ -196,7 +196,7 @@ def feature():
 
     return check(predicate)
 
-def check_feature_inside(guild_id: int, cog: object, send_Error: bool = False) -> bool:
+async def check_feature_inside(guild_id: int, cog: object, send_Error: bool = False) -> bool:
     """
     Check if a feature is enabled within other code.
     Returns True if feature is enabled, False if disabled.

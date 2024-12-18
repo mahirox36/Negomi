@@ -13,7 +13,7 @@ class Data:
                  subFolder: str = None,
                  default: Union[Dict, List, None] = None):
         self.path = f"Data/{name}/{server_id}/{subFolder}" if subFolder else f"Data/{name}/{server_id}"
-        self.file = f"{self.path}/{file}.json" if subFolder == None else f"{self.path}/{subFolder}/{file}.json"
+        self.file = f"{self.path}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
         if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
         self.default = default
@@ -84,7 +84,7 @@ class DataGlobal:
         elif subFolder  : self.path = f"Data/{name}/{subFolder}"
         else            : self.path = f"Data/{name}"
         self.__saveExit = saveExit
-        self.file = f"{self.path}/{file}.json" if not subFolder else f"{self.path}/{subFolder}/{file}.json"
+        self.file = f"{self.path}/{file}.json"
         os.makedirs(self.path,exist_ok=True)
         self.default = default
         self.data = default

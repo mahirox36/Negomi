@@ -191,6 +191,7 @@ def handle_command(cmd: str):
         logger.error(f"{cmd} Not Found")
 
 cli = CommandLineInterface(
+    # Add disable AI temp
         commands=["help", "clear", "reload"],
         command_handler=handle_command
     )
