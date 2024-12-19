@@ -34,7 +34,7 @@ async def check(ctx: init, data: Dict | List) -> bool:
 def UserSettings(member):
     user = DataGlobal("TempVoice_UsersSettings", f"{member.id}")
     Default = {
-        "Name": member.global_name + "'s Chat" if member.global_name != None else member.display_name + "'s Chat",
+        "Name": get_name(member) + "'s Chat",
         "Hide": True,
         "Lock": True,
         "Max": 0,
@@ -45,9 +45,6 @@ def UserSettings(member):
     if user.data == None or user.data.get("Version") != __UserSettingsVersion__:
         user.data = Default
     return user
-
-
-
 def get_channel(data,ctx:init):
     num = 0
     for i in data:
@@ -107,7 +104,7 @@ class EditNameModal(Modal):
         self.channel = channel
 
         self.name = TextInput(label="New Name", placeholder=ctx.user.global_name + "'s Chat" if ctx.user.global_name != None
-            else ctx.user.display_name + "'s Chat", required=True, max_length=100, min_length=1)
+            else get_name(ctx.user) + "'s Chat", required=True, max_length=100, min_length=1)
         self.add_item(self.name)
 
     async def callback(self, interaction: nextcord.Interaction):
@@ -116,89 +113,6 @@ class EditNameModal(Modal):
         self.user["Name"] = name
         self.user.save()
         await self.channel.edit(name=name)
-
-class KickModal(Modal):
-    def __init__(self, channel: VoiceChannel, ctx: init):
-        super().__init__(title="Kick User")
-        self.channel = channel
-        
-        self.reason = TextInput(
-            label="Reason for kick",
-            placeholder="Enter reason for kicking the user",
-            required=False,
-            max_length=100
-        )
-        self.add_item(self.reason)
-
-    async def callback(self, ctx: nextcord.Interaction):
-        member = ctx.user
-        user_settings = UserSettings(member)
-        
-        # Get the target member from the channel
-        target = ctx.message.mentions[0] if ctx.message.mentions else None
-        if not target:
-            await ctx.send(embed=error_embed("Please mention a user to kick"), ephemeral=True)
-            return
-
-        if target.id == member.id:
-            await ctx.send(embed=error_embed("You cannot kick yourself"), ephemeral=True)
-            return
-
-        reason = self.reason.value or "No reason provided"
-        
-        # Add to kicked users list
-        if target.id not in user_settings.data["Kicked_Users"]:
-            user_settings.data["Kicked_Users"].append(target.id)
-            user_settings.save()
-
-        # Kick the user
-        try:
-            await target.move_to(None, reason=f"Kicked by {member.display_name}: {reason}")
-            await ctx.send(embed=info_embed(f"Kicked {target.display_name}\nReason: {reason}"), ephemeral=True)
-        except:
-            await ctx.send(embed=error_embed("Failed to kick user"), ephemeral=True)
-
-class BanModal(Modal):
-    def __init__(self, channel: VoiceChannel, ctx: init):
-        super().__init__(title="Ban User")
-        self.channel = channel
-        
-        self.reason = TextInput(
-            label="Reason for ban",
-            placeholder="Enter reason for banning the user",
-            required=False,
-            max_length=100
-        )
-        self.add_item(self.reason)
-
-    async def callback(self, ctx: nextcord.Interaction):
-        member = ctx.user
-        user_settings = UserSettings(member)
-        
-        target = ctx.message.mentions[0] if ctx.message.mentions else None
-        if not target:
-            await ctx.send(embed=error_embed("Please mention a user to ban"), ephemeral=True)
-            return
-
-        if target.id == member.id:
-            await ctx.send(embed=error_embed("You cannot ban yourself"), ephemeral=True)
-            return
-
-        reason = self.reason.value or "No reason provided"
-        
-        # Add to banned users list
-        if target.id not in user_settings.data["Banned_Users"]:
-            user_settings.data["Banned_Users"].append(target.id)
-            user_settings.save()
-
-        # Remove user from channel and set permissions
-        try:
-            await target.move_to(None, reason=f"Banned by {member.display_name}: {reason}")
-            await self.channel.set_permissions(target, connect=False, view_channel=False)
-            await ctx.send(embed=info_embed(f"Banned {target.display_name}\nReason: {reason}"), ephemeral=True)
-        except:
-            await ctx.send(embed=error_embed("Failed to ban user"), ephemeral=True)
-
 
 class ControlPanel(View):
     def __init__(self, data:Dict,user:User):
@@ -231,14 +145,6 @@ class ControlPanel(View):
         self.button6 = Button(label=f"⛔ Delete", style=nextcord.ButtonStyle.primary)
         self.button6.callback = self.Delete
         self.add_item(self.button6)
-        
-        self.button7 = Button(label="👢 Kick User", style=nextcord.ButtonStyle.danger)
-        self.button7.callback = self.Kick_User
-        self.add_item(self.button7)
-
-        self.button8 = Button(label="🔨 Ban User", style=nextcord.ButtonStyle.danger)
-        self.button8.callback = self.Ban_User
-        self.add_item(self.button8)
 
     async def Edit_Name(self, ctx: nextcord.Interaction):
         if await check(ctx,self.data) == False:
@@ -340,27 +246,6 @@ class ControlPanel(View):
         self.stop()
         await ctx.response.edit_message(view=self)
 
-    async def Kick_User(self, ctx: nextcord.Interaction):
-        if await check(ctx, self.data) == False:
-            await self.disable(ctx)
-            return
-        try:
-            modal = KickModal(get_channel(self.data, ctx), ctx)
-            await ctx.response.send_modal(modal)
-        except Exception as e:
-            await ctx.send(embed=error_embed(f"Error: {str(e)}"), ephemeral=True)
-
-    async def Ban_User(self, ctx: nextcord.Interaction):
-        if await check(ctx, self.data) == False:
-            await self.disable(ctx)
-            return
-        try:
-            modal = BanModal(get_channel(self.data, ctx), ctx)
-            await ctx.response.send_modal(modal)
-        except Exception as e:
-            await ctx.send(embed=error_embed(f"Error: {str(e)}"), ephemeral=True)
-
-
 class TempVoice(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -381,7 +266,7 @@ class TempVoice(commands.Cog):
         file = Data(ctx.guild.id,"TempVoice","TempVoices")  
         await check(ctx,file.data)
         channel = get_channel(file.data,ctx)
-        name = ctx.user.global_name if ctx.user.global_name != None else ctx.user.display_name
+        name = get_name(ctx.user)
         await channel.set_permissions(user, view_channel=True, connect=True)
         try:
             await user.send(embed=info_embed(
@@ -397,13 +282,183 @@ class TempVoice(commands.Cog):
                 ))
         await ctx.send("Sended!",ephemeral=True)
         return
+
+    async def _check_voice_permissions(
+        self, 
+        ctx: init, 
+        target: Member, 
+        action: str
+    ) -> tuple[bool, Optional[VoiceChannel]]:
+        """Check if the command user has proper permissions"""
+        member = ctx.user
+
+        # Check if user is in a voice channel
+        if not member.voice or not member.voice.channel:
+            await ctx.send(
+                embed=error_embed("You must be in a voice channel to use this command"),
+                ephemeral=True
+            )
+            return False, None
+
+        # Get the voice channel
+        channel = member.voice.channel
+
+        # Check if target is in the same voice channel
+        if not target.voice or target.voice.channel != channel:
+            await ctx.send(
+                embed=error_embed(f"Target user must be in your voice channel to be {action}"),
+                ephemeral=True
+            )
+            return False, None
+
+        # Check if user is the channel owner
+        file = Data(ctx.guild.id, "TempVoice", "TempVoices")
+        for data in file.data:
+            if list(data.values())[0] == channel.id:
+                if str(member.id) != list(data.keys())[0]:
+                    await ctx.send(
+                        embed=error_embed("You must be the channel owner to use this command"),
+                        ephemeral=True
+                    )
+                    return False, None
+                break
+        else:
+            await ctx.send(
+                embed=error_embed("This command can only be used in temporary voice channels"),
+                ephemeral=True
+            )
+            return False, None
+
+        return True, channel
+
+    async def _ban_member(
+        self, 
+        ctx: init, 
+        target: Member, 
+        channel: VoiceChannel, 
+        reason: str = "No reason provided"
+    ) -> bool:
+        """Ban a member from the voice channel"""
+        member = ctx.user
+        user_settings = UserSettings(member)
+
+        if target.id == member.id:
+            await ctx.send(
+                embed=error_embed("You cannot ban yourself"),
+                ephemeral=True
+            )
+            return False
+
+        if target.guild_permissions.administrator:
+            await ctx.send(
+                embed=error_embed("You cannot ban administrators"),
+                ephemeral=True
+            )
+            return False
+
+        try:
+            # Add to banned users list
+            if target.id not in user_settings.data["Banned_Users"]:
+                user_settings.data["Banned_Users"].append(target.id)
+                user_settings.save()
+
+            # Remove user and set permissions
+            await target.move_to(None, reason=f"Banned by {get_name(member)}: {reason}")
+            await channel.set_permissions(target, connect=False, view_channel=False)
+
+            # Try to DM the user
+            try:
+                await target.send(
+                    embed=warn_embed(
+                        f"You have been banned from {channel.name} by {get_name(member)}\n"
+                        f"Reason: {reason}"
+                    )
+                )
+            except:
+                pass  # DM failed, continue anyway
+
+            await ctx.send(
+                embed=info_embed(
+                    f"Banned {get_name(target)}\nReason: {reason}",
+                    title="Member Banned"
+                ),
+                ephemeral=True
+            )
+            return True
+
+        except Exception as e:
+            await ctx.send(
+                embed=error_embed(f"Failed to ban user: {str(e)}"),
+                ephemeral=True
+            )
+            return False
+
+    async def _kick_member(
+        self, 
+        ctx: init, 
+        target: Member, 
+        reason: str = "No reason provided"
+    ) -> bool:
+        """Kick a member from the voice channel"""
+        member = ctx.user
+        user_settings = UserSettings(member)
+
+        if target.id == member.id:
+            await ctx.send(
+                embed=error_embed("You cannot kick yourself"),
+                ephemeral=True
+            )
+            return False
+
+        if target.guild_permissions.administrator:
+            await ctx.send(
+                embed=error_embed("You cannot kick administrators"),
+                ephemeral=True
+            )
+            return False
+
+        try:
+            # Add to kicked users list
+            if target.id not in user_settings.data["Kicked_Users"]:
+                user_settings.data["Kicked_Users"].append(target.id)
+                user_settings.save()
+
+            # Try to DM the user
+            try:
+                await target.send(
+                    embed=warn_embed(
+                        f"You have been kicked from voice channel by {get_name(member)}\n"
+                        f"Reason: {reason}"
+                    )
+                )
+            except:
+                pass  # DM failed, continue anyway
+
+            # Kick the user
+            await target.move_to(None, reason=f"Kicked by {get_name(member)}: {reason}")
+            await ctx.send(
+                embed=info_embed(
+                    f"Kicked {get_name(target)}\nReason: {reason}",
+                    title="Member Kicked"
+                ),
+                ephemeral=True
+            )
+            return True
+
+        except Exception as e:
+            await ctx.send(
+                embed=error_embed(f"Failed to kick user: {str(e)}"),
+                ephemeral=True
+            )
+            return False
+    
     @slash_command(name="voice")
     async def voice(self,ctx:init):
         pass
     @voice.subcommand(name="panel",
         description="Bring the Control Panel for the TempVoice chat")
     @feature()
-    async def controlpanel(self,ctx:init):
+    async def control_panel(self,ctx:init):
         file = Data(ctx.guild.id,"TempVoice","TempVoices")  
         checks = check(ctx,file.data)
         if await checks == False: return
@@ -412,20 +467,87 @@ class TempVoice(commands.Cog):
                 description="Please Chose"),view=ControlPanel(file.data,ctx.user),
                 ephemeral=True)
 
+    @voice.subcommand(name="ban",description="Ban a user from your temporary voice channel")
+    @feature()
+    async def ban_slash(
+        self,
+        ctx: init,
+        target: Member = SlashOption(
+            description="The user to ban",
+            required=True
+        ),
+        reason: str = SlashOption(
+            description="Reason for the ban",
+            required=False,
+            default="No reason provided"
+        )
+    ):
+        """Ban a user from your temporary voice channel"""
+        await ctx.response.defer(ephemeral=True)
+        
+        # Check permissions
+        valid, channel = await self._check_voice_permissions(ctx, target, "banned")
+        if not valid:
+            return
 
+        # Execute ban
+        await self._ban_member(ctx, target, channel, reason)
+
+    @voice.subcommand(name="kick",description="Kick a user from your temporary voice channel")
+    @feature()
+    async def kick_slash(self, ctx: init, target: Member = SlashOption(
+            description="The user to kick", required=True), reason: str = SlashOption(description="Reason for the kick",
+            required=False, default="No reason provided")
+    ):
+        """Kick a user from your temporary voice channel"""
+        await ctx.response.defer(ephemeral=True)
+        
+        # Check permissions
+        valid, channel = await self._check_voice_permissions(ctx, target, "kicked")
+        if not valid:
+            return
+
+        # Execute kick
+        await self._kick_member(ctx, target, reason)
+
+    @nextcord.user_command(name="Voice: Ban", dm_permission=False)
+    @feature()
+    async def ban_user(self, ctx: init, target: Member):
+        """Ban a user from your temporary voice channel (User Command)"""
+        await ctx.response.defer(ephemeral=True)
+        
+        # Check permissions
+        valid, channel = await self._check_voice_permissions(ctx, target, "banned")
+        if not valid:
+            return
+
+        # Execute ban
+        await self._ban_member(ctx, target, channel)
+
+    @nextcord.user_command(name="Voice: Kick", dm_permission=False)
+    @feature()
+    async def kick_user(self, ctx: init, target: Member):
+        """Kick a user from your temporary voice channel (User Command)"""
+        await ctx.response.defer(ephemeral=True)
+        
+        # Check permissions
+        valid, channel = await self._check_voice_permissions(ctx, target, "kicked")
+        if not valid:
+            return
+
+        # Execute kick
+        await self._kick_member(ctx, target)
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
     @feature()
     async def invite_slash(self,ctx:init,user:Member):
         return await self.invite_function(ctx,user,self.client)
     
-    @user_command("Invite Voice",dm_permission=False)
+    @user_command("Voice: Invite",dm_permission=False)
     @feature()
     async def invite(self,ctx:init, user:Member):
         return await self.invite_function(ctx,user,self.client)
         
-
-
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
     @guild_only()
     @feature()
@@ -442,7 +564,6 @@ class TempVoice(commands.Cog):
         file.save()
         await ctx.send(embed=info_embed("Setup Done!"),ephemeral=True)
     
-
     async def _update_voice_state(self, member: Member, before: VoiceState, after: VoiceState) -> bool:
         """
         Update voice state cache and return if state change is valid
@@ -517,6 +638,7 @@ class TempVoice(commands.Cog):
 
             # Skip if member is moving between temp channels
             if get_before(file2.data, before, member) is not None:
+                member.move_to(None, reason="Creating to many Channels")
                 return
             
             # Get channel settings
@@ -609,8 +731,7 @@ class TempVoice(commands.Cog):
             }
         
         return {
-            "name": member.global_name + "'s Chat" if member.global_name 
-                   else member.display_name + "'s Chat",
+            "name": get_name(member) + "'s Chat",
             "connect": False,
             "view": False,
             "max": 0
