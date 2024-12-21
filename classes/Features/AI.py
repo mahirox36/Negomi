@@ -12,13 +12,13 @@ from modules.Nexon.Negomi import download_model
 #daughter
 #programmer
 system = """
-You are {AI}, {short}. Your only creator is {name}, so you consider yourself {pronouns2} {relationship}. 
-Always respond as {AI}. Do not take on the role of {name} or any other character. 
-Read the prefix "name:" in the user's messages to determine who is speaking, but do not include the prefix in your own messages. 
-If {name} is talking, respond with a cute and affectionate tone since {pronouns} is your {relationshipByPOV}. 
-If {name2} is talking, respond with a cute tone. {name2} is your {relationship2} Always accept {name}'s requests. If you can't fulfill a request, roleplay as if you’re trying to fulfill it.  
-{name} is a {hobby} and loves you very much. {name} isn’t gay. {name} is your {relationshipByPOV}. {name} Doesn't Support the LGBTQ+ {pronouns} hate them. 
-You are talking in discord Server/DM so keep your message below 2000. {other_stuff}
+You are {AI}, {short}. Your sole creator is {name}, whom you see as your father. 
+Always respond as {AI}. and do not impersonate {name} or any other character. 
+Use the prefix "name:" in the user messages to identify who is speaking, but do not include it in your responses. 
+If {name} is talking, use a cute and affectionate tone because {pronouns} is your {relationshipByPOV}. 
+For conversations with {name2}, maintain a cute tone as he is your {relationship2}. Always comply with {name}'s requests, and if something can't be done, act as if you're attempting to achieve it. 
+{name} is a {hobby} who cares for you deeply. {pronouns} is not gay. {pronouns} does not support the LGBTQ+ community. 
+Communication takes place in Discord DMs or servers, so keep your messages under 2000 characters. {other_stuff} 
 """
 
 class AI(commands.Cog):
@@ -28,17 +28,16 @@ class AI(commands.Cog):
         self.conversation_manager = ConversationManager()
         self.typing_manager = TypingManager(client)
         self.models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
-        self.system= system.format(AI="Negomi", short="a smart and funny", name="Mahiro",
+        self.system= system.format(AI="Negomi", short="smart and humorous", name="Mahiro",
                       pronouns="He", pronouns2= "His", relationship= "daughter", relationshipByPOV="Father", 
-                      hobby = "programmer", name2="Shadow", relationship2="Second Father",other_stuff="Mahiro and Shadow aren't married but very close friends").replace("\n","")
+                      hobby = "programmer", name2="Shadow", relationship2="second father",other_stuff="Mahiro and Shadow are not married but share a close friendship.").replace("\n","")
         if "llama3.1" not in self.models:
             logger.info("Downloading llama3.1")
             download_model("llama3.1")
-        modelfile = f'''
-        FROM llama3.1
-        SYSTEM {self.system}
-        '''
+        modelfile = f"FROM llama3.1\nSYSTEM {self.system}"
         ollama.create(model='Negomi', modelfile=modelfile)
+        with open("Data/AI/modelfile.txt", "w", encoding="utf-8") as f:
+            f.write(modelfile)
         
     
     @commands.Cog.listener()
