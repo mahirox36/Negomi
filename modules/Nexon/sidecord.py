@@ -49,7 +49,7 @@ def info_embed(
 
 def warn_embed(
     description: str = None,
-    title: str = "Warn",
+    title: str = "Warning",
     footer: str = None,
     author: List[Union[str, url]] = None
 ) -> Embed:
