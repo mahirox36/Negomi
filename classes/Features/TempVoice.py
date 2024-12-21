@@ -288,7 +288,7 @@ class TempVoice(commands.Cog):
         ctx: init, 
         target: Member, 
         action: str
-    ) -> tuple[bool, Optional[VoiceChannel]]:
+    ) -> tuple[bool, Optional[VoiceChannel], Optional[dict]]:
         """Check if the command user has proper permissions"""
         member = ctx.user
 
@@ -298,7 +298,7 @@ class TempVoice(commands.Cog):
                 embed=error_embed("You must be in a voice channel to use this command"),
                 ephemeral=True
             )
-            return False, None
+            return False, None, None
 
         # Get the voice channel
         channel = member.voice.channel
@@ -309,10 +309,11 @@ class TempVoice(commands.Cog):
                 embed=error_embed(f"Target user must be in your voice channel to be {action}"),
                 ephemeral=True
             )
-            return False, None
+            return False, None, None
 
         # Check if user is the channel owner
         file = Data(ctx.guild.id, "TempVoice", "TempVoices")
+        channel_data = None
         for data in file.data:
             if list(data.values())[0] == channel.id:
                 if str(member.id) != list(data.keys())[0]:
@@ -320,22 +321,24 @@ class TempVoice(commands.Cog):
                         embed=error_embed("You must be the channel owner to use this command"),
                         ephemeral=True
                     )
-                    return False, None
+                    return False, None, None
+                channel_data = data
                 break
         else:
             await ctx.send(
                 embed=error_embed("This command can only be used in temporary voice channels"),
                 ephemeral=True
             )
-            return False, None
+            return False, None, None
 
-        return True, channel
+        return True, channel, channel_data
 
     async def _ban_member(
         self, 
         ctx: init, 
         target: Member, 
         channel: VoiceChannel, 
+        channel_data: dict,
         reason: str = "No reason provided"
     ) -> bool:
         """Ban a member from the voice channel"""
@@ -357,6 +360,16 @@ class TempVoice(commands.Cog):
             return False
 
         try:
+            # Temporarily disable channel cleanup for this operation
+            guild_id = ctx.guild.id
+            channel_id = channel.id
+            cleanup_disabled = False
+
+            if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
+                cleanup_disabled = True
+                # Mark channel as having an ongoing moderation action
+                self.voice_states[guild_id][channel_id]['mod_action'] = True
+
             # Add to banned users list
             if target.id not in user_settings.data["Banned_Users"]:
                 user_settings.data["Banned_Users"].append(target.id)
@@ -376,6 +389,11 @@ class TempVoice(commands.Cog):
                 )
             except:
                 pass  # DM failed, continue anyway
+
+            # Re-enable channel cleanup
+            if cleanup_disabled:
+                if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
+                    self.voice_states[guild_id][channel_id].pop('mod_action', None)
 
             await ctx.send(
                 embed=info_embed(
@@ -397,6 +415,8 @@ class TempVoice(commands.Cog):
         self, 
         ctx: init, 
         target: Member, 
+        channel: VoiceChannel,
+        channel_data: dict,
         reason: str = "No reason provided"
     ) -> bool:
         """Kick a member from the voice channel"""
@@ -418,6 +438,16 @@ class TempVoice(commands.Cog):
             return False
 
         try:
+            # Temporarily disable channel cleanup for this operation
+            guild_id = ctx.guild.id
+            channel_id = channel.id
+            cleanup_disabled = False
+
+            if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
+                cleanup_disabled = True
+                # Mark channel as having an ongoing moderation action
+                self.voice_states[guild_id][channel_id]['mod_action'] = True
+
             # Add to kicked users list
             if target.id not in user_settings.data["Kicked_Users"]:
                 user_settings.data["Kicked_Users"].append(target.id)
@@ -427,7 +457,7 @@ class TempVoice(commands.Cog):
             try:
                 await target.send(
                     embed=warn_embed(
-                        f"You have been kicked from voice channel by {get_name(member)}\n"
+                        f"You have been kicked from {channel.name} by {get_name(member)}\n"
                         f"Reason: {reason}"
                     )
                 )
@@ -436,6 +466,12 @@ class TempVoice(commands.Cog):
 
             # Kick the user
             await target.move_to(None, reason=f"Kicked by {get_name(member)}: {reason}")
+
+            # Re-enable channel cleanup
+            if cleanup_disabled:
+                if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
+                    self.voice_states[guild_id][channel_id].pop('mod_action', None)
+
             await ctx.send(
                 embed=info_embed(
                     f"Kicked {get_name(target)}\nReason: {reason}",
@@ -467,76 +503,60 @@ class TempVoice(commands.Cog):
                 description="Please Chose"),view=ControlPanel(file.data,ctx.user),
                 ephemeral=True)
 
-    @voice.subcommand(name="ban",description="Ban a user from your temporary voice channel")
-    @feature()
-    async def ban_slash(
-        self,
-        ctx: init,
-        target: Member = SlashOption(
-            description="The user to ban",
-            required=True
-        ),
-        reason: str = SlashOption(
-            description="Reason for the ban",
-            required=False,
-            default="No reason provided"
-        )
-    ):
-        """Ban a user from your temporary voice channel"""
-        await ctx.response.defer(ephemeral=True)
-        
-        # Check permissions
-        valid, channel = await self._check_voice_permissions(ctx, target, "banned")
-        if not valid:
-            return
+    # @voice.subcommand(name="ban",description="Ban a user from your temporary voice channel")
+    # @feature()
+    # async def ban_slash(
+    #     self,
+    #     ctx: init,
+    #     target: Member = SlashOption(
+    #         description="The user to ban",
+    #         required=True
+    #     ),
+    #     reason: str = SlashOption(
+    #         description="Reason for the ban",
+    #         required=False,
+    #         default="No reason provided"
+    #     )
+    # ):
+    #     """Ban a user from your temporary voice channel"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "banned")
+    #     if not valid:
+    #         return
+    #     await self._ban_member(ctx, target, channel, channel_data, reason)
 
-        # Execute ban
-        await self._ban_member(ctx, target, channel, reason)
+    # @voice.subcommand(name="kick",description="Kick a user from your temporary voice channel")
+    # @feature()
+    # async def kick_slash(self, ctx: init, target: Member = SlashOption(
+    #         description="The user to kick", required=True), reason: str = SlashOption(description="Reason for the kick",
+    #         required=False, default="No reason provided")
+    # ):
+    #     """Kick a user from your temporary voice channel"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "kicked")
+    #     if not valid:
+    #         return
+    #     await self._kick_member(ctx, target, channel, channel_data, reason)
 
-    @voice.subcommand(name="kick",description="Kick a user from your temporary voice channel")
-    @feature()
-    async def kick_slash(self, ctx: init, target: Member = SlashOption(
-            description="The user to kick", required=True), reason: str = SlashOption(description="Reason for the kick",
-            required=False, default="No reason provided")
-    ):
-        """Kick a user from your temporary voice channel"""
-        await ctx.response.defer(ephemeral=True)
-        
-        # Check permissions
-        valid, channel = await self._check_voice_permissions(ctx, target, "kicked")
-        if not valid:
-            return
+    # @nextcord.user_command(name="Voice: Ban", dm_permission=False)
+    # @feature()
+    # async def ban_user(self, ctx: init, target: Member):
+    #     """Ban a user from your temporary voice channel (User Command)"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "banned")
+    #     if not valid:
+    #         return
+    #     await self._ban_member(ctx, target, channel, channel_data)
 
-        # Execute kick
-        await self._kick_member(ctx, target, reason)
-
-    @nextcord.user_command(name="Voice: Ban", dm_permission=False)
-    @feature()
-    async def ban_user(self, ctx: init, target: Member):
-        """Ban a user from your temporary voice channel (User Command)"""
-        await ctx.response.defer(ephemeral=True)
-        
-        # Check permissions
-        valid, channel = await self._check_voice_permissions(ctx, target, "banned")
-        if not valid:
-            return
-
-        # Execute ban
-        await self._ban_member(ctx, target, channel)
-
-    @nextcord.user_command(name="Voice: Kick", dm_permission=False)
-    @feature()
-    async def kick_user(self, ctx: init, target: Member):
-        """Kick a user from your temporary voice channel (User Command)"""
-        await ctx.response.defer(ephemeral=True)
-        
-        # Check permissions
-        valid, channel = await self._check_voice_permissions(ctx, target, "kicked")
-        if not valid:
-            return
-
-        # Execute kick
-        await self._kick_member(ctx, target)
+    # @nextcord.user_command(name="Voice: Kick", dm_permission=False)
+    # @feature()
+    # async def kick_user(self, ctx: init, target: Member):
+    #     """Kick a user from your temporary voice channel (User Command)"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "kicked")
+    #     if not valid:
+    #         return
+    #     await self._kick_member(ctx, target, channel, channel_data)
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
     @feature()
@@ -638,7 +658,7 @@ class TempVoice(commands.Cog):
 
             # Skip if member is moving between temp channels
             if get_before(file2.data, before, member) is not None:
-                member.move_to(None, reason="Creating to many Channels")
+                # member.move_to(None, reason="Creating to many Channels")
                 return
             
             # Get channel settings
@@ -681,16 +701,16 @@ class TempVoice(commands.Cog):
             await self._send_channel_info(new_channel, member)
 
     async def handle_channel_cleanup(self, member: Member, guild: Guild,
-                                   before: VoiceState, after: VoiceState):
+                               before: VoiceState, after: VoiceState):
         """Handle cleanup of empty temporary voice channels with state tracking"""
         async with self.lock:
             if not before.channel:
                 return
-                
+
             # Check if this is a valid state change
             if not await self._update_voice_state(member, before, after):
                 return
-                
+
             file = Data(guild.id, "TempVoice", "TempVoices")
             if not file.data:
                 file.data = []
@@ -705,14 +725,21 @@ class TempVoice(commands.Cog):
             guild_id = guild.id
             channel_id = before.channel.id
             channel_states = self.voice_states.get(guild_id, {}).get(channel_id, {})
-            
+            logger.info(channel_states)
+
+            # Don't cleanup if there's an ongoing moderation action
+            if channel_states.get('mod_action'):
+                return
+
             # Cleanup old states (older than 30 seconds)
             current_time = datetime.now().timestamp()
             active_members = {
                 user_id: state for user_id, state in channel_states.items()
-                if current_time - state['timestamp'] < 30
+                if current_time - state['timestamp'] < 30 and isinstance(user_id, int)  # Exclude non-member keys like 'mod_action'
             }
+            logger.info(active_members)
             
+
             if not active_members:
                 await self._cleanup_channel(before.channel, file, channel_index)
                 # Clean up state cache
