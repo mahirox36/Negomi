@@ -2,7 +2,7 @@
 Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcord Shortcuts
 ~~~~~~~~~~~~~~~
 """
-
+#This Library Custom Classes and functions
 from .Data import Data, DataGlobal
 from .BetterID import BetterID
 from .config import BotConfig
@@ -15,14 +15,17 @@ from .other import url, clear, remove_prefix, word_to_number, time_units, text_t
     remove_numbers, get_resource_path, is_executable
 from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model
+
+#Important things
 from typing import Any, Callable, Dict, List, Set, Optional, Union
 import os
-import asyncio
-import io
 from pathlib import Path
 import json
-from datetime import datetime
 import asyncio
+import io
+from datetime import datetime
+
+# Every class/functions I used in nextcord
 from nextcord import (
     Client, Interaction as init, Member,
     Permissions, Role, slash_command, Activity, Attachment,
@@ -31,9 +34,11 @@ from nextcord import (
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
     User, PermissionOverwrite, __version__ as nextcord_version
 )
+#Type Errors
 from nextcord import (
     HTTPException, Forbidden
 )
+# Other Stuff Like UI, application_checks, commands
 from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
