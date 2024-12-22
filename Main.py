@@ -1,19 +1,14 @@
-import io
 import traceback
 from typing import Generator, Optional
 from pathlib import Path
 import asyncio
 from datetime import datetime
 import nextcord
-from nextcord import File, Interaction, User
-from nextcord.ext import commands
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
-from nextcord.ext.application_checks import *
 import ollama
 from rich.traceback import install
 from modules.Nexon import *
-
-# from modules.updater import AutoUpdater
+from modules.updater import AutoUpdater
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -36,8 +31,8 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
-        # self.version = "0.7.0"  # Set your current version
-        # self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
+        self.version = "0.7.0"  # Set your current version
+        self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
         
         self.setup_hook()
 
@@ -174,7 +169,7 @@ class DiscordBot(commands.Bot):
             
             await self.sync_all_application_commands()
             
-            self.logger.info(f"{self.user.display_name} is online!")
+            self.logger.info(f"{get_name(self.user)} is online!")
             
             if send_to_owner_enabled:
                 await self._send_startup_message()

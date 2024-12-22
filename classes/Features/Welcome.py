@@ -1,13 +1,6 @@
-import nextcord
-import nextcord as discord
-from nextcord import *
-from nextcord.ext import commands
-from nextcord import Interaction as init
 import requests
 from modules.Nexon import *
 from PIL import Image, ImageDraw, ImageFont
-from nextcord.ext.application_checks import *
-import io
 import gc
 "\
 Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):\
@@ -135,7 +128,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
             member_file.data = [m.id for m in ctx.guild.members]
             member_file.save()
             
-            embed = nextcord.Embed(
+            embed = Embed(
                 title="Welcome Message Setup Complete",
                 description=f"Channel: {channel.mention}\nMessage: ```{message}```",
                 color=colors.Info.value
@@ -178,7 +171,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
                         str(member.avatar.url)
                     )
                     await channel.send(
-                        file=nextcord.File(welcome_image, f"welcome_{member.id}.png")
+                        file=File(welcome_image, f"welcome_{member.id}.png")
                     )
                 except Exception as e:
                     logger.error(f"Error creating welcome image: {e}")
@@ -272,7 +265,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
                     str(member.avatar.url)
                 )
                 await channel.send(
-                    file=nextcord.File(welcome_image, f"welcome_{member.id}.png")
+                    file=File(welcome_image, f"welcome_{member.id}.png")
                 )
                 del welcome_image
                 gc.collect()

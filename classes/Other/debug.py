@@ -1,9 +1,6 @@
 import platform
 import psutil
-import nextcord
-from nextcord import slash_command, Message, Member, Embed, Interaction as init
 from modules.Nexon import *
-from nextcord.ext import commands
 import time
 
 class Debug(commands.Cog):
@@ -58,7 +55,7 @@ class Debug(commands.Cog):
         embed.add_field(name="🐍 Python Version", value=f"**{python_version}**", inline=True)
 
         # Nextcord Version
-        nextcord_version = nextcord.__version__
+        nextcord_version = nextcord_version
         embed.add_field(name="🛠 Nextcord Version", value=f"**{nextcord_version}**", inline=True)
 
         # System Info

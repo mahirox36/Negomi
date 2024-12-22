@@ -1,9 +1,5 @@
 """
 Backup.py is for Backing up your server as a File"""
-import io
-from nextcord import *
-from nextcord.ext import commands
-from nextcord import Interaction as init
 from modules.Nexon import *
 import json
 __version__ = 1.4
@@ -128,7 +124,7 @@ class Backup(commands.Cog):
             else:
                 await ctx.guild.create_role(
                     name=role_name,
-                    color=Color(color),
+                    color=Colour(color),
                     permissions=Permissions(permissions)
                 )
 

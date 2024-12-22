@@ -1,7 +1,4 @@
 import nextcord
-from nextcord import *
-from nextcord.ext import commands
-from nextcord import Interaction as init, SlashOption
 from modules.Nexon import *
 from modules.config import Color
 

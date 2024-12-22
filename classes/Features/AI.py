@@ -1,9 +1,5 @@
-import nextcord
-from nextcord import *
-from nextcord.ext import commands
 from modules.Nexon import *
 import ollama
-from modules.Nexon.Negomi import download_model
 
 # models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
 #TODO: Instead adding a name before message it to the system: this Person display's name is "{Name}"
@@ -44,7 +40,7 @@ class AI(commands.Cog):
     async def on_message(self, message: Message):
         if message.author.bot:
             return
-        if not isinstance(message.channel, nextcord.DMChannel):
+        if not isinstance(message.channel, DMChannel):
             if message.mention_everyone: 
                 return
             elif not self.client.user.mentioned_in(message): 
@@ -53,7 +49,7 @@ class AI(commands.Cog):
                 return
         
         # First handle DM channels
-        if isinstance(message.channel, nextcord.DMChannel):
+        if isinstance(message.channel, DMChannel):
             if not allowAllUsers and message.author.id not in AI_AllowedUsersID:
                 return
         # Then handle guild messages

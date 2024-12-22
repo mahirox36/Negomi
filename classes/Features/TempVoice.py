@@ -1,9 +1,3 @@
-import nextcord
-import nextcord as discord
-from nextcord import *
-from nextcord.ext import commands
-from nextcord.ui import View, Button, TextInput, Modal
-from nextcord.ext.application_checks import *
 from nextcord import Interaction as init
 from modules.Nexon import *
 __UserSettingsVersion__ = 2
@@ -80,7 +74,7 @@ class EditMaxModal(Modal):
                                max_length=2, required=True)
         self.add_item(self.max)
 
-    async def callback(self, ctx: nextcord.Interaction):
+    async def callback(self, ctx: Interaction):
         # This is called when the modal is submitted
         try:
             num = int(self.max.value)
@@ -107,7 +101,7 @@ class EditNameModal(Modal):
             else get_name(ctx.user) + "'s Chat", required=True, max_length=100, min_length=1)
         self.add_item(self.name)
 
-    async def callback(self, interaction: nextcord.Interaction):
+    async def callback(self, interaction: Interaction):
         # This is called when the modal is submitted
         name = self.name.value
         self.user["Name"] = name
@@ -122,31 +116,31 @@ class ControlPanel(View):
         self.user = UserSettings(user)       
 
     def create_buttons(self):
-        self.button1 = Button(label=f"📝 Edit Name", style=nextcord.ButtonStyle.primary)
+        self.button1 = Button(label=f"📝 Edit Name", style=ButtonStyle.primary)
         self.button1.callback = self.Edit_Name
         self.add_item(self.button1)
 
-        self.button2 = Button(label=f"🫥 Hide/Show", style=nextcord.ButtonStyle.primary)
+        self.button2 = Button(label=f"🫥 Hide/Show", style=ButtonStyle.primary)
         self.button2.callback = self.Hide
         self.add_item(self.button2)
 
-        self.button3 = Button(label=f"🔓 Lock/Unlock", style=nextcord.ButtonStyle.primary)
+        self.button3 = Button(label=f"🔓 Lock/Unlock", style=ButtonStyle.primary)
         self.button3.callback = self.Lock
         self.add_item(self.button3)
 
-        self.button4 = Button(label=f"📝 Change Max Users", style=nextcord.ButtonStyle.primary)
+        self.button4 = Button(label=f"📝 Change Max Users", style=ButtonStyle.primary)
         self.button4.callback = self.Max
         self.add_item(self.button4)
 
-        self.button5 = Button(label=f"🚫 Delete Channel Messages", style=nextcord.ButtonStyle.primary)
+        self.button5 = Button(label=f"🚫 Delete Channel Messages", style=ButtonStyle.primary)
         self.button5.callback = self.Delete_Messages
         self.add_item(self.button5)
 
-        self.button6 = Button(label=f"⛔ Delete", style=nextcord.ButtonStyle.primary)
+        self.button6 = Button(label=f"⛔ Delete", style=ButtonStyle.primary)
         self.button6.callback = self.Delete
         self.add_item(self.button6)
 
-    async def Edit_Name(self, ctx: nextcord.Interaction):
+    async def Edit_Name(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -157,7 +151,7 @@ class ControlPanel(View):
             return
         await ctx.response.send_modal(modal)
         
-    async def Hide(self, ctx: nextcord.Interaction):
+    async def Hide(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -175,7 +169,7 @@ class ControlPanel(View):
         self.user.save()
         return
     
-    async def Lock(self, ctx: nextcord.Interaction):
+    async def Lock(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -193,7 +187,7 @@ class ControlPanel(View):
         self.user.save()
         return
     
-    async def Max(self, ctx: nextcord.Interaction):
+    async def Max(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -204,7 +198,7 @@ class ControlPanel(View):
             return
         await ctx.response.send_modal(modal)
 
-    async def Delete_Messages(self, ctx: nextcord.Interaction):
+    async def Delete_Messages(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -215,7 +209,7 @@ class ControlPanel(View):
             return
         await channeled.purge(limit=10000)
 
-    async def Delete(self, ctx: nextcord.Interaction):
+    async def Delete(self, ctx: Interaction):
         if await check(ctx,self.data) == False:
             await self.disable(ctx)
             return
@@ -237,7 +231,7 @@ class ControlPanel(View):
         file.save()
         await self.disable(ctx)
 
-    async def disable(self, ctx: nextcord.Interaction):
+    async def disable(self, ctx: Interaction):
         buttons = [
             self.button1,self.button2,self.button3,
             self.button4,self.button5,self.button6]
@@ -538,7 +532,7 @@ class TempVoice(commands.Cog):
             return
         await self._kick_member(ctx, target, channel, channel_data, reason)
 
-    @nextcord.user_command(name="Voice: Ban", dm_permission=False)
+    @user_command(name="Voice: Ban", dm_permission=False)
     @feature()
     async def ban_user(self, ctx: init, target: Member):
         """Ban a user from your temporary voice channel (User Command)"""
@@ -548,7 +542,7 @@ class TempVoice(commands.Cog):
             return
         await self._ban_member(ctx, target, channel, channel_data)
 
-    @nextcord.user_command(name="Voice: Kick", dm_permission=False)
+    @user_command(name="Voice: Kick", dm_permission=False)
     @feature()
     async def kick_user(self, ctx: init, target: Member):
         """Kick a user from your temporary voice channel (User Command)"""

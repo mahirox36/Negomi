@@ -1,8 +1,4 @@
 from datetime import timedelta
-from nextcord import *
-from nextcord.ext import commands
-from nextcord.ext.application_checks import *
-from nextcord import Interaction as init
 from modules.Nexon import *
 #TODO: Highly Customable
 class moderatormanager(commands.Cog):
@@ -13,7 +9,7 @@ class moderatormanager(commands.Cog):
     
     
     async def refresh_tokens_task(self):
-        """Background task to refresh tokens every 14 days"""
+        """Background task to refresh tokens every 60 days"""
         while not self.client.is_closed():
             try:
                 # Get all guild data
@@ -27,7 +23,7 @@ class moderatormanager(commands.Cog):
                     updated = False
                     for user_id, mod_data in data.items():
                         token_date = datetime.fromisoformat(mod_data.get("token_created", datetime.now().isoformat()))
-                        if datetime.now() - token_date >= timedelta(days=14):
+                        if datetime.now() - token_date >= timedelta(days=60):
                             # Generate new token
                             new_token = self.generate_token()
                             mod_data["token"] = new_token
@@ -58,7 +54,7 @@ class moderatormanager(commands.Cog):
 
     def get_mod_data(self, guild_id: int):
         """Get moderator data file"""
-        return Data(guild_id, "Moderator Manager", "users")
+        return Data(guild_id, "Moderator Manager", "users", default={})
 
     async def create_backup_data(self, guild_id: int, user_id: str):
         """Create backup of moderator data"""
@@ -124,6 +120,7 @@ class moderatormanager(commands.Cog):
     @manager.subcommand("add", "Add a Moderator")
     @feature()
     async def add(self, ctx: init, member: Member, role: Role):
+        await ctx.response.defer()
         file = self.get_mod_data(ctx.guild_id)
         mods = file.load()
         data = Data(ctx.guild_id, "Moderator Manager").data
@@ -139,6 +136,12 @@ class moderatormanager(commands.Cog):
         if str(member.id) in data:
             await ctx.send(embed=error_embed("This member is already a Moderator", "Moderator Manager"))
             return
+        try:
+            staffRole = ctx.guild.get_role(data["staff"])
+            await member.add_roles(role)
+            await member.add_roles(staffRole)
+        except:
+            await ctx.send(embed=error_embed(f"Error while adding Role. please check that the bot role is on top of the {role.mention} role", "Moderator Manager"),ephemeral=True)
 
         token = self.generate_token()
         
@@ -156,13 +159,14 @@ class moderatormanager(commands.Cog):
         
         # DM the token to the new moderator
         try:
-            await member.send(f"Your moderator token is: `{token}`\nThis token will be automatically refreshed every 14 days.")
+            await member.send(f"Your moderator token is: `{token}`\nThis token will be automatically refreshed every 60 days.")
             await ctx.send(embed=info_embed(f"{member.mention} is now a {role.mention}\nToken has been sent via DM", "Moderator Manager"))
         except:
             await ctx.send(embed=warn_embed(f"{member.mention} is now a {role.mention}, but I couldn't DM them the token", "Moderator Manager"))
     @manager.subcommand("promote", "Promote a moderator to a higher role")
     @feature()
     async def promote(self, ctx: init, member: Member):
+        await ctx.response.defer()
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
         roles_data = Data(ctx.guild_id, "Moderator Manager").load()
@@ -199,6 +203,7 @@ class moderatormanager(commands.Cog):
     @manager.subcommand("demote", "Demote a moderator to a lower role")
     @feature()
     async def demote(self, ctx: init, member: Member):
+        await ctx.response.defer()
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
         roles_data = Data(ctx.guild_id, "Moderator Manager").load()
@@ -212,7 +217,7 @@ class moderatormanager(commands.Cog):
         
         try:
             current_index = role_hierarchy.index(current_role_id)
-            if current_index <= 0:
+            if current_index <= 1:
                 await ctx.send(embed=error_embed("This moderator is already at the lowest role", "Moderator Manager"))
                 return
                 
@@ -235,6 +240,7 @@ class moderatormanager(commands.Cog):
     @manager.subcommand("remove", "Remove a moderator")
     @feature()
     async def remove(self, ctx: init, member: Member):
+        await ctx.response.defer()
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
         
@@ -315,7 +321,7 @@ class moderatormanager(commands.Cog):
                 # Send new token via DM
                 try:
                     await new_member.send(f"Your moderator access has been restored. Your new token is: `{new_token}`\n"
-                                        f"This token will be automatically refreshed every 14 days.")
+                                        f"This token will be automatically refreshed every 60 days.")
                     success_msg = f"Account recovered:\n- Banned compromised account\n- Restored access to {new_member.mention}\n- New token sent via DM"
                 except:
                     success_msg = f"Account recovered:\n- Banned compromised account\n- Restored access to {new_member.mention}\n- ⚠️ Could not send token via DM"
@@ -338,14 +344,14 @@ class moderatormanager(commands.Cog):
     @manager.subcommand("list", "List all moderators")
     @feature()
     async def list(self, ctx: init):
+        await ctx.response.defer()
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
         
         if not data:
-            await ctx.send(embed=info_embed("No moderators found", "Moderator Manager"))
+            await ctx.send(embed=warn_embed("No moderators found", "Moderator Manager"))
             return
-            
-        embed = Embed(title="Moderator List", color=0x00ff00)
+        embed = info_embed(title="Moderator List")
         
         for user_id, mod_data in data.items():
             member = ctx.guild.get_member(int(user_id))
@@ -353,7 +359,7 @@ class moderatormanager(commands.Cog):
                 role = ctx.guild.get_role(mod_data["currentRole"])
                 since = mod_data["since"]
                 embed.add_field(
-                    name=f"{member.display_name}",
+                    name=f"{get_name(member)}",
                     value=f"Role: {role.mention}\nSince: {since}",
                     inline=False
                 )
@@ -363,6 +369,7 @@ class moderatormanager(commands.Cog):
     @manager.subcommand("info", "Get information about a moderator")
     @feature()
     async def info(self, ctx: init, member: Member):
+        await ctx.response.defer()
         file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
         data = file.load()
         
@@ -371,7 +378,7 @@ class moderatormanager(commands.Cog):
             return
             
         mod_data = data[str(member.id)]
-        embed = Embed(title=f"Moderator Information - {member.display_name}", color=0x00ff00)
+        embed = info_embed(title=f"Moderator Information - {get_name(member)}")
         
         current_role = ctx.guild.get_role(mod_data["currentRole"])
         added_by = ctx.guild.get_member(mod_data["by"])

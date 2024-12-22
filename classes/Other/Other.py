@@ -1,7 +1,3 @@
-from nextcord import *
-from nextcord.ext.application_checks import *
-from nextcord.ext import commands
-from nextcord import Interaction as init
 from modules.Nexon import *
 from requests import get
 import random

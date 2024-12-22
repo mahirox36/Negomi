@@ -1,11 +1,4 @@
-from typing import Set
-from nextcord import *
-from nextcord.ext import commands
-from nextcord import Interaction as init
 from modules.Nexon import *
-import os
-import json
-from pathlib import Path
 
 description= f"Advance viewing is hard but if you understand it, it's easy\n\
         first try type: {prefix}view-x, it gives you folders and you can type the folder you want in after command like {prefix}view-x <Folder>\n\
