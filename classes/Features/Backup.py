@@ -72,6 +72,9 @@ class Backup(commands.Cog):
                    default_member_permissions=Permissions(administrator=True))
     @feature()
     async def imported(self,ctx:init, file: Attachment):
+        if ctx.guild.owner_id != ctx.user.id:
+            ctx.send(embed=error_embed("Only the owner of the guild can import.","Import Error"))
+            return
         if not file.filename.endswith(".json"):
             await ctx.send(embed=error_embed("Invalid file type. Please upload a `.json` file that the command `/export` made", "Error"))
             return
