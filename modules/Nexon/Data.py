@@ -4,7 +4,6 @@ import os
 import shutil
 from typing import Any, Dict, List, Union
 
-
 class Data:
     def __init__(self,
                  server_id:int,

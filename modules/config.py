@@ -1,6 +1,5 @@
 import json
 from typing import Any, Dict, List, Union
-
 import os
 
 
@@ -84,7 +83,7 @@ class Config:
                         value = f"\"{value}\""
                     elif value is None:
                         value = "None"
-                    elif not isinstance(value, (int, float, bool,Color,tuple)):
+                    elif not isinstance(value, (int, float, bool, Color, tuple)):
                         raise ValueError("Invalid value: must be a boolean, string, int, float, or tuple")
                     lines.append(f"{key} = {value}\n")
             elif isinstance(section_data, list):
