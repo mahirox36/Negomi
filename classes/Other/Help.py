@@ -28,9 +28,10 @@ class HelpSelectAdmin(ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.options = [
-            SelectOption(label="Home", value="home", emoji="🏠", default=True),
             SelectOption(label="Setups", value="setup", emoji="🔮"),
             SelectOption(label="Plugins Manager", value="plugin", emoji="🛠️"),
+            SelectOption(label="Moderator Manager", value="mod", emoji="💀"),
+            SelectOption(label="Backup", value="backup", emoji="💾"),
             SelectOption(label="Other", value="other", emoji="🗿")
         ]
         self.select = ui.Select(placeholder="Choose an option...", options=self.options)
@@ -40,13 +41,12 @@ class HelpSelectAdmin(ui.View):
     async def callback(self, ctx: Interaction):
         selected_value = self.select.values[0]
         embeds = {
-            "home": home_embed,
             "setup": embed_builder_static(
                 "🔮 Setups",
                 "Here are the setup commands:",
                 {"auto role setup": "Setup auto role for members and bots",
                 "mod manager setup": "Setup the Moderator Manager",
-                "welcome setup": "Setup the Welcoming Message, check '/welcome how' to know how to set it up",
+                "welcome setup": "Setup the Welcoming Message, check /welcome how to know how to set it up",
                 "voice-setup": "Setup temp voice",
                 }
             ),
@@ -56,10 +56,30 @@ class HelpSelectAdmin(ui.View):
                 {"feature enable": "Enable a feature in your server",
                  "feature disable": "Disable a feature in your server"}
             ),
+            "mod": embed_builder_static(
+                "💀 Moderator Manager",
+                "Here are the Moderator Manager commands:",
+                {"mod manager add": "Add a Moderator",
+                 "mod manager remove": "Remove a moderator",
+                 "mod manager promote": "Promote a moderator to a higher role",
+                 "mod manager demote": "Demote a moderator to a lower role",
+                 "mod manager hacked": "Handle hacked moderator account",
+                 "mod manager list": "List all moderators",
+                 "mod manager info": "Get information about a moderator",
+                 }
+            ),
+            "backup": embed_builder_static(
+                "💾 Backup",
+                "Here are the Backup commands:",
+                {"export": "this will export Roles, Channels, and Bots Names",
+                 "import": "This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
+                 }
+            ),
             "other": embed_builder_static(
                 "🗿 Other",
                 "Here are other commands:",
-                {"debug": "Displays detailed debug information about the bot. (Not Really Admin Only Command)"}
+                {"debug": "Displays detailed debug information about the bot. (Not Really Admin Only Command)",
+                "mode": "Change the mode of role creation"},
             )
         }
         embed = embeds.get(selected_value, home_embed)
@@ -69,7 +89,6 @@ class HelpSelect(ui.View):
     def __init__(self, admin: bool = False):
         super().__init__(timeout=None)
         self.options = [
-            SelectOption(label="Home", value="home", emoji="🏠", default=True),
             SelectOption(label="Role", value="role", emoji="👥"),
             SelectOption(label="Temp Voice", value="temp", emoji="🎤"),
             SelectOption(label="Groups", value="groups", emoji="💀"),
@@ -86,7 +105,6 @@ class HelpSelect(ui.View):
     async def callback(self, ctx: Interaction):
         selected_value = self.select.values[0]
         embeds = {
-            "home": home_embed,
             "role": embed_builder_static(
                 "👥 Role",
                 "Here are the role commands:",
@@ -103,8 +121,12 @@ class HelpSelect(ui.View):
                 "🎤 Temp Voice",
                 "Here are the temp voice commands:",
                 {"voice panel": "Bring the Control Panel for the TempVoice chat",
-                 "voice invite": "Invite a member to Voice chat,",
-                 "Invite Voice": "Invite a member to Voice chat, (Shows when right click on user)"
+                 "voice invite": "Invite a member to Voice chat",
+                 "voice ban": "Ban a user from your temporary voice channel",
+                 "voice kick": "Kick a user from your temporary voice channel",
+                 "Voice: Invite": "Invite a member to Voice chat, (Shows when right click on user)",
+                 "Voice: Ban": "Ban a user from your temporary voice channel, (Shows when right click on user)",
+                 "Voice: Kick": "Kick a user from your temporary voice channel, (Shows when right click on user)",
                  }
             ),
             "groups": embed_builder_static(
