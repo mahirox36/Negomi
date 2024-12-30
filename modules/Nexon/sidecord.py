@@ -91,22 +91,9 @@ class SlashCommandOnCooldown(ApplicationCheckFailure):
 #         return decorator
     
 #     return hybrid
-    
-def userCTX(ctx:init):
-    try:
-        ctx.user = ctx.author
-    except:
-        pass
-    return ctx
-def userCONTEXT(ctx:init):
-    try:
-        ctx.author = ctx.user
-    except:
-        pass
-    return ctx
 
 
-async def high(ctx:init,user:Member):
+async def HaveHigherRole(ctx:init,user:Member):
     if user.top_role.position >= ctx.user.top_role.position:
         await ctx.send(f"User {user} Is Higher Than you")
         return True

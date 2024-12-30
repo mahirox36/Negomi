@@ -8,7 +8,7 @@ from .BetterID import BetterID
 from .config import BotConfig
 from .config import *
 from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name, everyone, debug_embed, info_embed, warn_embed, \
-    error_embed, SlashCommandOnCooldown, userCTX, userCONTEXT, high, ApplicationNotOwnerGuild, cooldown, is_owner_guild, \
+    error_embed, SlashCommandOnCooldown,HaveHigherRole, ApplicationNotOwnerGuild, cooldown, is_owner_guild, \
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
         CommandDisabled, enableByConfig
 from .other import url, clear, remove_prefix, word_to_number, time_units, text_to_number, convert_to_seconds, \
@@ -24,7 +24,6 @@ import json
 import asyncio
 import io
 from datetime import datetime
-
 # Every class/functions I used in nextcord
 from nextcord import (
     Client, Interaction as init, Member,

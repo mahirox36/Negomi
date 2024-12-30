@@ -111,8 +111,7 @@ class DiscordBot(commands.Bot):
                     "Arc" in str(ext_path) or
                     "." in ext_path.stem or
                     (not enableAI and ext_path.stem == "AI") or
-                    (not Welcome_enabled and ext_path.stem == "Welcome") or
-                    (get and ext_path.stem == "testShadow")):
+                    (not Welcome_enabled and ext_path.stem == "Welcome")):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
                 
@@ -200,43 +199,43 @@ class DiscordBot(commands.Bot):
         except AttributeError:
             err = error
         if isinstance(err, SlashCommandOnCooldown):
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationMissingPermissions):
             missing = ", ".join(err.missing_permissions)
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationNotOwner):
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationNotOwnerGuild):
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You are not the owner of the Server {err.guild}", "Not Owner of Server"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationNoPrivateMessage):
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationPrivateMessageOnly):
-            await ctx.send(
+            await ctx.response.send_message(
                 embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return
         elif isinstance(error, FeatureDisabled):
-            if error.send_error: await ctx.send(
+            if error.send_error: await ctx.response.send_message(
                 embed=error_embed(error.message,"Feature Disabled",))
             return 
         elif isinstance(error, CommandDisabled):
             return
-        await ctx.send(embed=error_embed(error,title="An unexpected error occurred"))
+        await ctx.response.send_message(embed=error_embed(error,title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner
@@ -259,30 +258,30 @@ class DiscordBot(commands.Bot):
             return
         elif isinstance(error, MissingPermissions):
             missing = ", ".join(error.missing_permissions)
-            await ctx.send(
+            await ctx.reply(
                 embed=error_embed(f"You don't have {missing}", "Missing Permissions"))
             return
         elif isinstance(error, NotOwner):
-            await ctx.send(
+            await ctx.reply(
                 embed=error_embed(f"You are not the owner of the bot", "Not Owner"))
             return
         elif isinstance(error, FeatureDisabled):
-            if error.send_error: await ctx.send(
+            if error.send_error: await ctx.reply(
                 embed=error_embed(f"This Feature is disabled",
                                   "Feature Disabled"))
             return 
         # elif isinstance(error, NotOwnerGuild):
-        #     await ctx.send(
+        #     await ctx.reply(
         #         embed=error_embed(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),
         #         ephemeral=True)
         #     return
         elif isinstance(error, NoPrivateMessage):
-            await ctx.send(
+            await ctx.reply(
                 embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
         elif isinstance(error, PrivateMessageOnly):
-            await ctx.send(
+            await ctx.reply(
                 embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return

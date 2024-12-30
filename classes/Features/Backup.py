@@ -12,8 +12,17 @@ class Backup(commands.Cog):
     @feature()
     @cooldown(10)
     async def export(self, ctx: init):
-        await ctx.response.defer()
-        
+        ctx.response.defer(ephemeral=False)
+        await self.exportFunction(ctx)
+
+    # in Nextcord 3.0.1 
+    # @slash_command(name="export_server", description="this will export Roles, Channels, and Bots Names",integration_types=[IntegrationType.user_install])
+    # @cooldown(60)
+    # async def exportUser(self, ctx: init):
+    #     ctx.response.defer(ephemeral=True)
+    #     await self.exportFunction(ctx)
+
+    async def exportFunction(self, ctx: init):
         data: Dict[str, Union[
             str,  # Version string
             Dict[str, Dict[int, str]],  # Server structure with categories, channels, voice mappings

@@ -55,7 +55,7 @@ class AI(commands.Cog):
         # Then handle guild messages
         else:
             try:
-                check_feature_inside(message.guild.id, self)
+                await check_feature_inside(message.guild.id, self)
                 if not allowAllServers and message.guild.id not in AI_AllowedServers:
                     return
             except Exception as e:
