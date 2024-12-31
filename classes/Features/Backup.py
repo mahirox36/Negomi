@@ -1,150 +1,193 @@
-"""
-Backup.py is for Backing up your server as a File"""
 from modules.Nexon import *
 import json
-__version__ = 1.4
-__VersionsSupported__= [1.4]
+__version__ = 2.1
+__VersionsSupported__ = [2.0, 2.1]
+
+#TODO: Add Protected File Type
+#TODO: Add if it should Include the Server Icon and banner (Only with the protected file type)
+#TODO: Add roles permission support for channels
+#TODO: make the PermissionSynced Be useful
 
 class Backup(commands.Cog):
-    def __init__(self, client:Client):
+    def __init__(self, client: Client):
         self.client = client
-    @slash_command(name="export", description="this will export Roles, Channels, and Bots Names", default_member_permissions=Permissions(administrator=True))
+
+    
+    @slash_command(name="backup", 
+                  default_member_permissions=Permissions(administrator=True))
+    async def backup(self, ctx:init):
+        pass
+    
+    
+    @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
     @feature()
     @cooldown(10)
     async def export(self, ctx: init):
-        ctx.response.defer(ephemeral=False)
+        await ctx.response.defer(ephemeral=False)
         await self.exportFunction(ctx)
 
-    # in Nextcord 3.0.1 
-    # @slash_command(name="export_server", description="this will export Roles, Channels, and Bots Names",integration_types=[IntegrationType.user_install])
-    # @cooldown(60)
-    # async def exportUser(self, ctx: init):
-    #     ctx.response.defer(ephemeral=True)
-    #     await self.exportFunction(ctx)
-
     async def exportFunction(self, ctx: init):
-        data: Dict[str, Union[
-            str,  # Version string
-            Dict[str, Dict[int, str]],  # Server structure with categories, channels, voice mappings
-            Dict[str, List[Union[List[Union[str, int, None]], Dict[str, int]]]],  # Channel details
-            List[Dict[str, Union[str, int]]]  # Role details
-        ]] = {
+        data = {
             "version": __version__,
-            "Categories": {}, # {category_id: category_name}
-            "channels": {
-                "Channels": [],  # [[channel_name, category_id, topic_or_None]]
-                "Voice": []  # [[voice_channel_name, category_id]]
-            },
-            "roles": [],  # [[role_name, role_color, role_permissions]]
-            "bot_name": []  # List of bot display names
+            "Categories": [],
+            "roles": [],
+            "bot_name": []
         }
-    
-        # Add categories
+
+        # Export roles first
+        for role in reversed(ctx.guild.roles):
+            role_data = {
+                "Name": role.name,
+                "Color": f"{role.color.value:06x}",  # Convert to hex
+                "Permission": role.permissions.value
+            }
+            data["roles"].append(role_data)
+
+        # Handle channels with no category
+        no_category_channels = []
+        for channel in ctx.guild.channels:
+            if channel.category is None:
+                channel_data = await self.create_channel_data(channel)
+                if channel_data:
+                    no_category_channels.append(channel_data)
+
+        if no_category_channels:
+            data["Categories"].append({
+                "channelsContains": no_category_channels
+            })
+
+        # Export categories with their channels
         for category in ctx.guild.categories:
-            data["Categories"][category.id] = category.name
-    
-        # Add text channels
-        for category in ctx.guild.categories:
-            for channel in category.text_channels:
-                data["channels"]["Channels"].append([
-                    channel.name, category.id, channel.topic or None
-                ])
-    
-        # Add voice channels
-        for category in ctx.guild.categories:
-            for channel in category.voice_channels:
-                data["channels"]["Voice"].append([channel.name, category.id])
-    
-        # Add roles in server order (reversed to match Discord's hierarchy)
-        for role in ctx.guild.roles:
-            data["roles"].append([role.name, role.color.value, role.permissions.value])
-        data["roles"].reverse()
-    
-        # Add bot display names
+            category_data = {
+                "Name": category.name,
+                "Permission": channel.permissions_for(channel.guild.default_role).value,
+                "PermissionSynced": channel.permissions_synced,
+                "channelsContains": []
+            }
+
+            for channel in category.channels:
+                channel_data = await self.create_channel_data(channel)
+                if channel_data:
+                    category_data["channelsContains"].append(channel_data)
+
+            data["Categories"].append(category_data)
+
+        # Export bot names
         for member in ctx.guild.members:
             if member.bot:
-                data["bot_name"].append(member.mention)
-    
-        # Create a temporary file-like object for JSON export
+                data["bot_name"].append(f"<@{member.id}> - {get_name(member)}")
+
+        # Create and send the file
         file_data = io.StringIO()
         try:
             json.dump(data, file_data, indent=2, ensure_ascii=False)
             file_data.seek(0)
-            filename = f"backup-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}.json"
+            filename = f"backup-v2-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}.json"
             discord_file = File(file_data, filename=filename)
             await ctx.send(file=discord_file)
         finally:
             file_data.close()
 
-    @slash_command(name="import",
-                   description="This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
-                   default_member_permissions=Permissions(administrator=True))
+    async def create_channel_data(self, channel):
+        if isinstance(channel, TextChannel):
+            overwrites = channel.overwrites_for(channel.guild.default_role)
+            permissions_dict = {
+                "allow": overwrites.pair()[0].value,
+                "deny": overwrites.pair()[1].value
+            }
+            return {
+                "Name": channel.name,
+                "Permission": permissions_dict,
+                "PermissionSynced": channel.permissions_synced,
+                "isAgeRestricted": channel.is_nsfw(),
+                "isAnnouncement": channel.is_news(),
+                "slowModeDuration": channel.slowmode_delay,
+                "channelTopic": channel.topic or ""
+            }
+        elif isinstance(channel, VoiceChannel):
+            overwrites = channel.overwrites_for(channel.guild.default_role)
+            permissions_dict = {
+                "allow": overwrites.pair()[0].value,
+                "deny": overwrites.pair()[1].value
+            }
+            return {
+                "Name": channel.name,
+                "Permission": permissions_dict,
+                "PermissionSynced": channel.permissions_synced,
+                "isVoice": True,
+                "userLimit": channel.user_limit
+            }
+        return None
+
+    @backup.subcommand(name="import",
+                  description="Import server configuration from a backup file")
     @feature()
-    async def imported(self,ctx:init, file: Attachment):
+    async def imported(self, ctx: init, file: Attachment):
         if ctx.guild.owner_id != ctx.user.id:
-            ctx.send(embed=error_embed("Only the owner of the guild can import.","Import Error"))
+            await ctx.send(embed=error_embed("Only the owner of the guild can import.", "Import Error"))
             return
+
         if not file.filename.endswith(".json"):
-            await ctx.send(embed=error_embed("Invalid file type. Please upload a `.json` file that the command `/export` made", "Error"))
-            return
-        file = await file.read()
-        data: Dict[str, Union[
-            str,  # Version string
-            Dict[str, Dict[int, str]],  # Server structure with categories, channels, voice mappings
-            Dict[str, List[Union[List[Union[str, int, None]], Dict[str, int]]]],  # Channel details
-            List[Dict[str, Union[str, int]]]  # Role details
-        ]] = json.loads(file)
-
-        # Check version compatibility
-        if data.get("version") == __version__:
-            await ctx.send(embed=info_embed("It will take some time to import everything.", "Okie UwU"))
-        elif data.get("version") in __VersionsSupported__:
-            await ctx.send(embed=warn_embed(
-                "This version is outdated but still supported. Please create a new backup to update it.",
-                title="⚠️ The Backup Version is Outdated ⚠️"
-            ))
-        else:
-            await ctx.send(embed=error_embed(
-                "Sorry, but this version of the backup is not supported.",
-                title="⚠️ The Backup Version is Not Supported ⚠️"
-            ))
+            await ctx.send(embed=error_embed("Invalid file type. Please upload a `.json` file.", "Error"))
             return
 
-        # Create categories
-        categories = {}
-        for id, name in data["Categories"].items():
-            category = await ctx.guild.create_category(name)
-            categories[int(id)] = category
+        created_roles = {}
+        file_content = await file.read()
+        data = json.loads(file_content)
 
-        # Create text channels
-        for channel in data["channels"]["Channels"]:
-            channel_name, category_id, topic = channel
-            category = categories.get(category_id)
-            await ctx.guild.create_text_channel(channel_name, category=category, topic=topic)
+        if data.get("version") not in __VersionsSupported__:
+            await ctx.send(embed=error_embed("Unsupported backup version.", "Version Error"))
+            return
 
-        # Create voice channels
-        for channel in data["channels"]["Voice"]:
-            channel_name, category_id = channel
-            category = categories.get(category_id)
-            await ctx.guild.create_voice_channel(channel_name, category=category)
+        await ctx.send(embed=info_embed("Starting import process...", "Import Started"))
 
-        # Create roles
-        for role in data["roles"]:
-            role_name, color, permissions = role
-            if role_name == "@everyone":
-                await ctx.guild.default_role.edit(permissions=Permissions(permissions))
+        # Create roles first
+        for role_data in data["roles"]:
+            if role_data["Name"] != "@everyone":
+                role = await ctx.guild.create_role(
+                    name=role_data["Name"],
+                    color=Colour(int(role_data["Color"], 16)),
+                    permissions=Permissions(role_data["Permission"])
+                )
+                created_roles[role_data["Name"]] = role
             else:
-                await ctx.guild.create_role(
-                    name=role_name,
-                    color=Colour(color),
-                    permissions=Permissions(permissions)
+                await ctx.guild.default_role.edit(
+                    permissions=Permissions(role_data["Permission"])
                 )
 
-        # Create a channel for more info
-        final_channel = await ctx.guild.create_text_channel("more-info")
+        # Create categories and channels
+        for category_data in data["Categories"]:
+            if "Name" in category_data:  # If it's a named category
+                category = await ctx.guild.create_category(
+                    name=category_data["Name"],
+                    overwrites={ctx.guild.default_role: PermissionOverwrite.from_pair(allow=Permissions(category_data["Permission"]), deny=Permissions.none())},
+                    reason= "Importing from file"
+                )
+                parent = category
+            else:  # For channels without category
+                parent = None
+
+            for channel_data in category_data["channelsContains"]:
+                await self.create_channel(ctx.guild, channel_data, parent)
         bot_names = "Bots Names:\n" + "\n".join(data["bot_name"])
-        await final_channel.send(bot_names)
-        await final_channel.send("Finished everything.")
+        await ctx.channel.send(bot_names)
+        await ctx.send(embed=info_embed("Import completed successfully!", "Import Complete"))
+
+    async def create_channel(self, guild: Guild, channel_data: dict, category):
+        channel_type = VoiceChannel if channel_data.get("isVoice", False) else TextChannel
+        allow_permissions = Permissions(channel_data["Permission"]["allow"])
+        deny_permissions = Permissions(channel_data["Permission"]["deny"])
+        overwrite = PermissionOverwrite.from_pair(allow=allow_permissions, deny=deny_permissions)
+        await guild.create_text_channel(
+                                        name=channel_data["Name"], reason= "Importing from file",
+                                        category=category, overwrites= {guild.default_role: overwrite},
+                                        slowmode_delay= channel_data["slowModeDuration"], nsfw=channel_data["isAgeRestricted"],
+                                        topic=channel_data["channelTopic"]
+                                        ) if channel_type == TextChannel else \
+            await guild.create_voice_channel(
+                name= channel_data["Name"], reason= "Importing from file",
+                category=category, user_limit=channel_data.get("userLimit", 0), overwrites={guild.default_role: overwrite}
+            )
 
 def setup(client):
     client.add_cog(Backup(client))

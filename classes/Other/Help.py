@@ -71,8 +71,8 @@ class HelpSelectAdmin(ui.View):
             "backup": embed_builder_static(
                 "💾 Backup",
                 "Here are the Backup commands:",
-                {"export": "this will export Roles, Channels, and Bots Names",
-                 "import": "This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
+                {"backup export": "this will export Roles, Channels, and Bots Names",
+                 "backup import": "This will import Roles, Channels, and Bots Names. You need to upload the file you made with export",
                  }
             ),
             "other": embed_builder_static(
