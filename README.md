@@ -15,7 +15,6 @@
 
 ## 🛠️ In Development:
 
-* Text Channel Refresher.
 * Split the Script for 2 one for only AI and the other for rest of the stuff.
 * Uniqe Card for every User.
 * EmbedEditor.
