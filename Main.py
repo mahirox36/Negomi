@@ -1,3 +1,6 @@
+from rich.traceback import install
+install()
+
 import traceback
 from typing import Generator, Optional
 from pathlib import Path
@@ -6,7 +9,6 @@ from datetime import datetime
 import nextcord
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 import ollama
-from rich.traceback import install
 from modules.Nexon import *
 
 class DiscordBot(commands.Bot):
@@ -30,9 +32,6 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
-        # self.version = "0.7.0"  # Set your current version
-        # self.updater = AutoUpdater("mahirox36", "Negomi", self.version)
-        
         self.setup_hook()
 
     async def cleanup(self):
@@ -54,22 +53,7 @@ class DiscordBot(commands.Bot):
 
     def setup_hook(self) -> None:
         """Overridden setup hook to handle bundled and non-bundled extensions."""
-        if is_executable():
-            # Check for updates
-            self.logger.info("Checking for updates...")
-            if self.updater.check_for_updates():
-                self.logger.info("Update available! Downloading...")
-                if new_exe := self.updater.download_update():
-                    self.logger.info("Applying update...")
-                    self.updater.apply_update(new_exe)
-            else:
-                self.logger.info("Up to date!")
-
-            # Load extensions normally
-            data = [i for i in self._load_extensions(get=True)]
-            
-        else:
-            data = [i for i in self._load_extensions    (get=True)]
+        data = [i for i in self._load_extensions(get=True)]
     
     def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
         """Load all extension modules with executable-aware path handling."""
@@ -325,5 +309,4 @@ async def main():
     
 
 if __name__ == "__main__":
-    install()  # Install Rich traceback handler
     asyncio.run(main())
