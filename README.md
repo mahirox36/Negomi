@@ -7,7 +7,7 @@
 - Customizable Roles for Members, for everyone, or boosters only
 - Welcoming Users with Images and Messages
 - Auto Role for members and bots
-- AI Integration (Bring Your Own AI For Now)
+- AI Integration (Bring Your AI For Now)
 - Backup Servers, including all types of channels (excluding Forums for now), with their permissions in the same order. Roles with their permissions and colors.
 - Fun and Engaging Commands
 
@@ -32,7 +32,7 @@
 ### Version 0.10
 
 - Develop a Server Economy with virtual currency and rewards.
-- Create engaging Custom Mini-Games for community interaction.
+- Create engaging Custom mini games for community interaction.
 - Add a Server Settings Customizer for admins to manage features effortlessly.
 - Expand the Level System with additional rewards and customization options.
 
