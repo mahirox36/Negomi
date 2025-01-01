@@ -8,7 +8,6 @@ from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage
 import ollama
 from rich.traceback import install
 from modules.Nexon import *
-from modules.updater import AutoUpdater
 
 class DiscordBot(commands.Bot):
     def __init__(self):
