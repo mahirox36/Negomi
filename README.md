@@ -4,26 +4,39 @@
 
 - Moderator Manager
 - Temporary Voice Chat
-- Customizable Roles for Members, for everyone or boosters only
-- Welcoming Users with Image and Message.
-- Auto Role for members and bots.
+- Customizable Roles for Members, for everyone, or boosters only
+- Welcoming Users with Images and Messages
+- Auto Role for members and bots
 - AI Integration (Bring Your Own AI For Now)
-- Backup Servers Included all type of channels (exluded Fourms for now) with their permission, the same order. roles with the permission and color.
+- Backup Servers, including all types of channels (excluding Forums for now), with their permissions in the same order. Roles with their permissions and colors.
 - Fun and Engaging Commands
 
 *Note: All features are customizable except the greeting image.*
 
-## 🛠️ In Development:
+## 🗺️ Roadmap:
 
-* Split the Script for 2 one for only AI and the other for rest of the stuff.
-* Uniqe Card for every User.
-* EmbedEditor.
-* Maybe a Dashboard.
-* Dynamic Help Menu in nextcord future update.
-* Ticket System.
-* Level System.
-* Nexon Library with custom Interaction
-* More Soon!
+### Version 0.8:
+
+- Expand the backup system to include forum channels.
+- Enhance AI integration to handle more advanced prompts.
+- Introduce an Achievement System to reward users for their activities.
+- Launch a Time Capsule feature, allowing users to save messages for future unveiling.
+
+### Version 0.9
+
+- Finalize and roll out the Dynamic Help Menu for easier navigation of bot features.
+- Implement a Unique User Card System to showcase personalized user stats.
+- Add a streamlined Ticket System for efficient issue management.
+- Introduce a Level System with rewards to encourage user engagement.
+
+### Version 0.10
+
+- Develop a Server Economy with virtual currency and rewards.
+- Create engaging Custom Mini-Games for community interaction.
+- Add a Server Settings Customizer for admins to manage features effortlessly.
+- Expand the Level System with additional rewards and customization options.
+
+### *More in Future Updates*
 
 ## 📚 Custom Libraries for This Bot:
 
