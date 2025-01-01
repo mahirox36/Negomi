@@ -2,22 +2,28 @@
 
 ## 🚀 Features:
 
-- Effortless Small Server Management
+- Moderator Manager
 - Temporary Voice Chat
-- Creatable Text Chat (Groups within Server)
-- Customizable Roles for Members
-- Welcoming Users with Image and Message
+- Customizable Roles for Members, for everyone or boosters only
+- Welcoming Users with Image and Message.
+- Auto Role for members and bots.
 - AI Integration (Bring Your Own AI For Now)
+- Backup Servers Included all type of channels (exluded Fourms for now) with their permission, the same order. roles with the permission and color.
 - Fun and Engaging Commands
 
 *Note: All features are customizable except the greeting image.*
 
 ## 🛠️ In Development:
 
-* Text Channel Refresher
-* EmbedEditor
-* Ticket System
-* Level System
+* Text Channel Refresher.
+* Split the Script for 2 one for only AI and the other for rest of the stuff.
+* Uniqe Card for every User.
+* EmbedEditor.
+* Maybe a Dashboard.
+* Dynamic Help Menu in nextcord future update.
+* Ticket System.
+* Level System.
+* Nexon Library with custom Interaction
 * More Soon!
 
 ## 📚 Custom Libraries for This Bot:

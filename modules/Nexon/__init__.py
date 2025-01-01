@@ -26,7 +26,7 @@ import io
 from datetime import datetime
 # Every class/functions I used in nextcord
 from nextcord import (
-    Client, Interaction as init, Member,
+    Client, Interaction as init, Member, Interaction,
     Permissions, Role, slash_command, Activity, Attachment,
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
