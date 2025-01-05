@@ -15,13 +15,14 @@ class Data:
                  default: Union[Dict, List, None] = None):
         self.path = f"Data/{name}/{server_id}/{subFolder}" if subFolder else f"Data/{name}/{server_id}"
         self.file = f"{self.path}/{file}.json"
-        os.makedirs(self.path,exist_ok=True)
+        
         if subFolder != None: os.makedirs(os.path.join(self.path, subFolder), exist_ok=True)
         self.default = default
         self.data = default
         self.load()
     
     def save(self) -> None:
+        os.makedirs(self.path,exist_ok=True)
         with open(self.file, "w") as f:
             json.dump(self.data,f,indent=4)
     
@@ -39,6 +40,8 @@ class Data:
     
     def delete(self) -> None:
         os.remove(self.file)
+        if not os.listdir(self.path):
+            self.delete_guild()
     def delete_guild(self):
         shutil.rmtree(self.path)
     def get(self,data):
@@ -86,12 +89,13 @@ class DataGlobal:
         else            : self.path = f"Data/{name}"
         self.__saveExit = saveExit
         self.file = f"{self.path}/{file}.json"
-        os.makedirs(self.path,exist_ok=True)
+        
         self.default = default
         self.data = default
         self.load()
     
     def save(self):
+        os.makedirs(self.path,exist_ok=True)
         with open(self.file, "w") as f:
             json.dump(self.data,f)
         return self

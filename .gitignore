@@ -2,7 +2,7 @@
 logs/
 __pycache__/
 test*
-data/
+Data/
 *.bat
 Todo*
 Dashboard
