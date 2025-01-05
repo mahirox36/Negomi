@@ -9,7 +9,8 @@ class ClassesManager(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.client = bot
 
-    @slash_command("class", default_member_permissions=Permissions(8),dm_permission=False,guild_ids=TESTING_GUILD_ID)
+    @slash_command("class", default_member_permissions=Permissions(8),guild_ids=TESTING_GUILD_ID)
+    @guild_only()
     async def classSet(self,ctx: init):
         pass
 

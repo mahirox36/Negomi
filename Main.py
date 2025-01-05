@@ -17,11 +17,10 @@ class DiscordBot(commands.Bot):
         super().__init__(
             command_prefix=prefix,
             intents=intents,
-            max_messages=1000,
-            heartbeat_timeout=150.0,
-            guild_ready_timeout=5.0,
+            lazy_load_commands=False,
             owner_id=overwriteOwner if overwriteOwner else None,
             help_command=None
+            
         )
         
         self.start_time = datetime.now()
@@ -149,7 +148,7 @@ class DiscordBot(commands.Bot):
                 )
             )
             
-            await self.sync_all_application_commands()
+            # await self.sync_all_application_commands()
             
             self.logger.info(f"{get_name(self.user)} is online!")
             

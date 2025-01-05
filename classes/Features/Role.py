@@ -180,11 +180,11 @@ class Rolez(commands.Cog):
         del file.data[f"{ctx.user.id}"]
         file.save()
     
-    @user_command("Role: Add User", dm_permission= False)
+    @user_command("Role: Add User", contexts=[InteractionContextType.guild])
     @feature()
     async def role_user_add_user_command(self,ctx:init, member:Member):
         await self.role_user_add(ctx,member)
-    @user_command("Role: Remove User", dm_permission= False)
+    @user_command("Role: Remove User", contexts=[InteractionContextType.guild])
     @feature()
     async def role_user_remove_user_command(self,ctx:init, member:Member):
         await self.role_user_remove(ctx,member)

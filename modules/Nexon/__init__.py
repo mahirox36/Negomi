@@ -12,7 +12,7 @@ from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name,
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
         CommandDisabled, enableByConfig
 from .other import url, clear, remove_prefix, word_to_number, time_units, text_to_number, convert_to_seconds, \
-    remove_numbers, get_resource_path, is_executable
+    remove_numbers, get_path, is_executable, ExportFolder
 from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model
 
@@ -31,7 +31,7 @@ from nextcord import (
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
-    User, PermissionOverwrite, __version__ as nextcord_version
+    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType
 )
 #Type Errors
 from nextcord import (

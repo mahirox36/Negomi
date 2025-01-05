@@ -1,4 +1,3 @@
-from nextcord import Interaction as init
 from modules.Nexon import *
 __UserSettingsVersion__ = 2
 
@@ -532,38 +531,37 @@ class TempVoice(commands.Cog):
             return
         await self._kick_member(ctx, target, channel, channel_data, reason)
 
-    @user_command(name="Voice: Ban", dm_permission=False)
-    @feature()
-    async def ban_user(self, ctx: init, target: Member):
-        """Ban a user from your temporary voice channel (User Command)"""
-        await ctx.response.defer(ephemeral=True)
-        valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "banned")
-        if not valid:
-            return
-        await self._ban_member(ctx, target, channel, channel_data)
+    # @user_command(name="Voice: Ban", contexts=[InteractionContextType.guild])
+    # @feature()
+    # async def ban_user(self, ctx: init, target: Member):
+    #     """Ban a user from your temporary voice channel (User Command)"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "banned")
+    #     if not valid:
+    #         return
+    #     await self._ban_member(ctx, target, channel, channel_data)
 
-    @user_command(name="Voice: Kick", dm_permission=False)
-    @feature()
-    async def kick_user(self, ctx: init, target: Member):
-        """Kick a user from your temporary voice channel (User Command)"""
-        await ctx.response.defer(ephemeral=True)
-        valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "kicked")
-        if not valid:
-            return
-        await self._kick_member(ctx, target, channel, channel_data)
+    # @user_command(name="Voice: Kick", contexts=[InteractionContextType.guild])
+    # @feature()
+    # async def kick_user(self, ctx: init, target: Member):
+    #     """Kick a user from your temporary voice channel (User Command)"""
+    #     await ctx.response.defer(ephemeral=True)
+    #     valid, channel, channel_data = await self._check_voice_permissions(ctx, target, "kicked")
+    #     if not valid:
+    #         return
+    #     await self._kick_member(ctx, target, channel, channel_data)
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
     @feature()
     async def invite_slash(self,ctx:init,user:Member):
         return await self.invite_function(ctx,user,self.client)
     
-    @user_command("Voice: Invite",dm_permission=False)
-    @feature()
-    async def invite(self,ctx:init, user:Member):
-        return await self.invite_function(ctx,user,self.client)
+    # @user_command("Voice: Invite", contexts=[InteractionContextType.guild])
+    # @feature()
+    # async def invite(self,ctx:init, user:Member):
+    #     return await self.invite_function(ctx,user,self.client)
         
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
-    @guild_only()
     @feature()
     async def setup(self, ctx:init, category:CategoryChannel):
         file = Data(ctx.guild.id,"TempVoice")

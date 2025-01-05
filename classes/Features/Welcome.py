@@ -2,13 +2,13 @@ import requests
 from modules.Nexon import *
 from PIL import Image, ImageDraw, ImageFont
 import gc
-"\
-Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):\
-{server}  : For the name of the server\
-{count}   : For the count of members in the server\
-{mention} : Mention the user\
-{name}    : Just the name of the user\
-"
+"""
+Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):
+{server}  : For the name of the server
+{count}   : For the count of members in the server
+{mention} : Mention the user
+{name}    : Just the name of the user
+"""
 
 @dataclass
 class WelcomeConfig:
@@ -19,6 +19,7 @@ class Welcome(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.welcome_cache = {}
+        # ExportFolder("Assets")
         
     
     async def get_welcome_config(self, guild_id: int) -> Optional[WelcomeConfig]:

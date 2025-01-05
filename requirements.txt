@@ -1,8 +1,7 @@
-emoji==2.12.1
-nextcord==2.6.0
-ollama==0.4.4
-Pillow==11.0.0
+nextcord==3.0.1
+ollama==0.4.5
+Pillow==11.1.0
 prompt_toolkit==3.0.48
-psutil==6.1.0
+psutil==6.1.1
 Requests==2.32.3
 rich==13.9.4

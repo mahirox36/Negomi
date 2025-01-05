@@ -1,7 +1,9 @@
+from json import loads
 import os
 import re
 import sys
 from typing import NewType
+from base64 import encode, decode
 
 
 url = NewType("url", str)
@@ -75,7 +77,7 @@ def convert_to_seconds(time_string: str):
 def remove_numbers(text):
     return re.sub(r'\d+', '', text)
 
-def get_resource_path(relative_path):
+def get_path(relative_path):
     """Get the absolute path to a resource."""
     # If running as a PyInstaller bundle, use the _MEIPASS directory.
     if hasattr(sys, '_MEIPASS'):
@@ -88,3 +90,26 @@ def get_resource_path(relative_path):
 
 def is_executable():
     return getattr(sys, 'frozen', False)
+
+def ExportFolder(folder: str):
+    """Export Files from Exe to Disk"""
+    if not is_executable():
+        return False
+
+    var_file_path = "Data/appdata/variables.mahiro"
+    var_key = f"is{folder.capitalize().replace(" ", "")}Exported"
+
+    if os.path.exists(var_file_path):
+        with open(var_file_path, "r") as f:
+            data = loads(decode(f.read()))
+            if data.get(var_key, False):
+                return True
+    else:
+        with open(var_file_path, "w") as f:
+            f.write(encode(f'{{"{var_key}": false}}').decode())
+
+    for file in os.listdir(get_path(folder)):
+        with open(get_path(f"{folder}/{file}"), "rb") as src, open(file, "wb") as dst:
+            dst.write(src.read())
+
+    return True
