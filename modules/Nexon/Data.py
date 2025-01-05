@@ -2,7 +2,9 @@
 import json
 import os
 import shutil
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, NewType, Union
+
+url = NewType("url", str)
 
 class Data:
     def __init__(self,

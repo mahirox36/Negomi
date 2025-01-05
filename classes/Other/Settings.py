@@ -9,11 +9,8 @@ class Settings(commands.Cog):
     def __init__(self, client: Client):
         self.client = client
         self.features_path = Path("classes/Features")
-        
-        # Handle executable path resolution
-        if is_executable():
-            base_path = Path(sys._MEIPASS) if hasattr(sys, '_MEIPASS') else Path.cwd()
-            self.features_path = base_path / "classes" / "Features"
+        base_path = Path.cwd()
+        self.features_path = base_path / "classes" / "Features"
         
         # Get all Python files in features directory
         self.features = [

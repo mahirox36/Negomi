@@ -3,7 +3,7 @@ Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcor
 ~~~~~~~~~~~~~~~
 """
 #This Library Custom Classes and functions
-from .Data import Data, DataGlobal
+from .Data import Data, DataGlobal, url
 from .BetterID import BetterID
 from .config import BotConfig
 from .config import *
@@ -11,8 +11,6 @@ from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name,
     error_embed, SlashCommandOnCooldown,HaveHigherRole, ApplicationNotOwnerGuild, cooldown, is_owner_guild, \
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
         CommandDisabled, enableByConfig
-from .other import url, clear, remove_prefix, word_to_number, time_units, text_to_number, convert_to_seconds, \
-    remove_numbers, get_path, is_executable, ExportFolder
 from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model
 
@@ -41,3 +39,7 @@ from nextcord import (
 from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
+import sys
+
+def clear():
+    os.system("cls" if os.name == "nt" else "clear")

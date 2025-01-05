@@ -2,7 +2,6 @@ import asyncio
 import time
 from typing import Dict, List, Optional, Union
 from modules.Nexon import *
-from .other import remove_numbers, url
 from nextcord import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, Thread, User, Client, TextChannel, VoiceChannel
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check

@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-import sys
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
@@ -238,60 +237,6 @@ def initialize_config() -> ConfigManager:
         config_manager.config.save()
     
     return config_manager
-
-def reload_config():
-    """Dynamically reload configuration from file and update all exported variables."""
-    global config_manager, config, BotConfig
-    
-    try:
-        # Reload configuration from file
-        config_manager.config.load()
-        
-        # Update BotConfig instance
-        config_manager.BotConfig = Bot_Config.from_dict(config_manager.config.data)
-        BotConfig = config_manager.BotConfig
-        
-        # Get the current module
-        current_module = sys.modules[__name__]
-        
-        # Dynamically update all module-level variables that reference BotConfig values
-        for var_name in dir(current_module):
-            if var_name.startswith('__'):  # Skip built-in attributes
-                continue
-                
-            # Get the original value
-            original_value = getattr(current_module, var_name)
-            
-            # Find and update variables that match config values
-            new_value = None
-            
-            # Check General settings
-            if hasattr(BotConfig.General, var_name):
-                new_value = getattr(BotConfig.General, var_name)
-            # Check Logger settings
-            elif hasattr(BotConfig.Logger, var_name):
-                new_value = getattr(BotConfig.Logger, var_name)
-            # Check color settings (handle both spellings)
-            elif var_name in ['colors', 'colours']:
-                new_value = BotConfig.General_Embeds_Colour
-            # Check Commands settings
-            elif hasattr(BotConfig.Commands_Settings, var_name):
-                new_value = getattr(BotConfig.Commands_Settings, var_name)
-            # Check AI settings
-            elif hasattr(BotConfig.AI, var_name):
-                new_value = getattr(BotConfig.AI, var_name)
-            # Check Welcome settings
-            elif hasattr(BotConfig.Welcome_Settings, var_name):
-                new_value = getattr(BotConfig.Welcome_Settings, var_name)
-                
-            # Update the variable if we found a new value
-            if new_value is not None:
-                setattr(current_module, var_name, new_value)
-        
-        return True
-    except Exception as e:
-        pprint(f"Failed to reload config: {str(e)}")
-        return False
 
 # Initialize and export configuration
 config_manager = initialize_config()

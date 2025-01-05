@@ -59,16 +59,7 @@ class DiscordBot(commands.Bot):
         self.logger.info("Starting extension loading process")
 
         try:
-            # Handle different base paths for exe vs normal running
-            if is_executable():
-                # When running as exe, we need to check sys._MEIPASS
-                if hasattr(sys, '_MEIPASS'):
-                    base_path = Path(sys._MEIPASS)
-                else:
-                    base_path = Path.cwd()
-                extensions_path = base_path / "classes"
-            else:
-                extensions_path = Path("classes")
+            extensions_path = Path("classes")
 
             self.logger.debug(f"Using extensions path: {extensions_path.resolve()}")
 
