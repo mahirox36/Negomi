@@ -10,12 +10,12 @@ from .config import *
 from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name, everyone, debug_embed, info_embed, warn_embed, \
     error_embed, SlashCommandOnCooldown,HaveHigherRole, ApplicationNotOwnerGuild, cooldown, is_owner_guild, \
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
-        CommandDisabled, enableByConfig
+        CommandDisabled, enableByConfig, url
 from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model
 
 #Important things
-from typing import Any, Callable, Dict, List, Set, Optional, Union, NewType
+from typing import Any, Callable, Dict, List, Set, Optional, Union
 import os
 from pathlib import Path
 import json
@@ -42,7 +42,7 @@ from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 import sys
-url = NewType("url", str)
+
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
