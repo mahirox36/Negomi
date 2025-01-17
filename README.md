@@ -35,6 +35,7 @@
 - Create engaging Custom mini games for community interaction.
 - Add a Server Settings Customizer for admins to manage features effortlessly.
 - Expand the Level System with additional rewards and customization options.
+- Enhance the Achievement System, allowing guilds to make their own Achievement
 
 ### *More in Future Updates*
 

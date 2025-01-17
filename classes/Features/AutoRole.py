@@ -1,7 +1,7 @@
 from modules.Nexon import *
 
 class AutoRole(commands.Cog):
-    def __init__(self, client:Client):
+    def __init__(self, client:Bot):
         self.client = client
 
     @slash_command(name="auto",default_member_permissions=Permissions(administrator=True))
@@ -15,7 +15,7 @@ class AutoRole(commands.Cog):
                    description="Setup auto role for members and bots")
     @feature()
     async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
-        file= Data(ctx.guild_id,"Auto role")
+        file= DataManager("Auto role", ctx.guild_id)
         file.data = {
             "member_role":member_role.id,
             "bot_role"   :bot_role.id if bot_role else None
@@ -31,8 +31,8 @@ class AutoRole(commands.Cog):
         except: return
         guild = member.guild
         try:
-            if Data(member.guild.id,"Auto role").check():
-                data = Data(member.guild.id,"Auto role").load()
+            if DataManager("Auto role", member.guild_id).check():
+                data = DataManager("Auto role", member.guild_id).load()
                 if data == None:
                     return
                 if (member.bot) and (data["bot_role"] != None):

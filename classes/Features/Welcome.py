@@ -27,7 +27,7 @@ class Welcome(commands.Cog):
         if guild_id in self.welcome_cache:
             return self.welcome_cache[guild_id]
             
-        file = Data(guild_id, "Welcome")
+        file = DataManager("Welcome", guild_id)
         if not file.data:
             return None
             
@@ -114,7 +114,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
                 return
                 
             # Save configuration
-            welcome_file = Data(ctx.guild.id, "Welcome")
+            welcome_file = DataManager("Welcome", ctx.guild_id)
             welcome_file.data = {
                 "message": message,
                 "channel": channel.id
@@ -125,7 +125,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
             self.welcome_cache[ctx.guild.id] = WelcomeConfig(message=message, channel_id=channel.id)
             
             # Save current member list
-            member_file = Data(ctx.guild.id, "Welcome", "Members")
+            member_file = DataManager("Welcome", ctx.guild.id, file="Members")
             member_file.data = [m.id for m in ctx.guild.members]
             member_file.save()
             
@@ -147,7 +147,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
         """Handle new member joins with proper error handling and rate limiting."""
         try:
             await check_feature_inside(member.guild.id, cog=self)
-            welcome_file = Data(member.guild.id, "Welcome")
+            welcome_file = DataManager("Welcome", member.guild.id)
             if not welcome_file.data:
                 return
                 
@@ -184,7 +184,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
             await channel.send(message)
             
             # Update member list
-            member_file = Data(member.guild.id, "Welcome", "Members")
+            member_file = DataManager("Welcome", member.guild.id, file="Members")
             member_file.data.append(member.id)
             member_file.save()
             
@@ -195,7 +195,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     async def on_member_remove(self, member: Member):
         """Handle member leaves with proper error handling."""
         try:
-            member_file = Data(member.guild.id, "Welcome", "Members")
+            member_file = DataManager("Welcome", member.guild.id, file="Members")
             if member.id in member_file.data:
                 member_file.data.remove(member.id)
                 member_file.save()
@@ -207,12 +207,12 @@ Setup a welcome message in a specific Channel, in the message option you can use
     async def on_ready(self):
         """Handle missed welcomes during downtime with rate limiting."""
         try:
-            global_file = Data(None, "Welcome", "Guilds", default=[])
+            global_file = DataManager("Welcome", file="Guilds", default=[])
             if not global_file.data:
                 return
 
             for guild_id in global_file.data[:]:  # Create a copy of the list to iterate
-                welcome_file = Data(guild_id, "Welcome")
+                welcome_file = DataManager("Welcome", guild_id)
                 if not welcome_file.data:
                     global_file.data.remove(guild_id)
                     welcome_file.delete_guild()
@@ -228,7 +228,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
                     global_file.data.remove(guild_id)
                     continue
 
-                members_file = Data(guild_id, "Welcome", "Members")
+                members_file = DataManager("Welcome", guild_id, file="Members")
                 old_members = set(members_file.data or [])
                 current_members = {member.id for member in guild.members}
                 

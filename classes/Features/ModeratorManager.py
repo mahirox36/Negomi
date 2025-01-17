@@ -1,7 +1,8 @@
 from datetime import timedelta
 from modules.Nexon import *
+
 #TODO: Highly Customable
-class moderatormanager(commands.Cog):
+class ModeratorManager(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.logger = logger
@@ -14,7 +15,7 @@ class moderatormanager(commands.Cog):
             try:
                 # Get all guild data
                 for guild in self.client.guilds:
-                    file = Data(guild.id, "Moderator Manager", "users", default={})
+                    file = DataManager("Moderator Manager", guild.id, "users", default={})
                     data = file.load()
                     
                     if not data:
@@ -54,14 +55,14 @@ class moderatormanager(commands.Cog):
 
     def get_mod_data(self, guild_id: int):
         """Get moderator data file"""
-        return Data(guild_id, "Moderator Manager", "users", default={})
+        return DataManager("Moderator Manager", guild_id, "users", default={})
 
     async def create_backup_data(self, guild_id: int, user_id: str):
         """Create backup of moderator data"""
         file = self.get_mod_data(guild_id)
         data = file.load()
         if user_id in data:
-            backup_file = Data(guild_id, "Moderator Manager", "backups", default={})
+            backup_file = DataManager("Moderator Manager", guild_id, "backups", default={})
             backup_data = backup_file.load()
             backup_data[user_id] = data[user_id].copy()
             backup_file.save()
@@ -107,7 +108,7 @@ class moderatormanager(commands.Cog):
             PermissionOverwriteWith()
         if staffRole == None:
             staffRole= await guild.create_role(name="Staff")
-        file = Data(ctx.guild_id, "Moderator Manager")
+        file = DataManager("Moderator Manager", guild.id)
         file.data = {
             "staff": staffRole.id if staffRole else None,
             "trail": trailRole.id if trailRole else None,
@@ -123,7 +124,7 @@ class moderatormanager(commands.Cog):
         await ctx.response.defer()
         file = self.get_mod_data(ctx.guild_id)
         mods = file.load()
-        data = Data(ctx.guild_id, "Moderator Manager").data
+        data = DataManager("Moderator Manager", ctx.guild.id).data
         
         if data is None:
             await ctx.send(embed=error_embed("Moderator Manager is not setup yet", "Moderator Manager"))
@@ -167,9 +168,9 @@ class moderatormanager(commands.Cog):
     @feature()
     async def promote(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
         data = file.load()
-        roles_data = Data(ctx.guild_id, "Moderator Manager").load()
+        roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
         if str(member.id) not in data:
             await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
@@ -204,9 +205,9 @@ class moderatormanager(commands.Cog):
     @feature()
     async def demote(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
         data = file.load()
-        roles_data = Data(ctx.guild_id, "Moderator Manager").load()
+        roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
         if str(member.id) not in data:
             await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
@@ -241,7 +242,7 @@ class moderatormanager(commands.Cog):
     @feature()
     async def remove(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
         data = file.load()
         
         if str(member.id) not in data:
@@ -345,7 +346,7 @@ class moderatormanager(commands.Cog):
     @feature()
     async def list(self, ctx: init):
         await ctx.response.defer()
-        file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
         data = file.load()
         
         if not data:
@@ -370,7 +371,7 @@ class moderatormanager(commands.Cog):
     @feature()
     async def info(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = Data(ctx.guild_id, "Moderator Manager", "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
         data = file.load()
         
         if str(member.id) not in data:
@@ -399,4 +400,4 @@ class moderatormanager(commands.Cog):
     
 
 def setup(client):
-    client.add_cog(moderatormanager(client))
+    client.add_cog(ModeratorManager(client))

@@ -6,7 +6,7 @@ from nextcord import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, P
 from nextcord.ext import commands
 from nextcord.ext.application_checks import check
 from nextcord.errors import ApplicationCheckFailure
-from .Data import DataGlobal
+from .DataManager import DataManager
 from .config import colors, overwriteOwner
 from .logger import logger
 
@@ -149,7 +149,7 @@ def remove_numbers(text: str) -> str:
 
 def get_feature_state(guild_id: int) -> List[str]:
     """Get the list of disabled features for a guild."""
-    with DataGlobal("Feature", guild_id, default=[], saveExit=False) as file:
+    with DataManager("Feature", guild_id, default=[], auto_save=False) as file:
         return file.data
 
 def feature():

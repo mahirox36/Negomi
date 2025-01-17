@@ -80,12 +80,12 @@ class Settings(commands.Cog):
     
     def get_disabled_features(self, server_id: str) -> List[str]:
         """Get list of disabled features for a server."""
-        with DataGlobal("Feature", server_id, [], False) as file:
+        with DataManager("Feature", server_id, default=[], auto_save=False) as file:
             return file.data
     
     def get_enabled_features(self, server_id: str) -> Set[str]:
         """Get set of enabled features for a server."""
-        with DataGlobal("Feature", server_id, [], False) as file:
+        with DataManager("Feature", server_id, default=[], auto_save=False) as file:
             return set(self.features) - set(file.data)
     @slash_command("feature", default_member_permissions=Permissions(administrator=True))
     async def feature(self, ctx):
@@ -113,7 +113,7 @@ class Settings(commands.Cog):
             return
 
         disabled_features.append(feature)
-        with DataGlobal("Feature", ctx.guild_id) as file:
+        with DataManager("Feature", ctx.guild_id) as file:
             file.data = disabled_features
         
         await ctx.send(
@@ -143,7 +143,7 @@ class Settings(commands.Cog):
         disabled_features = self.get_disabled_features(ctx.guild_id)
         disabled_features.remove(feature)
         
-        with DataGlobal("Feature", ctx.guild_id) as file:
+        with DataManager("Feature", ctx.guild_id) as file:
             file.data = disabled_features
         
         await ctx.send(

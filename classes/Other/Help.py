@@ -91,7 +91,6 @@ class HelpSelect(ui.View):
         self.options = [
             SelectOption(label="Role", value="role", emoji="👥"),
             SelectOption(label="Temp Voice", value="temp", emoji="🎤"),
-            SelectOption(label="Groups", value="groups", emoji="💀"),
             SelectOption(label="Other", value="other", emoji="⚙️")
         ]
         self.select = ui.Select(placeholder="Choose an option...", options=self.options)
@@ -127,17 +126,6 @@ class HelpSelect(ui.View):
                  "Voice: Invite": "Invite a member to Voice chat, (Shows when right click on user)",
                  "Voice: Ban": "Ban a user from your temporary voice channel, (Shows when right click on user)",
                  "Voice: Kick": "Kick a user from your temporary voice channel, (Shows when right click on user)",
-                 }
-            ),
-            "groups": embed_builder_static(
-                "💀 Groups",
-                "Here are the group commands:",
-                {"group create": "Create a group (AKA Text Channels) For you and your friends",
-                 "group edit": "Edit this group's details",
-                 "group delete": "Delete a group",
-                 "group add": "Add a member to this group",
-                 "group kick": "Remove a member from this group",
-                 "group transfer": "Transfer group ownership to another member in this group",
                  }
             ),
             "other": embed_builder_static(

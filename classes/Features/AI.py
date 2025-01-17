@@ -4,9 +4,7 @@ import ollama
 # models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
 #TODO: Instead adding a name before message it to the system: this Person display's name is "{Name}"
 #TODO: Add a 2 ways chatting, 1: will be in a private thread and the other will be in text channel
-#a smart and funny AI assistant
-#daughter
-#programmer
+#
 system = """
 You are {AI}, {short}. Your sole creator is {name}, whom you see as your father. 
 Always respond as {AI}. and do not impersonate {name} or any other character. 
@@ -99,29 +97,29 @@ class AI(commands.Cog):
         finally:
            await  self.typing_manager.stop_typing(channel_id)
     
-    # @slash_command(name="ai")
-    # async def ai(self, ctx:init):
-    #     pass
-    # @ai.subcommand(name="join", description="Join a voice channel")
-    # async def join(self, ctx:init):
-    #     if not ctx.user.voice:
-    #         return await ctx.send(embed=error_embed("You are not in a voice channel!", title="AI Error"))
-    #     elif ctx.guild.voice_client:
-    #         return await ctx.send(embed=error_embed("I am already in a voice channel!", title="AI Error"))
-    #     await ctx.user.voice.channel.connect()
-    #     voice_client: VoiceClient = ctx.guild.voice_client
-    #     audio_source = FFmpegPCMAudio("Assets/Musics/Magain Train.mp3") 
-    #     if not voice_client.is_playing():
-    #         voice_client.play(audio_source)
+    @slash_command(name="ai")
+    async def ai(self, ctx:init):
+        pass
+    @ai.subcommand(name="join", description="Join a voice channel")
+    async def join(self, ctx:init):
+        if not ctx.user.voice:
+            return await ctx.send(embed=error_embed("You are not in a voice channel!", title="AI Error"))
+        elif ctx.guild.voice_client:
+            return await ctx.send(embed=error_embed("I am already in a voice channel!", title="AI Error"))
+        await ctx.user.voice.channel.connect()
+        voice_client: VoiceClient = ctx.guild.voice_client
+        audio_source = FFmpegPCMAudio("Assets/Musics/Magain Train.mp3") 
+        if not voice_client.is_playing():
+            voice_client.play(audio_source)
             
             
-    # @ai.subcommand(name="leave", description="Leave a voice channel")
-    # async def leave(self, ctx:init):
-    #     if not ctx.guild.voice_client:
-    #         return await ctx.send(embed=error_embed("I am not in a voice channel!", title="AI Error"))
-    #     elif ctx.guild.voice_client.channel != ctx.user.voice.channel:
-    #         return await ctx.send(embed=error_embed("You are not in the same voice channel as me!", title="AI Error"))
-    #     await ctx.guild.voice_client.disconnect()
+    @ai.subcommand(name="leave", description="Leave a voice channel")
+    async def leave(self, ctx:init):
+        if not ctx.guild.voice_client:
+            return await ctx.send(embed=error_embed("I am not in a voice channel!", title="AI Error"))
+        elif ctx.guild.voice_client.channel != ctx.user.voice.channel:
+            return await ctx.send(embed=error_embed("You are not in the same voice channel as me!", title="AI Error"))
+        await ctx.guild.voice_client.disconnect()
 
 def setup(client):
     client.add_cog(AI(client))

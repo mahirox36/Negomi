@@ -25,7 +25,7 @@ async def check(ctx: init, data: Dict | List) -> bool:
     return True
 
 def UserSettings(member):
-    user = DataGlobal("TempVoice_UsersSettings", f"{member.id}")
+    user = DataManager("TempVoice_UsersSettings", file=f"{member.id}")
     Default = {
         "Name": get_name(member) + "'s Chat",
         "Hide": True,
@@ -217,7 +217,7 @@ class ControlPanel(View):
         except Exception:
             await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
             return
-        file = Data(ctx.guild.id,"TempVoice","TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         num = 0
         for i in file.data:
             i = dict(i)
@@ -256,7 +256,7 @@ class TempVoice(commands.Cog):
         elif user.bot:
             await ctx.send(embed=error_embed("You can't Invite Bot"))
             return
-        file = Data(ctx.guild.id,"TempVoice","TempVoices")  
+        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         await check(ctx,file.data)
         channel = get_channel(file.data,ctx)
         name = get_name(ctx.user)
@@ -305,7 +305,7 @@ class TempVoice(commands.Cog):
             return False, None, None
 
         # Check if user is the channel owner
-        file = Data(ctx.guild.id, "TempVoice", "TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         channel_data = None
         for data in file.data:
             if list(data.values())[0] == channel.id:
@@ -488,7 +488,7 @@ class TempVoice(commands.Cog):
         description="Bring the Control Panel for the TempVoice chat")
     @feature()
     async def control_panel(self,ctx:init):
-        file = Data(ctx.guild.id,"TempVoice","TempVoices")  
+        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         checks = check(ctx,file.data)
         if await checks == False: return
         
@@ -564,7 +564,7 @@ class TempVoice(commands.Cog):
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
     @feature()
     async def setup(self, ctx:init, category:CategoryChannel):
-        file = Data(ctx.guild.id,"TempVoice")
+        file = DataManager("TempVoice", ctx.guild.id)
         overwrites = {ctx.guild.default_role: PermissionOverwrite(speak=False)}
         createChannel = await ctx.guild.create_voice_channel("➕・Create",
             reason=f"Used setup Temp Voice by {ctx.user}", category=category,overwrites=overwrites)
@@ -642,8 +642,8 @@ class TempVoice(commands.Cog):
             if not await self._update_voice_state(member, before, after):
                 return
                 
-            file = Data(guild.id, "TempVoice")
-            file2 = Data(guild.id, "TempVoice", "TempVoices")
+            file = DataManager("TempVoice", guild.id)
+            file2 = DataManager("TempVoice", guild.id, file="TempVoices")
             
             if not file.check():
                 return
@@ -654,7 +654,7 @@ class TempVoice(commands.Cog):
                 return
             
             # Get channel settings
-            user = DataGlobal("TempVoice_UsersSettings", f"{member.id}")
+            user = DataManager("TempVoice_UsersSettings", file=f"{member.id}")
             channel_settings = self._get_channel_settings(member, user)
             
             if file.data is None:
@@ -700,7 +700,7 @@ class TempVoice(commands.Cog):
                 return
             if not await self._update_voice_state(member, before, after):
                 return
-            file = Data(guild.id, "TempVoice", "TempVoices")
+            file = DataManager("TempVoice", guild.id, file="TempVoices")
             if not file.data:
                 file.data = []
                 file.save()
@@ -724,7 +724,7 @@ class TempVoice(commands.Cog):
                 if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
                     del self.voice_states[guild_id][channel_id]
 
-    def _get_channel_settings(self, member: Member, user: DataGlobal) -> dict:
+    def _get_channel_settings(self, member: Member, user: DataManager) -> dict:
         """Get channel settings with proper defaults"""
         if user.data and user.data.get("Version") == __UserSettingsVersion__:
             settings = user.data
@@ -819,7 +819,7 @@ class TempVoice(commands.Cog):
         return None
 
     async def _cleanup_channel(self, channel: VoiceChannel, 
-                             file: Data, channel_index: int):
+                             file: DataManager, channel_index: int):
         """Clean up channel and update database"""
         try:
             await channel.delete()

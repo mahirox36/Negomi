@@ -14,7 +14,7 @@ class Request(ui.View):
 
     async def Accept(self, ctx: nextcord.Interaction):
         guild= self.client.get_guild(self.guild_id)
-        file = Data(self.guild_id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, "MembersRoles")
         role = guild.get_role(user["roleID"])
         user = dict(file.data.get(f"{self.fromUser.id}"))
         user["members"].append(f"{ctx.user.id}")
@@ -57,7 +57,7 @@ class Rolez(commands.Cog):
         required=True
     )):
         guild = ctx.guild
-        file = Data(guild.id, "Roles", "Settings")
+        file = DataManager("Roles", self.guild_id, file="Settings")
         
         try:
             if not file.data:
@@ -83,7 +83,7 @@ class Rolez(commands.Cog):
         guild = ctx.guild
         
         # Check role creation mode
-        settings_file = Data(guild.id, "Roles", "Settings")
+        settings_file = DataManager("Roles", self.guild_id, file="Settings")
         try:
             mode = settings_file.data.get("creation_mode", "everyone")
         except AttributeError:
@@ -101,7 +101,7 @@ class Rolez(commands.Cog):
         
         try:color = self.colors[color.capitalize()]
         except KeyError:color= Color("#"+color if not color.startswith("#") else color)
-        file = Data(guild.id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, file="MembersRoles")
         try:
             if file.data.get(f"{ctx.user.id}") != None:
                 await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
@@ -130,7 +130,7 @@ class Rolez(commands.Cog):
         guild = ctx.guild
         if color != None:
             color = self.colors[color.capitalize()]
-        file = Data(guild.id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, file="MembersRoles")
         try:
             user = file.data.get(f"{ctx.user.id}")
             if user == None:
@@ -160,7 +160,7 @@ class Rolez(commands.Cog):
     @feature()
     async def role_delete(self,ctx:init):
         guild = ctx.guild
-        file = Data(guild.id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, file="MembersRoles")
         try:
             user = file.data.get(f"{ctx.user.id}")
             if user == None:
@@ -195,7 +195,7 @@ class Rolez(commands.Cog):
     @feature()
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
-        file = Data(guild.id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, file="MembersRoles")
         if ctx.user.id == member.id:
             await ctx.send(embed=error_embed("You can't add yourself"),ephemeral=True)
             return
@@ -233,7 +233,7 @@ class Rolez(commands.Cog):
     @feature()
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
-        file = Data(guild.id,"Roles","MembersRoles")
+        file = DataManager("Roles", self.guild_id, file="MembersRoles")
         if ctx.user.id == member.id:
             await ctx.send(embed=error_embed("You can't remove yourself"),ephemeral=True)
             return

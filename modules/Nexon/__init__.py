@@ -3,7 +3,7 @@ Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcor
 ~~~~~~~~~~~~~~~
 """
 #This Library Custom Classes and functions
-from .Data import Data, DataGlobal, url
+from .DataManager import DataManager
 from .BetterID import BetterID
 from .config import BotConfig
 from .config import *
@@ -15,7 +15,7 @@ from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model
 
 #Important things
-from typing import Any, Callable, Dict, List, Set, Optional, Union
+from typing import Any, Callable, Dict, List, Set, Optional, Union, NewType
 import os
 from pathlib import Path
 import json
@@ -29,7 +29,8 @@ from nextcord import (
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
-    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient
+    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
+    IntegrationType
 )
 #Type Errors
 from nextcord import (
@@ -39,7 +40,9 @@ from nextcord import (
 from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
+from nextcord.ext.commands import Bot
 import sys
+url = NewType("url", str)
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
