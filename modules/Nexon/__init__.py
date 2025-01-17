@@ -29,7 +29,7 @@ from nextcord import (
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
-    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType
+    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient
 )
 #Type Errors
 from nextcord import (

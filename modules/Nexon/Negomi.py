@@ -43,12 +43,13 @@ def download_model(model_name: str) -> None:
             current_digest = digest
 
 class ConversationManager:
-    def __init__(self):
+    def __init__(self, model: str = "Negomi"):
         self.conversation_histories:Dict[str, List[Dict[str, str]]] = {}
         self.history_file = Path("Data/AI/history.json")
         self.summary_threshold = 15  # Increased threshold for summarization
         self.keep_recent = 5  # Number of recent messages to keep
         self.load_histories()
+        self.model = model
 
     def load_histories(self):
         """Load conversation histories from JSON file."""
@@ -81,7 +82,7 @@ class ConversationManager:
             log_path = Path(f"logs/{date}")
             log_path.mkdir(parents=True, exist_ok=True)
             
-            with open(log_path / f"output_for_Negomi_{timed}.json", "w", encoding='utf-8') as f:
+            with open(log_path / f"output_for_{self.model}_{timed}.json", "w", encoding='utf-8') as f:
                 f.write(dumps(self.conversation_histories[user_id], indent=4, ensure_ascii=False))
 
     def summarize_conversation(self, conversation_history):
@@ -114,7 +115,7 @@ Previous conversation:
                 content = msg['content'].replace('Mahiro: ', '')  # Remove prefix for cleaner summary
                 prompt += f"User: {content}\n"
             else:
-                prompt += f"Negomi: {msg['content']}\n"
+                prompt += f"{self.model}: {msg['content']}\n"
 
         try:
             # Get the summary and ensure it doesn't leak internal details
@@ -173,7 +174,7 @@ Previous conversation:
 
         # Generate response using Ollama
         try:
-            response = ollama.chat(model='Negomi', messages=conversation_history)
+            response = ollama.chat(model=self.model, messages=conversation_history)
             text = response.get('message', {}).get('content', "Error: No response generated.")
             
         except Exception as e:
@@ -187,7 +188,7 @@ Previous conversation:
 
         return text
 
-def generate(prompt, model="Negomi") -> str:
+def generate(prompt, model: str="Negomi") -> str:
     response = ollama.generate(model, prompt)
     return response["response"]
 

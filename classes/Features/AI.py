@@ -20,20 +20,19 @@ Communication takes place in Discord DMs or servers, so keep your messages under
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
-        self.started = False
         self.conversation_manager = ConversationManager()
         self.typing_manager = TypingManager(client)
         self.models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
         self.system= system.format(AI="Negomi", short="smart and humorous", name="Mahiro",
                       pronouns="He", pronouns2= "His", relationship= "daughter", relationshipByPOV="Father", 
                       hobby = "programmer", name2="Shadow", relationship2="second father",other_stuff="Mahiro and Shadow are not married but share a close friendship.").replace("\n","")
-        if "llama3.1" not in self.models:
+        from_ = "llama3.1"
+        if from_ not in self.models:
             logger.info("Downloading llama3.1")
-            download_model("llama3.1")
-        modelfile = f"FROM llama3.1\nSYSTEM {self.system}"
-        ollama.create(model='Negomi', modelfile=modelfile)
-        with open("Data/AI/modelfile.txt", "w", encoding="utf-8") as f:
-            f.write(modelfile)
+            download_model(from_)
+        ollama.create(model='Negomi', from_=from_, system=self.system)
+        with open("Data/AI/system.txt", "w", encoding="utf-8") as f:
+            f.write(self.system)
         
     
     @commands.Cog.listener()
@@ -99,6 +98,30 @@ class AI(commands.Cog):
 
         finally:
            await  self.typing_manager.stop_typing(channel_id)
+    
+    # @slash_command(name="ai")
+    # async def ai(self, ctx:init):
+    #     pass
+    # @ai.subcommand(name="join", description="Join a voice channel")
+    # async def join(self, ctx:init):
+    #     if not ctx.user.voice:
+    #         return await ctx.send(embed=error_embed("You are not in a voice channel!", title="AI Error"))
+    #     elif ctx.guild.voice_client:
+    #         return await ctx.send(embed=error_embed("I am already in a voice channel!", title="AI Error"))
+    #     await ctx.user.voice.channel.connect()
+    #     voice_client: VoiceClient = ctx.guild.voice_client
+    #     audio_source = FFmpegPCMAudio("Assets/Musics/Magain Train.mp3") 
+    #     if not voice_client.is_playing():
+    #         voice_client.play(audio_source)
+            
+            
+    # @ai.subcommand(name="leave", description="Leave a voice channel")
+    # async def leave(self, ctx:init):
+    #     if not ctx.guild.voice_client:
+    #         return await ctx.send(embed=error_embed("I am not in a voice channel!", title="AI Error"))
+    #     elif ctx.guild.voice_client.channel != ctx.user.voice.channel:
+    #         return await ctx.send(embed=error_embed("You are not in the same voice channel as me!", title="AI Error"))
+    #     await ctx.guild.voice_client.disconnect()
 
 def setup(client):
     client.add_cog(AI(client))
