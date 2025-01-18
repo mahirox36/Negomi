@@ -76,6 +76,7 @@ class ModeratorManager(commands.Cog):
     
     @manager.subcommand("setup", "Setup the Moderator Manager")
     @feature()
+    @UserData.commandCount()
     async def setup(self, ctx:init,
                     staffRole:Role  = SlashOption("staff"   , "Role for staff members"   ,required=False),
                     trailRole:Role  = SlashOption("trail"   , "Role for trail mod"   ,required=False),
@@ -120,6 +121,7 @@ class ModeratorManager(commands.Cog):
         await ctx.send(embed=info_embed("Moderator Manager setup successfully", "Moderator Manager"))
     @manager.subcommand("add", "Add a Moderator")
     @feature()
+    @UserData.commandCount()
     async def add(self, ctx: init, member: Member, role: Role):
         await ctx.response.defer()
         file = self.get_mod_data(ctx.guild_id)
@@ -166,6 +168,7 @@ class ModeratorManager(commands.Cog):
             await ctx.send(embed=warn_embed(f"{member.mention} is now a {role.mention}, but I couldn't DM them the token", "Moderator Manager"))
     @manager.subcommand("promote", "Promote a moderator to a higher role")
     @feature()
+    @UserData.commandCount()
     async def promote(self, ctx: init, member: Member):
         await ctx.response.defer()
         file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
@@ -203,6 +206,7 @@ class ModeratorManager(commands.Cog):
 
     @manager.subcommand("demote", "Demote a moderator to a lower role")
     @feature()
+    @UserData.commandCount()
     async def demote(self, ctx: init, member: Member):
         await ctx.response.defer()
         file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
@@ -240,6 +244,7 @@ class ModeratorManager(commands.Cog):
 
     @manager.subcommand("remove", "Remove a moderator")
     @feature()
+    @UserData.commandCount()
     async def remove(self, ctx: init, member: Member):
         await ctx.response.defer()
         file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
@@ -261,6 +266,7 @@ class ModeratorManager(commands.Cog):
 
     @manager.subcommand("hacked", "Handle hacked moderator account")
     @feature()
+    @UserData.commandCount()
     async def hacked(self, ctx: init, compromised_member: Member, backup_token: str, new_member: Member = None):
         """
         Handle a hacked moderator account
@@ -344,6 +350,7 @@ class ModeratorManager(commands.Cog):
 
     @manager.subcommand("list", "List all moderators")
     @feature()
+    @UserData.commandCount()
     async def list(self, ctx: init):
         await ctx.response.defer()
         file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
@@ -369,6 +376,7 @@ class ModeratorManager(commands.Cog):
 
     @manager.subcommand("info", "Get information about a moderator")
     @feature()
+    @UserData.commandCount()
     async def info(self, ctx: init, member: Member):
         await ctx.response.defer()
         file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})

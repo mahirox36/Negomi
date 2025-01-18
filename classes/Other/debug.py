@@ -69,6 +69,7 @@ class Debug(commands.Cog):
         return embed
     
     @slash_command(name="debug",description="Displays detailed debug information about the bot.")
+    @UserData.commandCount()
     async def debugSlash(self,ctx:init):
         await ctx.send(embed=self.debugEmbed(ctx.user),ephemeral=True)
 

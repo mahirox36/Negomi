@@ -1,0 +1,298 @@
+from .DataManager import DataManager
+from .sidecord import get_name, extract_emojis
+from datetime import datetime
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Set, Optional, Union
+from nextcord import Member, Message, User
+from nextcord import Interaction as init
+from nextcord.ext.application_checks import check
+from nextcord.errors import ApplicationCheckFailure
+import re
+
+
+@dataclass
+class AttachmentTypes:
+    images: int = 0
+    videos: int = 0
+    audio: int = 0
+    other: int = 0
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'AttachmentTypes':
+        if isinstance(data, cls):
+            return data
+        return cls(**data)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+@dataclass
+class UserData:
+    # Basic Info
+    name: str 
+    joined_at: str
+    unique_names: Set[str] = field(default_factory=set)
+    
+    # Message Statistics
+    total_messages: int = 0
+    character_count: int = 0
+    word_count: int = 0
+    
+    # Content Analysis
+    attachments_sent: int = 0
+    attachment_types: AttachmentTypes = field(default_factory=AttachmentTypes)
+    mentions_count: int = 0
+    unique_users_mentioned: Set[int] = field(default_factory=set)
+    emoji_count: int = 0
+    custom_emoji_count: int = 0
+    unique_emojis_used: Set[str] = field(default_factory=set)
+    unique_custom_emojis_used: Set[str] = field(default_factory=set)
+    
+    # Interaction Patterns
+    replies_count: int = 0
+    reactions_received: int = 0 #TODO
+    reactions_given: int = 0 #TODO
+    
+    # Command Usage
+    commands_used: int = 0
+    favorite_commands: Dict[str, int] = field(default_factory=dict)
+    
+    # Link Sharing
+    links_shared: int = 0
+    unique_domains: Set[str] = field(default_factory=set)
+    
+    # Message Types
+    edited_messages: int = 0 #TODO
+    deleted_messages: int = 0 #TODO
+    pinned_messages: int = 0 #TODO
+    
+    # Special Events
+    last_boost: Optional[datetime] = None #TODO
+    birthdate: Optional[datetime] = None #TODO
+    
+    # Preferences
+    preferred_channels: Dict[int, int] = field(default_factory=dict) #TODO
+    
+    # Achievement Tracking
+    badges: Set[str] = field(default_factory=set) #TODO
+    milestones: Dict[str, any] = field(default_factory=dict) #TODO
+    reputation: int = 0 #TODO
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'UserData':
+        # Handle none case
+        if data is None:
+            return cls("Unknown", str(datetime.now()))
+
+        # Make a copy to avoid modifying the input
+        data = data.copy()
+        
+        # Convert datetime strings to datetime objects if they exist
+        if data.get('last_boost'):
+            data['last_boost'] = datetime.fromisoformat(data['last_boost'])
+        if data.get('birthdate'):
+            data['birthdate'] = datetime.fromisoformat(data['birthdate'])
+            
+        # Convert attachment_types dict to AttachmentTypes object
+        if 'attachment_types' in data:
+            if isinstance(data['attachment_types'], dict):
+                data['attachment_types'] = AttachmentTypes.from_dict(data['attachment_types'])
+            elif isinstance(data['attachment_types'], AttachmentTypes):
+                pass  # Keep as is
+            else:
+                data['attachment_types'] = AttachmentTypes()  # Default if invalid
+        
+        # Convert sets from lists if they come from JSON
+        data['unique_users_mentioned'] = set(data.get('unique_users_mentioned', []))
+        data['unique_emojis_used'] = set(data.get('unique_emojis_used', []))
+        data['unique_custom_emojis_used'] = set(data.get('unique_custom_emojis_used', []))
+        data['unique_domains'] = set(data.get('unique_domains', []))
+        data['unique_names'] = set(data.get('unique_names', []))
+        data['badges'] = set(data.get('badges', []))
+        
+        # Handle favorite_commands if it doesn't exist
+        if 'favorite_commands' not in data:
+            data['favorite_commands'] = {}
+            
+        # Handle preferred_channels if it doesn't exist
+        if 'preferred_channels' not in data:
+            data['preferred_channels'] = {}
+            
+        # Handle milestones if it doesn't exist
+        if 'milestones' not in data:
+            data['milestones'] = {}
+        
+        return cls(**data)
+
+    def to_dict(self) -> dict:
+        data = {
+            # Basic Info
+            "name": self.name,
+            "joined_at": self.joined_at,
+            "unique_names": list(self.unique_names),
+            
+            # Message Statistics
+            "total_messages": self.total_messages,
+            "character_count": self.character_count,
+            "word_count": self.word_count,
+            
+            # Content Analysis
+            "attachments_sent": self.attachments_sent,
+            "attachment_types": self.attachment_types.to_dict(),
+            "mentions_count": self.mentions_count,
+            "unique_users_mentioned": list(self.unique_users_mentioned),
+            "emoji_count": self.emoji_count,
+            "custom_emoji_count": self.custom_emoji_count,
+            "unique_emojis_used": list(self.unique_emojis_used),
+            "unique_custom_emojis_used": list(self.unique_custom_emojis_used),
+            
+            # Interaction Patterns
+            "replies_count": self.replies_count,
+            "reactions_received": self.reactions_received,
+            "reactions_given": self.reactions_given,
+            
+            # Command Usage
+            "commands_used": self.commands_used,
+            "favorite_commands": self.favorite_commands,
+            
+            # Link Sharing
+            "links_shared": self.links_shared,
+            "unique_domains": list(self.unique_domains),
+            
+            # Message Types
+            "edited_messages": self.edited_messages,
+            "deleted_messages": self.deleted_messages,
+            "pinned_messages": self.pinned_messages,
+            
+            # Special Events
+            "last_boost": self.last_boost.isoformat() if self.last_boost else None,
+            "birthdate": self.birthdate.isoformat() if self.birthdate else None,
+            
+            # Preferences
+            "preferred_channels": self.preferred_channels,
+            
+            # Achievement Tracking
+            "badges": list(self.badges),
+            "milestones": self.milestones,
+            "reputation": self.reputation
+        }
+        return data
+
+    @classmethod
+    def from_member(cls, member: Member) -> 'UserData':
+        return cls(
+            name=get_name(member),
+            joined_at=str(member.created_at)
+        )
+
+class UserManager(DataManager):
+    def __init__(self, user: Union[User, Member]):
+        # Initialize with user-specific file and UserData as default
+        super().__init__(
+            name="Users",
+            file=str(user.id),
+            default=UserData.from_member(user).to_dict()
+        )
+        self.user_id = user.id
+        # Convert loaded data to UserData object
+        self._user_data: UserData = self._load_user_data()
+
+    def _load_user_data(self) -> UserData:
+        """Convert raw data to UserData object"""
+        return UserData.from_dict(self.data)
+
+    def save(self) -> None:
+        """Save UserData to JSON file"""
+        self.data = self._user_data.to_dict()
+        super().save()
+    
+    def load(self) -> UserData:
+        """Load JSON file and return as UserData object"""
+        super().load()
+        self._user_data = self._load_user_data()
+        return self._user_data
+
+    @property
+    def user_data(self) -> UserData:
+        """Access the UserData object"""
+        return self._user_data
+    
+    def generalUpdateInfo(self, user: Member | User):
+        if get_name(user) == self.user_data.name:
+            return
+        else:
+            self.user_data.unique_names.add(self.user_data.name)
+            self.user_data.name = get_name(user)
+            return self.save()
+    
+    def incrementMessageCount(self, message: Message):
+        self.generalUpdateInfo(message.author)
+        content = message.content
+        self.user_data.total_messages += 1
+        self.user_data.character_count += len(content.replace(" ", ""))
+        self.user_data.word_count += len(content.split())
+
+        self.user_data.attachments_sent += len(message.attachments)
+        if len(message.attachments) >= 1:
+            for att in message.attachments:
+                print(att.content_type)
+                if att.content_type and (
+                    att.content_type.startswith("image") or
+                    att.content_type.startswith("video") or  
+                    att.content_type.startswith("audio")
+                ):
+                    media_type = att.content_type.split('/')[0]
+                    if media_type == 'image':
+                        self.user_data.attachment_types.images += 1
+                    elif media_type == 'video':
+                        self.user_data.attachment_types.videos += 1
+                    elif media_type == 'audio':
+                        self.user_data.attachment_types.audio += 1
+                else:
+                    self.user_data.attachment_types.other += 1
+        mentions = re.findall(r"<@(\d+)>", content)
+        self.user_data.mentions_count += len(mentions)
+        self.user_data.unique_users_mentioned.update(mentions)
+        #<a:dddd:706660674780266536>
+        emojis = extract_emojis(content)
+        self.user_data.emoji_count += len(emojis)
+        self.user_data.unique_emojis_used.update(emojis)
+        customEmojis = re.findall(r"<a?:[a-zA-Z0-9_]+:(\d+)>", content)
+        self.user_data.custom_emoji_count += len(customEmojis)
+        self.user_data.unique_custom_emojis_used.update(customEmojis)
+        self.user_data.replies_count += 1 if message.reference else 0
+        links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", content)
+        self.user_data.links_shared += len(links)
+        self.user_data.unique_domains.update(links)
+        
+        self.save()
+    
+    def increment_command_count(self, command_name: str) -> None:
+        """Increment the command usage count"""
+        self._user_data.commands_used += 1
+        self._user_data.favorite_commands[command_name] = \
+            self._user_data.favorite_commands.get(command_name, 0) + 1
+        self.save()
+
+    @classmethod
+    def commandCount(self):
+        """Command decorator to track usage"""
+        def predicate(ctx: init):
+            try:
+                # Get or create UserManager instance for the command user
+                user_manager = UserManager(ctx.user)
+                user_manager.generalUpdateInfo(ctx.user)
+                # Track command usage
+                command_name = ctx.application_command.name
+                user_manager.increment_command_count(command_name)
+            except Exception as e:
+                # Log error but don't prevent command execution
+                print(f"Error tracking command usage: {e}")
+            return True
+        return check(predicate)
+
+    def __getattr__(self, name: str) -> Any:
+        """Delegate unknown attributes to UserData object"""
+        if hasattr(self._user_data, name):
+            return getattr(self._user_data, name)
+        raise AttributeError(f"'UserManager' object has no attribute '{name}'")

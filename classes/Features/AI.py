@@ -101,6 +101,7 @@ class AI(commands.Cog):
     async def ai(self, ctx:init):
         pass
     @ai.subcommand(name="join", description="Join a voice channel")
+    @UserData.commandCount()
     async def join(self, ctx:init):
         if not ctx.user.voice:
             return await ctx.send(embed=error_embed("You are not in a voice channel!", title="AI Error"))
@@ -114,6 +115,7 @@ class AI(commands.Cog):
             
             
     @ai.subcommand(name="leave", description="Leave a voice channel")
+    @UserData.commandCount()
     async def leave(self, ctx:init):
         if not ctx.guild.voice_client:
             return await ctx.send(embed=error_embed("I am not in a voice channel!", title="AI Error"))

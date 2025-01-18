@@ -14,6 +14,7 @@ class AutoRole(commands.Cog):
     @role.subcommand(name="setup",
                    description="Setup auto role for members and bots")
     @feature()
+    @UserData.commandCount()
     async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
         file= DataManager("Auto role", ctx.guild_id)
         file.data = {
@@ -31,7 +32,7 @@ class AutoRole(commands.Cog):
         except: return
         guild = member.guild
         try:
-            if DataManager("Auto role", member.guild_id).check():
+            if DataManager("Auto role", member.guild_id).exists():
                 data = DataManager("Auto role", member.guild_id).load()
                 if data == None:
                     return

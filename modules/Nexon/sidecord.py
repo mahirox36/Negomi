@@ -1,6 +1,8 @@
 import asyncio
 import time
 from typing import Dict, List, Optional, Union, NewType
+
+import emoji
 from modules.Nexon import *
 from nextcord import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, Thread, User, Client, TextChannel, VoiceChannel
 from nextcord.ext import commands
@@ -92,6 +94,16 @@ class SlashCommandOnCooldown(ApplicationCheckFailure):
     
 #     return hybrid
 
+def contains_emoji(text: str) -> bool:
+    """
+    Check if a string contains any emojis.
+    """
+    return any(char in emoji.EMOJI_DATA for char in text)
+def extract_emojis(text: str) -> list:
+    """
+    Extract all emojis from a string.
+    """
+    return [char for char in text if char in emoji.EMOJI_DATA]
 
 async def HaveHigherRole(ctx:init,user:Member):
     if user.top_role.position >= ctx.user.top_role.position:

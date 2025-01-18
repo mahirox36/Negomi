@@ -91,6 +91,7 @@ class Welcome(commands.Cog):
 
     @welcome.subcommand("how", "How to setup the Welcoming Message")
     @feature()
+    @UserData.commandCount()
     async def how(self, ctx:init):
         await ctx.send(embed=info_embed("""
 Setup a welcome message in a specific Channel, in the message option you can uses these for info (Variables):
@@ -106,6 +107,7 @@ Setup a welcome message in a specific Channel, in the message option you can use
     @guild_only()
     @cooldown(10)
     @feature()
+    @UserData.commandCount()
     async def setupWelcome(self, ctx:init, message: str, channel:TextChannel):
         try:
             # Validate permissions

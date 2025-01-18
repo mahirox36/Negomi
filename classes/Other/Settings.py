@@ -93,6 +93,7 @@ class Settings(commands.Cog):
         pass
 
     @feature.subcommand("disable", "Disable a feature in your server")
+    @UserData.commandCount()
     async def disable(self, ctx: init, 
                      feature: str = SlashOption("feature", "Select a feature to disable", 
                                               required=True, autocomplete=True)):
@@ -121,6 +122,7 @@ class Settings(commands.Cog):
         )
 
     @feature.subcommand("enable", "Enable a feature in your server")
+    @UserData.commandCount()
     async def enable(self, ctx: init,
                     feature: str = SlashOption("feature", "Select a feature to enable",
                                              required=True, autocomplete=True)):
