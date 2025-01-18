@@ -1,48 +1,108 @@
 # Privacy Policy
-
-Last Updated: 12/12/2024
+Last Updated: January 18, 2025
 
 ## 1. Information We Collect
+Negomi<3 ("the Bot") collects and stores the following user data:
 
-Negomi<3 ("the Bot") collects and stores the following information:
-
+### 1.1 Basic User Information
 * Discord User IDs
-* Server IDs
-* AI Conversation
-* Command usage data like channels IDs, Server IDs, or Discord User IDs
+* Current and previous usernames
+* Account creation date
+* Server join dates
+
+### 1.2 Message Analytics
+* Message counts
+* Character and word counts
+* Message content analysis for:
+  * Emoji usage (both standard and custom)
+  * Mentions of other users
+  * Links shared and their domains
+  * File attachments and their types (images, videos, audio, etc.)
+  * Reply interactions
+
+### 1.3 Command Usage
+* Commands used and their frequency
+* Command execution context (channels, servers)
+* Command interaction patterns
+
+### 1.4 User Interactions
+* Message reply counts
+* Reactions given and received
+* User mentions
+* Channel participation
+
+### 1.5 Optional Information
+* Birthday (if provided)
+* Server boost status
+* Achievements and milestones
 
 ## 2. How We Use Information
-
 We use the collected information to:
-
 * Provide and maintain the Bot's services
-* Respond to user commands
-* Improve user experience
-* Track command usage for optimization
-* Analyze usage patterns to enhance features
+* Generate user statistics and analytics
+* Track command usage for feature optimization
+* Create personalized user experiences
+* Monitor bot performance and usage patterns
+* Improve bot features and functionality
 
-## 3. Information Sharing
-
-We do not sell, trade, or transfer your information to third parties. Your information may only be released if required by law.
+## 3. Information Sharing and Disclosure
+* We do not sell, trade, or transfer your information to third parties
+* Data is only shared within the server where it was collected
+* Information may only be released if required by law
+* Aggregate, anonymized statistics may be used for bot improvement
 
 ## 4. Data Storage and Security
-
-* All collected data is stored securely
-* We implement reasonable security measures to protect your information
-* Data is retained only as long as necessary for providing our services
+* All data is stored locally and securely
+* We implement industry-standard security measures
+* Access to data is strictly limited to bot functionality
+* Data is retained only as long as necessary or until user requests deletion
+* Regular backups are maintained to prevent data loss
 
 ## 5. User Rights
-
 You have the right to:
-
-* Request access to your data
+* Request access to your collected data
 * Request deletion of your data
-* Opt-out of data collection (by stopping use of the Bot)
+* Opt-out of data collection by:
+  * Stopping use of the Bot
+  * Leaving servers where the Bot is present
+* Request information about how your data is used
+* Object to certain types of data collection
 
-## 6. Changes to Privacy Policy
+## 6. Data Retention
+* Active user data is retained while the bot is in use
+* Inactive user data may be automatically purged after extended periods
+* Users can request immediate data deletion at any time
+* Some basic data may be retained for system functionality
 
-We may update this privacy policy from time to time. We will notify users of any changes by updating the "Last Updated" date.
+## 7. Children's Privacy
+The Bot does not knowingly collect data from users under 13 years of age. If we become aware of such data collection, we will take steps to delete the information.
 
-## 7. Contact Information
+## 8. Changes to Privacy Policy
+* We reserve the right to update this privacy policy
+* Users will be notified of significant changes through:
+  * Updated "Last Updated" date
+  * Server announcements (when possible)
+  * Bot status messages
+* Continued use of the Bot after changes constitutes acceptance
 
-For any questions about this Privacy Policy, please contact `mahiroc36@gmail.com`.
+## 9. Contact Information
+For questions, concerns, or data requests:
+* Email: mahiroc36@gmail.com
+* Discord: mahirox36
+* Response Time: Within 48-72 hours
+
+## 10. Data Processing Details
+* Data is processed automatically through bot commands and interactions
+* Manual data processing only occurs for support requests
+* No human review of user data occurs except when explicitly requested
+
+## 11. Legal Basis
+We collect and process data based on:
+* Legitimate interests in providing bot functionality
+* User consent through bot usage
+* Contractual necessity for providing services
+
+## 12. Geographic Restrictions
+* The Bot's services are available globally
+* Data is stored in accordance with relevant data protection laws
+* Users from all regions have equal data rights
