@@ -6,7 +6,6 @@ from typing import Any, Dict, Set, Optional, Union
 from nextcord import Member, Message, User
 from nextcord import Interaction as init
 from nextcord.ext.application_checks import check
-from nextcord.errors import ApplicationCheckFailure
 import re
 
 
@@ -47,11 +46,12 @@ class UserData:
     custom_emoji_count: int = 0
     unique_emojis_used: Set[str] = field(default_factory=set)
     unique_custom_emojis_used: Set[str] = field(default_factory=set)
+    preferred_channels: Dict[str, int] = field(default_factory=dict)
     
     # Interaction Patterns
     replies_count: int = 0
-    reactions_received: int = 0 #TODO
-    reactions_given: int = 0 #TODO
+    reactions_received: int = 0
+    reactions_given: int = 0
     
     # Command Usage
     commands_used: int = 0
@@ -62,16 +62,11 @@ class UserData:
     unique_domains: Set[str] = field(default_factory=set)
     
     # Message Types
-    edited_messages: int = 0 #TODO
-    deleted_messages: int = 0 #TODO
-    pinned_messages: int = 0 #TODO
+    edited_messages: int = 0
+    deleted_messages: int = 0
     
     # Special Events
-    last_boost: Optional[datetime] = None #TODO
-    birthdate: Optional[datetime] = None #TODO
-    
-    # Preferences
-    preferred_channels: Dict[int, int] = field(default_factory=dict) #TODO
+    birthdate: Optional[datetime] = None
     
     # Achievement Tracking
     badges: Set[str] = field(default_factory=set) #TODO
@@ -88,8 +83,6 @@ class UserData:
         data = data.copy()
         
         # Convert datetime strings to datetime objects if they exist
-        if data.get('last_boost'):
-            data['last_boost'] = datetime.fromisoformat(data['last_boost'])
         if data.get('birthdate'):
             data['birthdate'] = datetime.fromisoformat(data['birthdate'])
             
@@ -162,10 +155,8 @@ class UserData:
             # Message Types
             "edited_messages": self.edited_messages,
             "deleted_messages": self.deleted_messages,
-            "pinned_messages": self.pinned_messages,
             
             # Special Events
-            "last_boost": self.last_boost.isoformat() if self.last_boost else None,
             "birthdate": self.birthdate.isoformat() if self.birthdate else None,
             
             # Preferences
@@ -211,6 +202,9 @@ class UserManager(DataManager):
         super().load()
         self._user_data = self._load_user_data()
         return self._user_data
+    def delete(self):
+        """Deletes the user data"""
+        return super().delete(None)
 
     @property
     def user_data(self) -> UserData:
@@ -231,6 +225,8 @@ class UserManager(DataManager):
         self.user_data.total_messages += 1
         self.user_data.character_count += len(content.replace(" ", ""))
         self.user_data.word_count += len(content.split())
+        self.user_data.preferred_channels[str(message.channel.id)] = \
+            self.user_data.preferred_channels.get(str(message.channel.id), 0) + 1
 
         self.user_data.attachments_sent += len(message.attachments)
         if len(message.attachments) >= 1:

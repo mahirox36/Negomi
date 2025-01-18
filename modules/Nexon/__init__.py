@@ -31,14 +31,14 @@ from nextcord import (
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
-    IntegrationType
+    IntegrationType, Reaction, Thread
 )
 #Type Errors
 from nextcord import (
     HTTPException, Forbidden
 )
 # Other Stuff Like UI, application_checks, commands
-from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect
+from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
