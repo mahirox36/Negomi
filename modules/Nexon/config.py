@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.25"
+VERSION = "0.26"
 
 @dataclass
 class GeneralConfig:
@@ -67,6 +67,7 @@ class CommandsSettings:
 @dataclass
 class AISettings:
     enable : bool = False
+    ip: str = "127.0.0.1"
     allow_all_servers: bool = False
     allow_all_users: bool = False
 
@@ -253,7 +254,7 @@ overwriteOwner = BotConfig.General.owner_id
 Format = BotConfig.Logger.format
 Level = BotConfig.Logger.level
  
-# Colors/Colours
+# Colors/Colour
 colors = BotConfig.General_Embeds_Colour
 colours = BotConfig.General_Embeds_Colour
 
@@ -262,6 +263,7 @@ EnableAdvanceViewing = BotConfig.Commands_Settings.enable_advanced_viewing
 
 #AI
 enableAI = BotConfig.AI.enable
+ip = BotConfig.AI.ip
 allowAllServers = BotConfig.AI.allow_all_servers
 allowAllUsers  = BotConfig.AI.allow_all_users
 

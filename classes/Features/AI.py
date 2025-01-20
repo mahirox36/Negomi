@@ -1,5 +1,4 @@
 from modules.Nexon import *
-import ollama
 
 # models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
 #TODO: Instead adding a name before message it to the system: this Person display's name is "{Name}"
@@ -20,18 +19,25 @@ class AI(commands.Cog):
         self.client = client
         self.conversation_manager = ConversationManager()
         self.typing_manager = TypingManager(client)
-        self.models = [model["model"].split(":")[0] for model in ollama.list().model_dump()["models"]]
-        self.system= system.format(AI="Negomi", short="smart and humorous", name="Mahiro",
+        self.ready = False
+        
+        
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        global system
+        models = [model.model.split(":")[0] for model in  negomi.list().models]
+        system= system.format(AI="Negomi", short="smart and humorous", name="Mahiro",
                       pronouns="He", pronouns2= "His", relationship= "daughter", relationshipByPOV="Father", 
                       hobby = "programmer", name2="Shadow", relationship2="second father",other_stuff="Mahiro and Shadow are not married but share a close friendship.").replace("\n","")
         from_ = "llama3.1"
-        if from_ not in self.models:
+        if from_ not in models:
             logger.info("Downloading llama3.1")
             download_model(from_)
-        ollama.create(model='Negomi', from_=from_, system=self.system)
+        negomi.create(model='Negomi', from_=from_, system=system)
         with open("Data/AI/system.txt", "w", encoding="utf-8") as f:
-            f.write(self.system)
-        
+            f.write(system)
+        self.ready = True
     
     @commands.Cog.listener()
     async def on_message(self, message: Message):
@@ -57,8 +63,9 @@ class AI(commands.Cog):
                     return
             except Exception as e:
                 return
-            
-        
+        if not self.ready:
+            await message.reply(embed=warn_embed("The AI is still starting up, please wait it will be ready in any minute","AI Warning"))
+            return
 
         content = message.content.replace(f"<@{self.client.user.id}>", "Negomi")\
             .replace("  ", " ").replace("  ", " ")
@@ -78,6 +85,10 @@ class AI(commands.Cog):
             response = self.conversation_manager.get_response(
                 str(message.author.id), f"{name}: {content}", content
             )
+            
+            if response is offline:
+                await message.reply(embed=error_embed("Sorry, but the AI is offline for now", "AI is Offline"))
+                return
 
             # Handle response
             if response is False:

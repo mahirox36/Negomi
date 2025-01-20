@@ -12,7 +12,7 @@ from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name,
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
         CommandDisabled, enableByConfig, url, extract_emojis, contains_emoji
 from .logger import logger, print
-from .Negomi import ConversationManager, generate, download_model
+from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline
 from .Users import UserManager as UserData
 
 #Important things

@@ -88,11 +88,8 @@ class DiscordBot(commands.Bot):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
                 
-                if enableAI: 
-                    try:
-                        ollama.list()
-                    except: 
-                        logger.error("Ollama isn't installed, skipping AI\nTo Install Ollama Go to this link: https://ollama.com/download")
+                if enableAI and ext_path.stem == "AI": 
+                    if isClientOnline() is offline:
                         continue
                 
                 try:

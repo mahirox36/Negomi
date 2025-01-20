@@ -1,12 +1,25 @@
 import datetime
 import os
-from typing import Dict, List
+from typing import Dict, List, NewType
+import httpx
 import ollama
 from rich import print
 from json import dumps, loads
 from .logger import logger
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
+from .config import ip
 from pathlib import Path
+
+CheckerClient = ollama.Client(ip, timeout = 1)
+client = ollama.Client(ip)
+offline = NewType("offline", False)
+online = NewType("online", True)
+
+def isClientOnline():
+    try:
+        list = CheckerClient.list()
+        return online
+    except: return offline
 
 def download_model(model_name: str) -> None:
     """
@@ -23,7 +36,7 @@ def download_model(model_name: str) -> None:
     ) as progress:
         current_digest, tasks = '', {}
         
-        for status in ollama.pull(model_name, stream=True):
+        for status in client.pull(model_name, stream=True):
             digest = status.get('digest', '')
             
             if not digest:
@@ -144,6 +157,8 @@ Previous conversation:
                     msg['content'] = content
             
             return final_history
+        except httpx.ConnectTimeout as e:
+            raise e
             
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
@@ -168,15 +183,21 @@ Previous conversation:
         conversation_history.append({'role': 'user', 'content': user_message})
         non_system_messages = [msg for msg in conversation_history if msg['role'] != 'system']
         # Summarize if needed
-        if len(non_system_messages) > self.summary_threshold:
-            conversation_history = self.summarize_conversation(conversation_history)
-            self.conversation_histories[user_id] = conversation_history
+        try:
+            if len(non_system_messages) > self.summary_threshold:
+                conversation_history = self.summarize_conversation(conversation_history)
+                self.conversation_histories[user_id] = conversation_history
+        except httpx.ConnectTimeout as e:
+            logger.error(f"Error in ollama.chat: {e}")
+            return offline
 
         # Generate response using Ollama
         try:
-            response = ollama.chat(model=self.model, messages=conversation_history)
+            response = client.chat(model=self.model, messages=conversation_history)
             text = response.get('message', {}).get('content', "Error: No response generated.")
-            
+        except httpx.ConnectTimeout as e:
+            logger.error(f"Error in ollama.chat: {e}")
+            return offline
         except Exception as e:
             logger.error(f"Error in ollama.chat: {e}")
             text = "Sorry, I encountered an issue generating a response."
@@ -189,8 +210,11 @@ Previous conversation:
         return text
 
 def generate(prompt, model: str="Negomi") -> str:
-    response = ollama.generate(model, prompt)
-    return response["response"]
+    try:
+        response = client.generate(model, prompt)
+        return response["response"]
+    except Exception:
+        return offline
 
 if __name__ == '__main__':
     os.system("cls")
