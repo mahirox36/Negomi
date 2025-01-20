@@ -10,9 +10,8 @@ from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, Trans
 from .config import ip
 from pathlib import Path
 
-entireIP = f"http://{ip}:11434"
-CheckerClient = ollama.Client(entireIP, timeout = 1)
-client = ollama.Client(entireIP)
+CheckerClient = ollama.Client(ip, timeout = 1)
+client = ollama.Client(ip)
 offline = NewType("offline", False)
 online = NewType("online", True)
 
