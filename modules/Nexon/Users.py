@@ -1,5 +1,8 @@
-from .DataManager import DataManager
-from .sidecord import get_name, extract_emojis
+try:
+    from .DataManager import DataManager
+    from .sidecord import get_name, extract_emojis
+except: 
+    from DataManager import DataManager
 from datetime import datetime
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Set, Optional, Union
@@ -7,6 +10,11 @@ from nextcord import Member, Message, User
 from nextcord import Interaction as init
 from nextcord.ext.application_checks import check
 import re
+import json
+from pathlib import Path
+from collections import Counter
+from rich.console import Console
+from rich.table import Table
 
 
 @dataclass
@@ -292,3 +300,124 @@ class UserManager(DataManager):
         if hasattr(self._user_data, name):
             return getattr(self._user_data, name)
         raise AttributeError(f"'UserManager' object has no attribute '{name}'")
+    
+    
+    
+
+
+def load_json_files(directory):
+    """Load all JSON files from a directory."""
+    data = []
+    for file in Path(directory).glob("*.json"):
+        with open(file, "r", encoding='utf-8') as f:
+            data.append(json.load(f))
+    return data
+
+def analyze_data(data):
+    """Analyze the loaded data."""
+    total_users = len(data)
+    total_messages = sum(user["total_messages"] for user in data)
+    total_words = sum(user["word_count"] for user in data)
+    total_reactions_received = sum(user["reactions_received"] for user in data)
+    total_reactions_given = sum(user["reactions_given"] for user in data)
+    total_mentions = sum(user["mentions_count"] for user in data)
+    
+    # Activity metrics
+    total_attachments = sum(user["attachments_sent"] for user in data)
+    attachment_types = Counter(
+        {key: 0 for key in ["images", "videos", "audio", "other"]}
+    )
+    for user in data:
+        attachment_types.update(user["attachment_types"])
+    
+    # Command usage
+    command_usage = Counter()
+    for user in data:
+        command_usage.update(user["favorite_commands"])
+    
+    # Preferred channels
+    preferred_channels = Counter()
+    for user in data:
+        preferred_channels.update(user["preferred_channels"])
+    
+    # Domain analysis
+    unique_domains = set()
+    for user in data:
+        unique_domains.update(user["unique_domains"])
+
+    # Badge distribution
+    badges = Counter()
+    for user in data:
+        badges.update(user["badges"])
+    
+    return {
+        "total_users": total_users,
+        "total_messages": total_messages,
+        "total_words": total_words,
+        "total_reactions_received": total_reactions_received,
+        "total_reactions_given": total_reactions_given,
+        "total_mentions": total_mentions,
+        "total_attachments": total_attachments,
+        "attachment_types": dict(attachment_types),
+        "top_commands": command_usage.most_common(10),
+        "top_channels": preferred_channels.most_common(10),
+        "unique_domains_count": len(unique_domains),
+        "unique_domains": list(unique_domains),
+        "badge_distribution": dict(badges),
+    }
+
+def format_report(stats):
+    """Format the analytics report using rich."""
+    console = Console()
+
+    # Create a table for better visualization
+    table = Table(title="Analytics Report")
+    
+    table.add_column("Metric", justify="left", style="cyan", no_wrap=True)
+    table.add_column("Value", justify="right", style="magenta")
+    
+    table.add_row("Total Users", str(stats["total_users"]))
+    table.add_row("Total Messages", str(stats["total_messages"]))
+    table.add_row("Total Words", str(stats["total_words"]))
+    table.add_row("Reactions Received", str(stats["total_reactions_received"]))
+    table.add_row("Reactions Given", str(stats["total_reactions_given"]))
+    table.add_row("Total Mentions", str(stats["total_mentions"]))
+    table.add_row("Total Attachments", str(stats["total_attachments"]))
+    
+    table.add_row("Attachment Types", str(stats["attachment_types"]))
+    table.add_row("Top Commands", str(stats["top_commands"]))
+    table.add_row("Top Channels", str(stats["top_channels"]))
+    table.add_row("Unique Domains", str(stats["unique_domains_count"]))
+    table.add_row("Badge Distribution", str(stats["badge_distribution"]))
+    
+    # Display the table
+    console.print(table)
+
+def format_for_discord(stats):
+    """Format the analytics as a string suitable for a Discord message."""
+    formatted = (
+        f"**Analytics Report**\n"
+        f"**Total Users:** {stats['total_users']}\n"
+        f"**Total Messages:** {stats['total_messages']}\n"
+        f"**Total Words:** {stats['total_words']}\n"
+        f"**Reactions Received:** {stats['total_reactions_received']}\n"
+        f"**Reactions Given:** {stats['total_reactions_given']}\n"
+        f"**Total Mentions:** {stats['total_mentions']}\n"
+        f"**Total Attachments:** {stats['total_attachments']}\n"
+        f"**Attachment Types:** {stats['attachment_types']}\n"
+        f"**Top Commands:** {stats['top_commands']}\n"
+        f"**Top Channels:** {stats['top_channels']}\n"
+        f"**Unique Domains Count:** {stats['unique_domains_count']}\n"
+        f"**Badge Distribution:** {stats['badge_distribution']}\n"
+    )
+    return f"```{formatted}```"
+
+if __name__ == "__main__":
+    import os
+    os.system("cls")
+    directory = "Data/Users/"
+    data = load_json_files(directory)
+    stats = analyze_data(data)
+    
+    # Print rich table to console
+    format_report(stats)
