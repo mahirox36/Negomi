@@ -3,6 +3,9 @@ Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcor
 ~~~~~~~~~~~~~~~
 """
 #This Library Custom Classes and functions
+import nest_asyncio
+nest_asyncio.apply()
+
 from .DataManager import DataManager
 from .BetterID import BetterID
 from .config import BotConfig
@@ -14,6 +17,7 @@ from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name,
 from .logger import logger, print
 from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline
 from .Users import UserManager as UserData
+from .ipc_manager import IPCManager
 
 #Important things
 from typing import Any, Callable, Dict, List, Set, Optional, Union

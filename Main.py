@@ -10,6 +10,8 @@ import nextcord
 from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 import ollama
 from modules.Nexon import *
+import multiprocessing
+from Dashboard.dashboard import run_dashboard
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -31,10 +33,14 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
+        # Initialize IPC
+        if dashboard_enabled:
+            self.ipc_manager: Optional[IPCManager] = IPCManager(self)
+        
         self.setup_hook()
 
     async def cleanup(self):
-        """Cleanup bot resources"""
+        """Cleanup bot resources including IPC"""
         if self._cleanup_done.is_set():
             return
 
@@ -51,8 +57,10 @@ class DiscordBot(commands.Bot):
         self.logger.info("Cleanup completed")
 
     def setup_hook(self) -> None:
-        """Overridden setup hook to handle bundled and non-bundled extensions."""
+        """Setup hook with IPC initialization"""
         data = [i for i in self._load_extensions(get=True)]
+        if dashboard_enabled:
+            self.ipc_manager.start()
     
     def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
         """Load all extension modules with executable-aware path handling."""
@@ -149,13 +157,14 @@ class DiscordBot(commands.Bot):
         try:
             if self.owner != None:
                 channel = await self.owner.create_dm()
-                await channel.send(
+                message: Message = await channel.send(
                     embed=nextcord.Embed(
                         title="Status Update",
                         description="Bot has successfully started",
                         color=colors.Info.value
                     )
                 )
+                self.logger.info(f"Sent to {get_name(self.owner)} ({self.owner.id}) with the message ID {message.id}")
             else:
                 logger.warning("There is no owner")
         except Exception as e:
@@ -279,6 +288,12 @@ class DiscordBot(commands.Bot):
 
 async def main():
     bot = DiscordBot()
+    
+    # Start dashboard in separate process
+    if dashboard_enabled:
+        dashboard_process = multiprocessing.Process(target=run_dashboard)
+        dashboard_process.start()
+    
     try:
         await bot.start(token)
     except nextcord.LoginFailure:
@@ -291,6 +306,7 @@ async def main():
     except Exception as e:
         bot.logger.exception("An error occurred while running the bot")
     finally:
+        dashboard_process.terminate()
         await bot.cleanup()
         input()
     

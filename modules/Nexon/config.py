@@ -1,25 +1,37 @@
 import os
+import secrets
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.26"
+VERSION = "0.27"
+
+@dataclass
+class IPCConfig:
+    secret: str = field(default_factory=lambda: secrets.token_urlsafe(32))
+    port: int = 5001
+
+@dataclass
+class DashboardConfig:
+    enabled: bool = True
+    host: str = "localhost"
+    port: int = 5000
 
 @dataclass
 class GeneralConfig:
     prefix: str = "u."
     token: str = "Your Bot Token"
-    presence : str = "My Master Mahiro"
-    send_to_online_owner : bool = True
-    owner_id : int = None
+    presence: str = "My Master Mahiro"
+    send_to_online_owner: bool = True
+    owner_id: int = None
     ConfigVersion: str = VERSION
 
 @dataclass
 class LoggerConfig:
-    format : str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
-    level : str = "Info"
+    format: str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
+    level: str = "Info"
 
 @dataclass
 class ColorConfig:
@@ -47,26 +59,25 @@ class ColorConfig:
                 raise ValueError(f"Invalid color value for {key}: {value}")
         return cls(**processed_data)
 
-
 @dataclass
 class WelcomeConfig:
-    enabled : bool = True
-    base_image_path : str = "Assets/img/Welcome.png"
-    font : str = "Assets/font/MonsterFriendFore.otf"
-    backup_font : str = "Assets/font/arial.ttf"
-    font_size : int = 30
-    resize_dimensions : tuple[int, int] = (99, 99)
-    avatar_position : tuple[int, int] = (47, 47)
-    text_position : tuple[int, int] = (190, 195)
-    text_color_rgb : tuple[int, int, int] = (70, 243, 243)
+    enabled: bool = True
+    base_image_path: str = "Assets/img/Welcome.png"
+    font: str = "Assets/font/MonsterFriendFore.otf"
+    backup_font: str = "Assets/font/arial.ttf"
+    font_size: int = 30
+    resize_dimensions: tuple[int, int] = (99, 99)
+    avatar_position: tuple[int, int] = (47, 47)
+    text_position: tuple[int, int] = (190, 195)
+    text_color_rgb: tuple[int, int, int] = (70, 243, 243)
 
 @dataclass
 class CommandsSettings:
-    enable_advanced_viewing : bool = True
+    enable_advanced_viewing: bool = True
 
 @dataclass
 class AISettings:
-    enable : bool = False
+    enabled: bool = False
     ip: str = "127.0.0.1"
     allow_all_servers: bool = False
     allow_all_users: bool = False
@@ -79,9 +90,11 @@ class Bot_Config:
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     Commands_Settings: CommandsSettings = field(default_factory=CommandsSettings)
     AI: AISettings = field(default_factory=AISettings)
-    Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234,43214321])
-    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234,43214321])
-    AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321,12341234])
+    IPC: IPCConfig = field(default_factory=IPCConfig)
+    Dashboard: DashboardConfig = field(default_factory=DashboardConfig)
+    Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234, 43214321])
+    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234, 43214321])
+    AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321, 12341234])
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the config to a dictionary format."""
@@ -102,6 +115,12 @@ class Bot_Config:
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
+            "IPC": {
+                k: v for k, v in self.IPC.__dict__.items()
+            },
+            "Dashboard": {
+                k: v for k, v in self.Dashboard.__dict__.items()
+            },
             "TESTING GUILDS ID": self.Testing_guilds_id,
             "AI_AllowedServers": self.AI_AllowedServers,
             "AI_AllowedUsersID": self.AI_AllowedUsersID
@@ -117,6 +136,8 @@ class Bot_Config:
             Welcome_Settings=WelcomeConfig(**data.get("Welcome", {})),
             Commands_Settings=CommandsSettings(**data.get("Commands", {})),
             AI=AISettings(**data.get("AI", {})),
+            IPC=IPCConfig(**data.get("IPC", {})),
+            Dashboard=DashboardConfig(**data.get("Dashboard", {})),
             Testing_guilds_id=data.get("TESTING GUILDS ID", []),
             AI_AllowedServers=data.get("AI_AllowedServers", []),
             AI_AllowedUsersID=data.get("AI_AllowedUsersID", [])
@@ -138,6 +159,8 @@ class ConfigManager:
             "Welcome",
             "Commands",
             "AI",
+            "IPC",
+            "Dashboard",
             "TESTING GUILDS ID",
             "AI_AllowedServers",
             "AI_AllowedUsersID"
@@ -262,7 +285,7 @@ colours = BotConfig.General_Embeds_Colour
 EnableAdvanceViewing = BotConfig.Commands_Settings.enable_advanced_viewing
 
 #AI
-enableAI = BotConfig.AI.enable
+enableAI = BotConfig.AI.enabled
 ip = BotConfig.AI.ip
 allowAllServers = BotConfig.AI.allow_all_servers
 allowAllUsers  = BotConfig.AI.allow_all_users
@@ -282,3 +305,12 @@ textColor = BotConfig.Welcome_Settings.text_color_rgb
 TESTING_GUILD_ID = BotConfig.Testing_guilds_id
 AI_AllowedServers = BotConfig.AI_AllowedServers
 AI_AllowedUsersID = BotConfig.AI_AllowedUsersID
+
+# IPC
+ipc_secret = BotConfig.IPC.secret
+ipc_port = BotConfig.IPC.port
+
+# Dashboard
+dashboard_enabled = BotConfig.Dashboard.enabled
+dashboard_host = BotConfig.Dashboard.host
+dashboard_port = BotConfig.Dashboard.port

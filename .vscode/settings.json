@@ -53,5 +53,16 @@
         "Dashboard": "serverless",
         "Working on Progress": "Ci",
         "Nexon":"Quasar"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.sync":true,
+        "**/builds":true,
+        "**/logs":true,
     }
 }
