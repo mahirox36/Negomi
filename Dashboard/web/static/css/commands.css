@@ -1,0 +1,174 @@
+:root {
+    --main-color: #ff69b4;
+    --second-color: #e996fa;
+    --light-color: #84ebff;
+    --accent: #cdd3ff;
+    --text-primary: white;
+    --text-secondary: rgba(255, 255, 255, 0.9);
+    --background-overlay: rgba(255, 255, 255, 0.25);
+    --card-overlay: rgba(255, 255, 255, 0.05);
+}
+
+
+
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+
+
+
+body {
+    background: linear-gradient(115deg, var(--main-color), var(--second-color));
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+/* nav */
+nav {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+nav ul {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 2rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: var(--light-color);
+}
+
+/* Layout */
+.commands-container {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+}
+
+/* Category Styles */
+.category {
+    background: var(--background-overlay);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.category-title {
+    color: var(--light-color);
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.category-count {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* Command Grid Layout */
+.command-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Command Cards */
+.command-card {
+    background: var(--card-overlay);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.command-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.command-card.user-command {
+    border: 2px solid var(--second-color);
+}
+
+/* Command Elements */
+.command-name {
+    color: var(--accent);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-right: 4.5rem;
+}
+
+.command-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.command-usage {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-family: 'Consolas', monospace;
+    color: var(--light-color);
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+/* Badges */
+.command-type-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.user-command .command-type-badge {
+    background: var(--second-color);
+    color: var(--text-primary);
+}
+
+.slash-command .command-type-badge {
+    background: var(--light-color);
+    color: #000;
+}

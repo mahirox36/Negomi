@@ -16,7 +16,7 @@ class IPCConfig:
 @dataclass
 class DashboardConfig:
     enabled: bool = True
-    host: str = "localhost"
+    host: str = "0.0.0.0"
     port: int = 25400
 
 @dataclass

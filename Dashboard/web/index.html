@@ -3,23 +3,81 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="static/css/style.css">
-        <title>Lua Dashboard</title>
+        <title>Negomi Bot</title>
+        <link rel="stylesheet" href="static/css/style.css?v=1.05">
     </head>
     
     <body>
         <nav>
-            <div  class="container">
-                <a href="/"><button href="/"                    class="button-selected">Home</button></a>
-                <a href="/about"><button href="/about"          class="button">About</button></a>
-                <a href="/dashboard"><button href="/dashboard"  class="button">Dashboard</button></a>
-            </div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#setup">Quick Start</a></li>
+                <li><a href="/commands">Commands</a></li>
+            </ul>
         </nav>
-        <!-- <img src="static/image/Icon.png" class="image-icon"> -->
-        <h3>The bot is in <strong>{{stats.guild_count}}</strong> Servers!</h3>
-        
-    </body>
     
-    <footer>
-    </footer>
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <h1>Negomi</h1>
+                <p class="description">
+                    Your all-in-one Discord bot for moderation, community engagement, and server management. Featuring AI integration, custom roles, temporary voice channels, and more!
+                </p>
+                <a href="https://discord.com/oauth2/authorize?client_id=1304926952552923156" class="cta-button">Add to Discord</a>
+            </div>
+        </section>
+    
+        <section class="features" id="features">
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Advanced Moderation</h3>
+                <p>Comprehensive moderator management system with role hierarchy, token authentication, and automated security features.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎭</div>
+                <h3>Custom Roles</h3>
+                <p>Let members create and customize their own roles. Perfect for communities and servers with boosters!</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔊</div>
+                <h3>Temporary Voice</h3>
+                <p>Dynamic voice channels with full user control - customize names, limits, privacy settings and more.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Integration</h3>
+                <p>Engage with an intelligent AI assistant that can help manage your server and interact with members.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👋</div>
+                <h3>Welcome System</h3>
+                <p>Greet new members with customizable welcome messages and beautifully generated welcome images.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3>Backup System</h3>
+                <p>Comprehensive server backups including channels, roles, permissions and more for complete peace of mind.</p>
+            </div>
+        </section>
+        <section class="quick-start" id="setup">
+            <h2>Quick Start Guide</h2>
+            <div class="setup-steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h4>Invite Bot</h4>
+                    <p>Add Negomi to your server with just a few clicks</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h4>Setup Features</h4>
+                    <p>Use /setup commands to configure moderator roles, welcome messages, and more</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h4>Enjoy!</h4>
+                    <p>Experience enhanced server management and community engagement</p>
+                </div>
+            </div>
+        </section>
+    </body>
 </html>

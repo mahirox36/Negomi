@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Negomi Commands</title>
+        <link rel="stylesheet" href="static/css/commands.css?v=1.08">
+    </head>
+    
+    <body>
+        <nav>
+            <ul>
+                <li><a href="/#home">Home</a></li>
+                <li><a href="/#features">Features</a></li>
+                <li><a href="/#setup">Quick Start</a></li>
+                <li><a href="/commands">Commands</a></li>
+            </ul>
+        </nav>
+        <div class="commands-container">
+            {% if stats %}
+                {% set categories = {} %}
+                {% for command in stats %}
+                    {% if command.category not in categories %}
+                        {% set _ = categories.update({command.category: []}) %}
+                    {% endif %}
+                    {% set _ = categories[command.category].append(command) %}
+                {% endfor %}
+    
+                {% for category, commands in categories.items() %}
+                    <div class="category">
+                        <h2 class="category-title">
+                            {{ category }}
+                            <span class="category-count">{{ commands|length }} commands</span>
+                        </h2>
+                        <div class="command-grid">
+                            {% for command in commands %}
+                                <div class="command-card {{ command.type }}-command">
+                                    <span class="command-type-badge">{{ command.type }}</span>
+                                    <div class="command-name">{{ command.name }}</div>
+                                    <div class="command-description">{{ command.description }}</div>
+                                    <div class="command-usage">{{ command.usage }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="error-message">
+                    Failed to load commands. Please try again later.
+                </div>
+            {% endif %}
+        </div>
+    </body>
+</html>

@@ -33,21 +33,29 @@ class Dashboard:
                 self.logger.error(f"Dashboard error: {str(e)}")
                 return {"error": "Failed to load dashboard"}
 
-        @self.app.get("/about")
+        @self.app.get("/commands")
         async def about(request: Request):
-            return self.templates.TemplateResponse("about.html", {"request": request})
+            try:
+                stats = await self.ipc.request("get_commands")
+                return self.templates.TemplateResponse(
+                    "commands.html", 
+                    {"request": request, "stats": stats}
+                )
+            except Exception as e:
+                self.logger.error(f"Dashboard error: {str(e)}")
+                return {"error": "Failed to load dashboard"}
 
     async def start(self):
         """Start the dashboard"""
         config = uvicorn.Config(
             self.app,
-            host=BotConfig.Dashboard.host or "localhost",
+            host=BotConfig.Dashboard.host or "0.0.0.0",
             port=BotConfig.Dashboard.port or 25400,
             log_config=None  # Disable uvicorn's logging
         )
         server = uvicorn.Server(config)
         
-        self.logger.info(f"Starting dashboard on {config.host}:{config.port}")
+        self.logger.info(f"Starting dashboard on http://{config.host if not "0.0.0.0" else "127.0.0.1"}:{config.port}")
         await server.serve()
 
 def run_dashboard():

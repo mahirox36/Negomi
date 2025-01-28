@@ -1,71 +1,188 @@
-
-:root{
-    --main-color : #8f39ae;
-    --background-color: #181f25;
-    --darker: #11161b;
-    --anent: #5EBAB1;
-    --small-font: #d1d2d3;
+:root {
+    --main-color: #ff69b4;
+    --second-color: #e996fa;
+    --light-color: #84ebff;
+    --accent: #bac3ff;
 }
-body {
-    background-color: var(--background-color);
-    color: #f0f0f0;
-    font-size: 30px;
-    font-family: Arial, sans-serif;
+
+* {
     margin: 0;
     padding: 0;
-    text-align: center;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-h1 {
-    color: #fff;
+body {
+    background: linear-gradient(135deg, var(--main-color) 0%, var(--second-color) 100%);
+    color: white;
+    line-height: 1.6;
 }
 
-.container {
+nav {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
 
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-    position: relative;
+nav ul {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 2rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: var(--light-color);
+}
+
+.hero {
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    column-gap: 40px;
-    width: 100%;
-
+    text-align: center;
+    padding: 2rem;
 }
 
-.button {
-    background: none;
+.hero-content {
+    max-width: 800px;
+}
+
+h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.description {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.cta-button {
+    background-color: var(--light-color);
+    color: #333;
+    padding: 1rem 2rem;
     border: none;
-    color: #c9c9c9;
-    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
     cursor: pointer;
-    transition: color 0.3s ease;
-    font-size: 15px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+    display: inline-block;
 }
 
-.button:hover {
-    color: #bc2ada;
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
-.button:click {
-    color: #d730f8;
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
-.button-selected {
-    background: none;
-    border: none;
-    color: #fff;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    font-size: 15px;
-    text-decoration: underline var(--main-color) 4px;
-    text-underline-offset: 8px ;
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    transition: transform 0.3s;
 }
-.image-icon{
-    width: 20%;
+
+.feature-card:hover {
+    transform: translateY(-5px);
 }
-strong{
-    background: -webkit-linear-gradient(var(--main-color), var(--anent));
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+}
+
+.quick-start {
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    text-align: center;
+}
+
+.quick-start h2 {
+    color: var(--light-color);
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+}
+
+.setup-steps {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.step {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    flex: 1;
+    min-width: 250px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.step-number {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    font-size: 35px;
+    line-height: 40px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.step h4 {
+    color: var(--light-color);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.step p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .setup-steps {
+        flex-direction: column;
+    }
+    
+    .step {
+        margin-bottom: 1rem;
+    }
 }
