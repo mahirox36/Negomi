@@ -2,19 +2,28 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="description" content="Negomi - Your all-in-one Discord bot for moderation, community engagement, and server management">
         <title>Negomi Bot</title>
-        <link rel="stylesheet" href="static/css/style.css?v=1.05">
+        <link rel="stylesheet" href="static/css/style.css?v=1.07">
     </head>
     
     <body>
+        <div class="loading">
+            <div class="loading-spinner"></div>
+        </div>
+        
         <nav>
-            <ul>
-                <li><a href="#home">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#setup">Quick Start</a></li>
-                <li><a href="/commands">Commands</a></li>
-            </ul>
+            <div class="nav-container">
+                <a href="#" class="logo">Negomi</a>
+                <div class="nav-toggle">☰</div>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#setup">Quick Start</a></li>
+                    <li><a href="/commands">Commands</a></li>
+                </ul>
+            </div>
         </nav>
     
         <section class="hero" id="home">
@@ -79,5 +88,22 @@
                 </div>
             </div>
         </section>
+
+        <script>
+            // Remove loading screen
+            window.addEventListener('load', () => {
+                document.querySelector('.loading').style.display = 'none';
+            });
+
+            // Mobile navigation
+            document.querySelector('.nav-toggle').addEventListener('click', () => {
+                document.querySelector('nav ul').classList.toggle('active');
+            });
+
+            // Navbar scroll effect
+            window.addEventListener('scroll', () => {
+                document.querySelector('nav').classList.toggle('scrolled', window.scrollY > 50);
+            });
+        </script>
     </body>
 </html>

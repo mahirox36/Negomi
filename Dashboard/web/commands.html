@@ -4,18 +4,37 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Negomi Commands</title>
-        <link rel="stylesheet" href="static/css/commands.css?v=1.08">
+        <link rel="stylesheet" href="static/css/commands.css?v=1.09">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     </head>
     
     <body>
         <nav>
-            <ul>
-                <li><a href="/#home">Home</a></li>
-                <li><a href="/#features">Features</a></li>
-                <li><a href="/#setup">Quick Start</a></li>
-                <li><a href="/commands">Commands</a></li>
-            </ul>
+            <div class="nav-container">
+                <a href="/" class="logo">Negomi</a>
+                <div class="nav-toggle">☰</div>
+                <ul>
+                    <li><a href="/#home">Home</a></li>
+                    <li><a href="/#features">Features</a></li>
+                    <li><a href="/#setup">Quick Start</a></li>
+                    <li><a href="/commands" class="active">Commands</a></li>
+                </ul>
+            </div>
         </nav>
+
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchCommands" placeholder="Search commands...">
+            </div>
+            <div class="filter-tags">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="slash">Slash</button>
+                <button class="filter-btn" data-filter="user">User</button>
+                <button class="filter-btn" data-filter="admin">Admin</button>
+            </div>
+        </div>
+
         <div class="commands-container">
             {% if stats %}
                 {% set categories = {} %}
@@ -29,16 +48,38 @@
                 {% for category, commands in categories.items() %}
                     <div class="category">
                         <h2 class="category-title">
+                            <i class="fas fa-folder"></i>
                             {{ category }}
                             <span class="category-count">{{ commands|length }} commands</span>
                         </h2>
                         <div class="command-grid">
                             {% for command in commands %}
-                                <div class="command-card {{ command.type }}-command">
-                                    <span class="command-type-badge">{{ command.type }}</span>
-                                    <div class="command-name">{{ command.name }}</div>
+                                <div class="command-card {{ command.type }}-command" 
+                                     data-type="{{ command.type }}"
+                                     data-admin="{{ 'true' if command.admin_only else 'false' }}"
+                                     data-name="{{ command.name|lower }}"
+                                     data-category="{{ category|lower }}">
+                                    <div class="badge-container">
+                                        <span class="command-type-badge">
+                                            <i class="fas fa-{{ 'slash' if command.type == 'slash' else 'user' }}"></i>
+                                            {{ command.type }}
+                                        </span>
+                                        {% if command.admin_only %}
+                                        <span class="admin-badge">
+                                            <i class="fas fa-shield-alt"></i>
+                                            Admin
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="command-name">
+                                        <i class="fas fa-terminal"></i>
+                                        {{ command.name }}
+                                    </div>
                                     <div class="command-description">{{ command.description }}</div>
-                                    <div class="command-usage">{{ command.usage }}</div>
+                                    <div class="command-usage">
+                                        <i class="fas fa-code"></i>
+                                        {{ command.usage }}
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -46,9 +87,62 @@
                 {% endfor %}
             {% else %}
                 <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
                     Failed to load commands. Please try again later.
                 </div>
             {% endif %}
         </div>
+
+        <script>
+            // Search functionality
+            const searchInput = document.getElementById('searchCommands');
+            const commandCards = document.querySelectorAll('.command-card');
+            const categories = document.querySelectorAll('.category');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+
+            function filterCommands() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            
+                commandCards.forEach(card => {
+                    const matchesSearch = card.dataset.name.includes(searchTerm);
+                    const isAdmin = card.dataset.admin === 'true';
+                    const matchesFilter = activeFilter === 'all' || 
+                                          (activeFilter === 'admin' && isAdmin) ||
+                                          card.dataset.type === activeFilter;
+            
+                    card.classList.toggle('hidden', !(matchesSearch && matchesFilter));
+                });
+            
+                // Hide empty categories
+                categories.forEach(category => {
+                    const visibleCards = category.querySelectorAll('.command-card:not(.hidden)');
+                    category.classList.toggle('hidden', visibleCards.length === 0);
+                });
+            }
+
+            searchInput.addEventListener('input', filterCommands);
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterCommands();
+                });
+            });
+
+            // Animation on scroll
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fade-in');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.command-card').forEach(card => {
+                observer.observe(card);
+            });
+        </script>
     </body>
 </html>

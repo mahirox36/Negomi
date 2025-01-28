@@ -37,6 +37,7 @@ class Dashboard:
         async def about(request: Request):
             try:
                 stats = await self.ipc.request("get_commands")
+                self.logger.info(stats)
                 return self.templates.TemplateResponse(
                     "commands.html", 
                     {"request": request, "stats": stats}
