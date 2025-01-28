@@ -11,13 +11,13 @@ VERSION = "0.27"
 @dataclass
 class IPCConfig:
     secret: str = field(default_factory=lambda: secrets.token_urlsafe(32))
-    port: int = 5001
+    port: int = 25401
 
 @dataclass
 class DashboardConfig:
     enabled: bool = True
     host: str = "localhost"
-    port: int = 5000
+    port: int = 25400
 
 @dataclass
 class GeneralConfig:

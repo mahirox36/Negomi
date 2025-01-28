@@ -14,7 +14,7 @@ class IPCManager:
         self.server = ipc.Server(
             bot=self.bot,
             secret_key=BotConfig.IPC.secret,
-            port=BotConfig.IPC.port or 5001,
+            port=BotConfig.IPC.port or 25401,
             do_multicast=False
         )
         

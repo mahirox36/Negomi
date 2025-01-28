@@ -12,7 +12,7 @@ class Dashboard:
         self.logger = logger
         self.ipc = ipc.Client(
             secret_key=BotConfig.IPC.secret,
-            port=BotConfig.IPC.port or 5001
+            port=BotConfig.IPC.port or 25401
         )
         
         # Setup routes
@@ -42,7 +42,7 @@ class Dashboard:
         config = uvicorn.Config(
             self.app,
             host=BotConfig.Dashboard.host or "localhost",
-            port=BotConfig.Dashboard.port or 5000,
+            port=BotConfig.Dashboard.port or 25400,
             log_config=None  # Disable uvicorn's logging
         )
         server = uvicorn.Server(config)
