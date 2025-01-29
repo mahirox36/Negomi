@@ -50,7 +50,6 @@ class Rolez(commands.Cog):
     
     @slash_command(name="mode",description="Change the mode of role creation", default_member_permissions=Permissions(administrator=True))
     @feature()
-    @UserData.commandCount()
     async def setup(self, ctx: init, mode: str = SlashOption(
         name="mode",
         description="Select who can create roles",
@@ -79,7 +78,6 @@ class Rolez(commands.Cog):
         )
     @role.subcommand(name="create",description="Create a role for your self")
     @feature()
-    @UserData.commandCount()
     async def create_role(self,ctx:init,name:str,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=True, autocomplete=True)):
         guild = ctx.guild
@@ -127,7 +125,6 @@ class Rolez(commands.Cog):
     @role.subcommand(name="edit",description="Edit your own role like the name or role or both!")
     @cooldown(15)
     @feature()
-    @UserData.commandCount()
     async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=False, autocomplete=True,default=None)):
         guild = ctx.guild
@@ -161,7 +158,6 @@ class Rolez(commands.Cog):
 
     @role.subcommand(name="delete",description="delete your own role")
     @feature()
-    @UserData.commandCount()
     async def role_delete(self,ctx:init):
         guild = ctx.guild
         file = DataManager("Roles", self.guild_id, file="MembersRoles")
@@ -197,7 +193,6 @@ class Rolez(commands.Cog):
     @role.subcommand(name="add",description="Add the role to a user")
     @cooldown(3)
     @feature()
-    @UserData.commandCount()
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
         file = DataManager("Roles", self.guild_id, file="MembersRoles")
@@ -236,7 +231,6 @@ class Rolez(commands.Cog):
     @role.subcommand(name="remove",description="Remove the role from a user")
     @cooldown(3)
     @feature()
-    @UserData.commandCount()
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
         file = DataManager("Roles", self.guild_id, file="MembersRoles")

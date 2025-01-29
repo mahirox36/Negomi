@@ -153,7 +153,6 @@ class Help(commands.Cog):
         self.client = client
 
     @slash_command(name="help", description="Help command")
-    @UserData.commandCount()
     async def help(self, ctx: init):
         global home_embed
         admin = ctx.user.guild_permissions.administrator

@@ -19,11 +19,9 @@ class Other(commands.Cog):
             "UwU","OwO",":3"
         ]
     @slash_command("uwu",description="What Does this thing do?")
-    @UserData.commandCount()
     async def uwu2(self,ctx:init):
         await ctx.send("UwU")
     @slash_command(name="joke",description="Get a Random Joke")
-    @UserData.commandCount()
     async def joke(self,ctx:init):
         joke= get("https://official-joke-api.appspot.com/random_joke").json()
         phrase      = joke["setup"]
@@ -32,7 +30,6 @@ class Other(commands.Cog):
         await ctx.send(embed=info_embed(title=phrase,description=f"||{punchline}||",footer=f"id: {ID}"))
 
     @slash_command(name="meme",description="Get a random Meme")
-    @UserData.commandCount()
     async def meme(self,ctx:init):
         response = get("https://meme-api.com/gimme")
         meme_data = response.json()
@@ -46,12 +43,10 @@ class Other(commands.Cog):
         await ctx.send(embed=embed)
     
     @slash_command(name="roll",description="Roll a Dice")
-    @UserData.commandCount()
     async def roll(self,ctx:init, max_num:int=6,min_num:int=1):
         await ctx.send(random.randint(min_num,max_num))
     
     @slash_command(name="8ball", description="Ask the magic 8-ball a question")
-    @UserData.commandCount()
     async def eight_ball(self,ctx: init, question: str):
         response = random.choice(self.eight_ball_responses)
         await ctx.send(embed=info_embed(title=f"🎱 **Question:** {question}",
@@ -59,7 +54,6 @@ class Other(commands.Cog):
         
         
     @slash_command(name="server-info",description="Gives This server Information")
-    @UserData.commandCount()
     async def server_info(self,interaction:init):
         name = interaction.guild.name
         description = interaction.guild.description
@@ -82,10 +76,20 @@ class Other(commands.Cog):
         await interaction.send(embed=embed,ephemeral=True)
         
     @slash_command(name="ping",description="Ping the Bot")
-    @UserData.commandCount()
     async def ping(self,ctx:init):
         latency = round(self.client.latency * 1000)
         await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.",ephemeral=True)
+    @slash_command(name="website", description="The Bot's Website.")
+    async def website(self, ctx: init):
+        link = f"http://{get("https://api64.ipify.org?format=text").text}:25400"
+        button = Button(label="Go to Website", url=link, style=ButtonStyle.primary)
+
+        # Create a view and add the button
+        view = View()
+        view.add_item(button)
+
+        # Send the button in response to the command
+        await ctx.response.send_message(embed=info_embed("Click the button below to visit the website:","Negomi Website"), view=view,ephemeral=True)
     
     
 

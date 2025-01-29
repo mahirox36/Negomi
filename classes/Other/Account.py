@@ -155,7 +155,7 @@ class BackPanel(View):
         view = MainPanel(self.user)
         await interaction.response.edit_message(embed=embed, view=view)
 
-class Updates(commands.Cog):
+class Account(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
         
@@ -192,10 +192,12 @@ class Updates(commands.Cog):
         userData = UserData(after.author)
         userData.user_data.deleted_messages += 1
         userData.save()
-
+    
+    @commands.Cog.listener()
+    async def on_interaction(self, ctx: init):
+        UserData.commandCount(ctx)
     
     @slash_command(name="account", description="View your account information and statistics")
-    @UserData.commandCount()
     async def account(self, interaction: Interaction):
         embed = Embed(title="Account Panel", color=colors.Info.value)
         embed.description = "Select an option below"
@@ -204,4 +206,4 @@ class Updates(commands.Cog):
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 def setup(client):
-    client.add_cog(Updates(client))
+    client.add_cog(Account(client))

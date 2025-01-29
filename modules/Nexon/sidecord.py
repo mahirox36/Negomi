@@ -94,6 +94,26 @@ class SlashCommandOnCooldown(ApplicationCheckFailure):
     
 #     return hybrid
 
+def get_by_percent(percent: Union[int, float] ,text: str, min_words: int = 5, returns: str = "") -> str:
+    """Get a specified percentage of words from a sentence.
+
+    Args:
+        percent (Union[int, float]): The percentage of words to return (between 0 and 100).
+        text (str): The input sentence to extract words from.
+        min_words (int, optional): Minimum number of words required to return any result. Defaults to 5.
+
+    Returns:
+        str: The extracted percentage of words from the input text, or an empty string if the text has fewer words than `min_words`.
+    """
+    if isinstance(percent, int):
+        percent /= 100
+    words = text.split()
+    if len(words) < min_words:
+        return returns
+
+    take_count = max(1, int(len(words) * percent))
+    return " ".join(words[:take_count])
+
 def contains_emoji(text: str) -> bool:
     """
     Check if a string contains any emojis.

@@ -14,7 +14,6 @@ class AutoRole(commands.Cog):
     @role.subcommand(name="setup",
                    description="Setup auto role for members and bots")
     @feature()
-    @UserData.commandCount()
     async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
         file= DataManager("Auto role", ctx.guild_id)
         file.data = {

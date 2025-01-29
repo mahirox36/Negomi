@@ -487,7 +487,6 @@ class TempVoice(commands.Cog):
     @voice.subcommand(name="panel",
         description="Bring the Control Panel for the TempVoice chat")
     @feature()
-    @UserData.commandCount()
     async def control_panel(self,ctx:init):
         file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         checks = check(ctx,file.data)
@@ -499,7 +498,6 @@ class TempVoice(commands.Cog):
 
     @voice.subcommand(name="ban",description="Ban a user from your temporary voice channel")
     @feature()
-    @UserData.commandCount()
     async def ban_slash(
         self,
         ctx: init,
@@ -522,7 +520,6 @@ class TempVoice(commands.Cog):
 
     @voice.subcommand(name="kick",description="Kick a user from your temporary voice channel")
     @feature()
-    @UserData.commandCount()
     async def kick_slash(self, ctx: init, target: Member = SlashOption(
             description="The user to kick", required=True), reason: str = SlashOption(description="Reason for the kick",
             required=False, default="No reason provided")
@@ -556,7 +553,6 @@ class TempVoice(commands.Cog):
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
     @feature()
-    @UserData.commandCount()
     async def invite_slash(self,ctx:init,user:Member):
         return await self.invite_function(ctx,user,self.client)
     
@@ -567,7 +563,6 @@ class TempVoice(commands.Cog):
         
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
     @feature()
-    @UserData.commandCount()
     async def setup(self, ctx:init, category:CategoryChannel):
         file = DataManager("TempVoice", ctx.guild.id)
         overwrites = {ctx.guild.default_role: PermissionOverwrite(speak=False)}

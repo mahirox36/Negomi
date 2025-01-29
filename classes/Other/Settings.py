@@ -92,8 +92,7 @@ class Settings(commands.Cog):
         """Base command for feature management."""
         pass
 
-    @feature.subcommand("disable", "Disable a feature in your server")
-    @UserData.commandCount()
+    @feature.subcommand("disable", "Disable a feature in your server") 
     async def disable(self, ctx: init, 
                      feature: str = SlashOption("feature", "Select a feature to disable", 
                                               required=True, autocomplete=True)):
@@ -121,8 +120,7 @@ class Settings(commands.Cog):
             embed=info_embed("Feature Disabled", f"{feature.capitalize()} has been disabled")
         )
 
-    @feature.subcommand("enable", "Enable a feature in your server")
-    @UserData.commandCount()
+    @feature.subcommand("enable", "Enable a feature in your server") 
     async def enable(self, ctx: init,
                     feature: str = SlashOption("feature", "Select a feature to enable",
                                              required=True, autocomplete=True)):

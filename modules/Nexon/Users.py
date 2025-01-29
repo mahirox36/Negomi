@@ -1,6 +1,7 @@
 try:
     from .DataManager import DataManager
     from .sidecord import get_name, extract_emojis
+    from .logger import logger
 except: 
     from DataManager import DataManager
 from datetime import datetime
@@ -239,7 +240,6 @@ class UserManager(DataManager):
         self.user_data.attachments_sent += len(message.attachments)
         if len(message.attachments) >= 1:
             for att in message.attachments:
-                print(att.content_type)
                 if att.content_type and (
                     att.content_type.startswith("image") or
                     att.content_type.startswith("video") or  
@@ -279,21 +279,14 @@ class UserManager(DataManager):
         self.save()
 
     @classmethod
-    def commandCount(self):
-        """Command decorator to track usage"""
-        def predicate(ctx: init):
-            try:
-                # Get or create UserManager instance for the command user
-                user_manager = UserManager(ctx.user)
-                user_manager.generalUpdateInfo(ctx.user)
-                # Track command usage
-                command_name = ctx.application_command.name
-                user_manager.increment_command_count(command_name)
-            except Exception as e:
-                # Log error but don't prevent command execution
-                print(f"Error tracking command usage: {e}")
-            return True
-        return check(predicate)
+    def commandCount(self, ctx: init):
+        """Command track usage"""
+        # Get or create UserManager instance for the command user
+        user_manager = UserManager(ctx.user)
+        user_manager.generalUpdateInfo(ctx.user)
+        # Track command usage
+        command_name = ctx.application_command.name
+        user_manager.increment_command_count(command_name)
 
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to UserData object"""

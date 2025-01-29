@@ -6,9 +6,9 @@ from .DataManager import DataManager
 
 
 class BetterID:
-    def __init__(self,subFolder: str = None,max:int = 7):
+    def __init__(self,file: str = "codes",max:int = 7):
         self.max = max
-        self.file = DataManager("BetterID", default=[], subfolder=subFolder)
+        self.file = DataManager("BetterID", default=[], file=file)
     def create_random_id(self) -> str:
         code = ''.join(random.choice(hexdigits) for _ in range(self.max))
         for i in self.file.data:

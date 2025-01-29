@@ -90,6 +90,10 @@ class DataManager:
         """Update data with dictionary."""
         if isinstance(self.data, dict):
             self.data.update(data)
+    def append(self, data: Any) -> None:
+        """Update data with dictionary."""
+        if isinstance(self.data, list):
+            self.data.append(data)
 
 
     def exists(self) -> bool:
