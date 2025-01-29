@@ -164,7 +164,7 @@ class Account(commands.Cog):
         if message.author.bot:
             return
         userData = UserData(message.author)
-        userData.incrementMessageCount(message)
+        await userData.incrementMessageCount(message)
     
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction:Reaction, user: Member | User):

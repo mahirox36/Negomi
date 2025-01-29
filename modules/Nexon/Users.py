@@ -1,14 +1,15 @@
 try:
     from .DataManager import DataManager
-    from .sidecord import get_name, extract_emojis
+    from .sidecord import get_name, extract_emojis, info_embed
     from .logger import logger
+    from .Badges import BadgeManager, Badge
 except: 
     from DataManager import DataManager
 from datetime import datetime
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Set, Optional, Union
+from typing import Any, Dict, List, Set, Optional, Union
 from nextcord import Member, Message, User
-from nextcord import Interaction as init
+from nextcord import Interaction as init, File
 from nextcord.ext.application_checks import check
 import re
 import json
@@ -16,6 +17,8 @@ from pathlib import Path
 from collections import Counter
 from rich.console import Console
 from rich.table import Table
+
+
 
 
 @dataclass
@@ -185,6 +188,7 @@ class UserData:
             joined_at=str(member.created_at)
         )
 
+
 class UserManager(DataManager):
     def __init__(self, user: Union[User, Member]):
         # Initialize with user-specific file and UserData as default
@@ -193,6 +197,7 @@ class UserManager(DataManager):
             file=str(user.id),
             default=UserData.from_member(user).to_dict()
         )
+        self.badgeManager = BadgeManager(self)
         self.user_id = user.id
         # Convert loaded data to UserData object
         self._user_data: UserData = self._load_user_data()
@@ -228,8 +233,59 @@ class UserManager(DataManager):
             self.user_data.name = get_name(user)
             return self.save()
     
-    def incrementMessageCount(self, message: Message):
+    async def BadgeDetect(self, message: Message | init) -> None:
+        """
+        Checks for new badges and sends notifications to user.
+        Args:
+            message: Discord message object or boolean for command-based checks
+        """
+        try:
+            # Get newly earned badges
+            new_badges:List[Badge] = self.badgeManager.check_badges(message)
+            
+            # Skip if no new badges earned
+            if not new_badges:
+                return
+
+            # Create notification embed for each new badge
+            for badge in new_badges:
+                embed = info_embed(
+                    title=f"🏆 New Badge Earned: {badge.title}!",
+                    description=badge.description
+                )
+                
+                if badge.image_path and Path(badge.image_path).exists():
+                    file = File(badge.image_path, filename="thumbnail.jpg")
+                    embed.set_thumbnail(url=f"attachment://thumbnail.jpg")
+                    
+                embed.add_field(
+                    name="Unlocked",
+                    value=f"<t:{int(datetime.now().timestamp())}:R>",
+                    inline=False
+                )
+                
+                # Try to DM the user
+                try:
+                    if isinstance(message, Message):
+                        await message.author.send(embed=embed, file=file)
+                    elif isinstance(message, init):
+                        await message.user.send(embed=embed, file=file)
+                except Exception as e:
+                    if isinstance(message, Message):
+                        await message.reply(embed=embed, file=file)
+                    elif isinstance(message, init):
+                        await message.send(embed=embed, ephemeral=True, file=file)
+                    
+            # Save badge progress
+            self.save()
+            
+        except Exception as e:
+            logger.error(f"Error in BadgeDetect: {str(e)}")
+    
+    async def incrementMessageCount(self, message: Message):
         self.generalUpdateInfo(message.author)
+        await self.BadgeDetect(message)
+        await self.BadgeDetect(False)
         content = message.content
         self.user_data.total_messages += 1
         self.user_data.character_count += len(content.replace(" ", ""))
@@ -287,6 +343,7 @@ class UserManager(DataManager):
         # Track command usage
         command_name = ctx.application_command.name
         user_manager.increment_command_count(command_name)
+        self.BadgeDetect(ctx)
 
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to UserData object"""
