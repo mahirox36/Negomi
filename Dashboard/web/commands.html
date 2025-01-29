@@ -4,8 +4,16 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Negomi Commands</title>
-        <link rel="stylesheet" href="static/css/commands.css?v=1.09">
+        <link rel="stylesheet" href="static/css/commands.css?v=1.11">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="icon" id="favicon" href="/icon">
+        <script>
+            fetch('/icon')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('favicon').href = data.icon;
+                });
+        </script>
     </head>
     
     <body>

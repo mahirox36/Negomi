@@ -6,6 +6,14 @@
         <meta name="description" content="Negomi - Your all-in-one Discord bot for moderation, community engagement, and server management">
         <title>Negomi Bot</title>
         <link rel="stylesheet" href="static/css/style.css?v=1.07">
+        <link rel="icon" id="favicon" href="/icon">
+        <script>
+            fetch('/icon')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('favicon').href = data.icon;
+                });
+        </script>
     </head>
     
     <body>

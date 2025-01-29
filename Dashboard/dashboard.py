@@ -31,20 +31,29 @@ class Dashboard:
                 )
             except Exception as e:
                 self.logger.error(f"Dashboard error: {str(e)}")
-                return {"error": "Failed to load dashboard"}
+                return {"error": f"{str(e)}"}
+
+        @self.app.get("/icon")
+        async def icon(request: Request):
+            try:
+                url = await self.ipc.request("get_icon")
+                self.logger.info(url)
+                return {"icon": url}
+            except Exception as e:
+                self.logger.error(f"Dashboard error: {str(e)}")
+                return {"error": f"{str(e)}"}
 
         @self.app.get("/commands")
-        async def about(request: Request):
+        async def commands(request: Request):
             try:
                 stats = await self.ipc.request("get_commands")
-                self.logger.info(stats)
                 return self.templates.TemplateResponse(
                     "commands.html", 
                     {"request": request, "stats": stats}
                 )
             except Exception as e:
                 self.logger.error(f"Dashboard error: {str(e)}")
-                return {"error": "Failed to load dashboard"}
+                return {"error": f"{str(e)}"}
 
     async def start(self):
         """Start the dashboard"""

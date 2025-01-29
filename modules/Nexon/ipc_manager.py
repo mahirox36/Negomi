@@ -49,6 +49,10 @@ class IPCManager:
         @self.route("get_guild_count")
         async def get_guild_count(_):
             return len(self.bot.guilds)
+        @self.route("get_icon")
+        async def get_icon(_):
+            self.logger.info(self.bot.user.display_avatar.url)
+            return self.bot.user.display_avatar.url
 
         @self.route("get_bot_stats")
         async def get_bot_stats(_):
@@ -65,12 +69,6 @@ class IPCManager:
                 for command in self.bot.get_application_commands():
                     try:
                         required_permissions = []
-                        # admin_only = command.default_member_permissions.administrator
-                        # if hasattr(command, 'checks'):
-                        #     for check in command.checks:
-                        #         if 'has_permissions' in str(check):
-                        #             perms = str(check).split('has_permissions(')[1].split(')')[0]
-                        #             required_permissions.extend(p.strip() for p in perms.split(','))
                         try:
                             if hasattr(command, 'default_member_permissions'):
                                 admin_only = command.default_member_permissions.administrator
@@ -140,7 +138,6 @@ class IPCManager:
                                     options.append(f"{option.name}:{option_type}")
                                 else:
                                     options.append(str(option))
-                            
                             commandJson = {
                                 **base_data,
                                 "name": command.name,

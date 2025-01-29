@@ -3,10 +3,10 @@
     --second-color: #e996fa;
     --light-color: #84ebff;
     --accent: #cdd3ff;
-    --text-primary: white;
-    --text-secondary: rgba(255, 255, 255, 0.9);
-    --background-overlay: rgba(255, 255, 255, 0.25);
-    --card-overlay: rgba(255, 255, 255, 0.05);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.95);
+    --background-overlay: rgba(0, 0, 0, 0.15);
+    --card-overlay: rgba(0, 0, 0, 0.2);
     --error-color: #ff4444;
     --success-color: #00C851;
 }

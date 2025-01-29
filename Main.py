@@ -283,6 +283,8 @@ class DiscordBot(commands.Bot):
         channel = await self.owner.create_dm()
 
         await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
+        self.logger.error(f"Traceback in {event_method}: {traceback.format_exc()}")
 
 
 
