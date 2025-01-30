@@ -25,7 +25,7 @@ async def check(ctx: init, data: Dict | List) -> bool:
     return True
 
 def UserSettings(member):
-    user = DataManager("TempVoice_UsersSettings", file=f"{member.id}")
+    user = DataManager("TempVoice", file=f"{member.id}")
     Default = {
         "Name": get_name(member) + "'s Chat",
         "Hide": True,
@@ -654,7 +654,7 @@ class TempVoice(commands.Cog):
                 return
             
             # Get channel settings
-            user = DataManager("TempVoice_UsersSettings", file=f"{member.id}")
+            user = DataManager("TempVoice", file=f"{member.id}")
             channel_settings = self._get_channel_settings(member, user)
             
             if file.data is None:
