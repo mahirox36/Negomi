@@ -233,7 +233,7 @@ class UserManager(DataManager):
             self.user_data.name = get_name(user)
             return self.save()
     
-    async def BadgeDetect(self, message: Message | init) -> None:
+    async def BadgeDetect(self, message: Union[Message, init]) -> None:
         """
         Checks for new badges and sends notifications to user.
         Args:
@@ -343,7 +343,7 @@ class UserManager(DataManager):
         # Track command usage
         command_name = ctx.application_command.name
         user_manager.increment_command_count(command_name)
-        self.BadgeDetect(ctx)
+        self.BadgeDetect(user_manager, ctx)
 
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to UserData object"""
