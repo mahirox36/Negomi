@@ -37,6 +37,7 @@ from nextcord import (
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
     IntegrationType, Reaction, Thread
 )
+from nextcord.ext import tasks
 #Type Errors
 from nextcord import (
     HTTPException, Forbidden
