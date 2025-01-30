@@ -241,7 +241,7 @@ class UserManager(DataManager):
         """
         try:
             # Get newly earned badges
-            new_badges:List[Badge] = self.badgeManager.check_badges(message)
+            new_badges:List[Badge] = await self.badgeManager.check_badges(message)
             
             # Skip if no new badges earned
             if not new_badges:
