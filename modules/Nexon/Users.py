@@ -85,6 +85,22 @@ class UserData:
     milestones: Dict[str, any] = field(default_factory=dict) #TODO
     reputation: int = 0 #TODO
 
+    custom_data: Dict[str, Any] = field(default_factory=dict)
+    
+    def set_custom_data(self, key: str, value: Any) -> None:
+        """Set a custom data field"""
+        self.custom_data[key] = value
+        
+    def get_custom_data(self, key: str, default: Any = None) -> Any:
+        """Get a custom data field"""
+        return self.custom_data.get(key, default)
+    
+    def __getitem__(self, key: str) -> Any:
+        return self.get_custom_data(key)
+        
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.set_custom_data(key, value)
+    
     @classmethod
     def from_dict(cls, data: dict) -> 'UserData':
         # Handle none case
@@ -93,6 +109,8 @@ class UserData:
 
         # Make a copy to avoid modifying the input
         data = data.copy()
+        
+        custom_data = data.pop('custom_data', {})
         
         # Convert datetime strings to datetime objects if they exist
         if data.get('birthdate'):
@@ -126,8 +144,9 @@ class UserData:
         # Handle milestones if it doesn't exist
         if 'milestones' not in data:
             data['milestones'] = {}
-        
-        return cls(**data)
+        instance = cls(**data)
+        instance.custom_data = custom_data
+        return instance
 
     def to_dict(self) -> dict:
         data = {
@@ -179,6 +198,7 @@ class UserData:
             "milestones": self.milestones,
             "reputation": self.reputation
         }
+        data['custom_data'] = self.custom_data
         return data
 
     @classmethod
