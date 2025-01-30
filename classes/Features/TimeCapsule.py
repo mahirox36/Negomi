@@ -54,6 +54,40 @@ class timeCapsule(commands.Cog):
                          title="List of time Capsules",
                          description="You don't have any time Capsules")
                      )
+            
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.check_time_capsules()
+        self.check_capsules_loop.start()
+
+    @tasks.loop(hours=24)
+    async def check_capsules_loop(self):
+        await self.check_time_capsules()
+
+    async def check_time_capsules(self):
+        file = DataManager("TimeCapsule", default=[])
+        now = datetime.now()
+        updated_data = []
+        
+        for capsule in file.data:
+            target_date = datetime.fromisoformat(capsule["time"])
+            if target_date <= now:
+                user = self.client.get_user(capsule["ID"])
+                if not user:
+                    self.client.fetch_user(capsule["ID"])
+                if user:
+                    try:
+                        await user.send(f"{user.mention}",embed=info_embed(
+                            title="Time Capsule",
+                            description=f"`Here's your message from the past:`\n{capsule['message']}"
+                        ))
+                    except:
+                        continue
+            else:
+                updated_data.append(capsule)
+        
+        file.data = updated_data
+        file.save()
     
     
 
