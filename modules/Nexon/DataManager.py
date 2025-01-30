@@ -39,15 +39,12 @@ class DataManager:
         self.data = self.default
         self.auto_save = auto_save
         
-        # Create directories if they don't exist
-        self.path.mkdir(parents=True, exist_ok=True)
         
         # Load existing data
         self.load()
 
     def save(self) -> None:
         """Save data to JSON file."""
-         
         self.path.mkdir(parents=True, exist_ok=True)
         with open(self.file, "w", encoding='utf-8') as f:
             json.dump(self.data, f, indent=4, ensure_ascii=False)
