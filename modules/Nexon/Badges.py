@@ -321,7 +321,6 @@ class BadgeManager:
     def __init__(self, user_data: 'UserData'):
         self.user_data = user_data
         self.badges = self.load_badges()
-        logger.info(self.badges)
     
     def load_badges(self) -> Dict[str, Badge]:
         try:

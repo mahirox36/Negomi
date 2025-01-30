@@ -195,7 +195,7 @@ class Account(commands.Cog):
     
     @commands.Cog.listener()
     async def on_interaction(self, ctx: init):
-        UserData.commandCount(ctx)
+        await UserData.commandCount(ctx)
     
     @slash_command(name="account", description="View your account information and statistics")
     async def account(self, interaction: Interaction):

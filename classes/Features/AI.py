@@ -35,7 +35,7 @@ class AI(commands.Cog):
             logger.info("Downloading llama3.1")
             download_model(from_)
         negomi.create(model='Negomi', from_=from_, system=system)
-        with open("Data/AI/system.txt", "w", encoding="utf-8") as f:
+        with open("Data/Features/AI/system.txt", "w", encoding="utf-8") as f:
             f.write(system)
         self.ready = True
     

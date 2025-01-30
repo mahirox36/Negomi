@@ -144,7 +144,7 @@ class DiscordBot(commands.Bot):
                 )
             )
             
-            await self.sync_all_application_commands()
+            await self.sync_application_commands()
             
             self.logger.info(f"{get_name(self.user)} is online!")
             

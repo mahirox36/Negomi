@@ -215,7 +215,9 @@ class UserManager(DataManager):
         super().__init__(
             name="Users",
             file=str(user.id),
-            default=UserData.from_member(user).to_dict()
+            default=UserData.from_member(user).to_dict(),
+            entity_type="Users",
+            addNameFolder=False
         )
         self.badgeManager = BadgeManager(self)
         self.user_id = user.id
@@ -355,15 +357,18 @@ class UserManager(DataManager):
         self.save()
 
     @classmethod
-    def commandCount(self, ctx: init):
+    async def commandCount(self, ctx: init):
         """Command track usage"""
         # Get or create UserManager instance for the command user
         user_manager = UserManager(ctx.user)
         user_manager.generalUpdateInfo(ctx.user)
         # Track command usage
-        command_name = ctx.application_command.name
-        user_manager.increment_command_count(command_name)
-        self.BadgeDetect(user_manager, ctx)
+        try:
+            command_name = ctx.application_command.name
+            user_manager.increment_command_count(command_name)
+            await self.BadgeDetect(user_manager, ctx)
+        except:
+            pass
 
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to UserData object"""

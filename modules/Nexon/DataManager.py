@@ -13,7 +13,9 @@ class DataManager:
                  file: str = "data",
                  subfolder: Optional[str] = None,
                  default: Union[Dict, List, None] = None,
-                 auto_save: bool = True):
+                 auto_save: bool = True,
+                 entity_type: str = "Features",
+                 addNameFolder: bool = True):
         """
         Initialize the DataManager.
         
@@ -27,12 +29,13 @@ class DataManager:
         """
         # Construct the path
         base_path = Path("Data")
-        entity_type = "Guilds" if server_id is not None else "Features"
+        entity_type = "Guilds" if server_id is not None else entity_type
         
         path_parts = [entity_type]
         if server_id is not None:
             path_parts.append(str(server_id))
-        path_parts.append(name)
+        if addNameFolder:
+            path_parts.append(name)
         if subfolder:
             path_parts.append(subfolder)
         
