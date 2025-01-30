@@ -9,7 +9,8 @@ from rich.theme import Theme
 from .config import Format, colors, Level
 
 
-def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging.INFO) -> Dict[str, logging.Logger]:
+
+def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging.INFO) -> tuple[logging.Logger, logging.Logger]:
     """
     Set up comprehensive loggers with Rich formatting and file logging
     
@@ -20,6 +21,15 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
     Returns:
         dict: Dictionary of configured logger instances
     """
+    global Level
+    Level = Level.lower()
+    if Level.startswith("n"): Level = logging.NOTSET
+    elif Level.startswith("d"): Level = logging.DEBUG
+    elif Level.startswith("i"): Level = logging.INFO
+    elif Level.startswith("w"): Level = logging.WARNING
+    elif Level.startswith("e"): Level = logging.ERROR
+    elif Level.startswith("c"): Level = logging.CRITICAL
+    else: Level = logging.INFO
     # Create custom theme for Rich
     custom_theme = Theme({
         "logging.level.debug": f"{colors.Debug}",
@@ -47,7 +57,7 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter(Format, datefmt="[%X]"))
 
-    loggers = {}
+    loggers: Dict[str, logging.Logger] = {}
     for name in names:
         logger = logging.getLogger(name)
         logger.setLevel(level)
@@ -59,20 +69,9 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
         
         loggers[name] = logger
 
-    return loggers
+    return (loggers["negomi"], loggers['nextcord'])
 
-# Create logger instances
-Level = Level.lower()
-if Level.startswith("n"): Level = logging.NOTSET
-elif Level.startswith("d"): Level = logging.DEBUG
-elif Level.startswith("i"): Level = logging.INFO
-elif Level.startswith("w"): Level = logging.WARNING
-elif Level.startswith("e"): Level = logging.ERROR
-elif Level.startswith("c"): Level = logging.CRITICAL
-else: Level = logging.INFO
-loggers = setup_logger(level=Level)
-logger = loggers['negomi']
-nextcord_logger = loggers['nextcord']
+logger, nextcord_logger = setup_logger()
 
 def print(string: str, logger_instance=None):
     """
