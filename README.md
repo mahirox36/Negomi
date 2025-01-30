@@ -17,10 +17,10 @@
 
 ### Version 0.8:
 
-- Expand the backup system to include forum channels.
-- Enhance AI integration to handle more advanced prompts.
-- Introduce an Achievement System to reward users for their activities.
-- Launch a Time Capsule feature, allowing users to save messages for future unveiling.
+- [ ] Expand the backup system to include forum channels.
+- [ ] Enhance AI integration to handle more advanced prompts.
+- [ ] Introduce an Achievement System to reward users for their activities.
+- [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
 
 ### Version 0.9
 
