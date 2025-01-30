@@ -37,7 +37,6 @@ class Dashboard:
         async def icon(request: Request):
             try:
                 url = await self.ipc.request("get_icon")
-                self.logger.info(url)
                 return {"icon": url}
             except Exception as e:
                 self.logger.error(f"Dashboard error: {str(e)}")

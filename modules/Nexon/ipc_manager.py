@@ -51,7 +51,6 @@ class IPCManager:
             return len(self.bot.guilds)
         @self.route("get_icon")
         async def get_icon(_):
-            self.logger.info(self.bot.user.display_avatar.url)
             return self.bot.user.display_avatar.url
 
         @self.route("get_bot_stats")
