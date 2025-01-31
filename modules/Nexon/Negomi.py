@@ -21,7 +21,7 @@ def isClientOnline():
         return online
     except: return offline
 
-def download_model(model_name: str) -> None:
+async def download_model(model_name: str) -> None:
     """
     Download an Ollama model with a progress bar.
     
@@ -57,12 +57,12 @@ def download_model(model_name: str) -> None:
 
 class ConversationManager:
     def __init__(self, model: str = "Negomi"):
-        self.conversation_histories:Dict[str, List[Dict[str, str]]] = {}
+        self.conversation_histories = {}
         self.history_file = Path("Data/AI/history.json")
-        self.summary_threshold = 15  # Increased threshold for summarization
-        self.keep_recent = 5  # Number of recent messages to keep
-        self.load_histories()
+        self.summary_threshold = 20
+        self.keep_recent = 8
         self.model = model
+        self.load_histories()
 
     def load_histories(self):
         """Load conversation histories from JSON file."""
@@ -164,18 +164,23 @@ Previous conversation:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_response(self, user_id, user_message, originalText):
-        """Process user message and get AI response."""
-        if user_id not in self.conversation_histories:
-            # Initialize with personality system message
-            self.conversation_histories[user_id] = []
+    def get_response(self, channel_id: str, user: str, user_message: str):
+        """Process user message and get AI response with improved context handling."""
+        if user == "HackedMahiro Hachiro":
+            user = "Mahiro"
+        if channel_id not in self.conversation_histories:
+            self.conversation_histories[channel_id] = [{
+                'role': 'system',
+                'content': f"You are chatting in {'a private thread' if 'thread' in channel_id else 'a public channel'}. "
+                          f"The current user is {user}. Maintain context and personality across messages."
+            }]
 
-        conversation_history = self.conversation_histories[user_id]
+        conversation_history = self.conversation_histories[channel_id]
 
-        if originalText.startswith("/clear"):
-            self.archive_conversation(user_id)
+        if user_message.startswith("/clear"):
+            self.archive_conversation(channel_id)
             # Keep only the initial system message when clearing
-            self.conversation_histories[user_id] = [msg for msg in conversation_history if msg['role'] == 'system'][:1]
+            self.conversation_histories[channel_id] = [msg for msg in conversation_history if msg['role'] == 'system'][:1]
             self.save_histories()
             return False
 
@@ -186,14 +191,23 @@ Previous conversation:
         try:
             if len(non_system_messages) > self.summary_threshold:
                 conversation_history = self.summarize_conversation(conversation_history)
-                self.conversation_histories[user_id] = conversation_history
+                self.conversation_histories[channel_id] = conversation_history
         except httpx.ConnectTimeout as e:
             logger.error(f"Error in ollama.chat: {e}")
             return offline
 
         # Generate response using Ollama
         try:
-            response = client.chat(model=self.model, messages=conversation_history)
+            response = client.chat(
+                model=self.model,
+                messages=conversation_history,
+                options={
+                    'temperature': 0.9,  # High creativity but still somewhat controlled
+                    'top_p': 0.85,       # Keeps responses coherent while allowing some diversity
+                    'frequency_penalty': 0.4,  # Reduces word/phrase repetition
+                    'presence_penalty': 0.6  # Encourages the bot to introduce new ideas
+                }
+            )
             text = response.get('message', {}).get('content', "Error: No response generated.")
         except httpx.ConnectTimeout as e:
             logger.error(f"Error in ollama.chat: {e}")
@@ -224,5 +238,5 @@ if __name__ == '__main__':
         print("Mahiro: " + text)
         if text.startswith("/bye"):
             break
-        conversation_manager.get_response("test_user", "Mahiro: " + text, text)
+        conversation_manager.get_response("test_user", "Mahiro", text)
         print("\n")
