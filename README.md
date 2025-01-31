@@ -19,7 +19,7 @@ Overall Progress: █████████████░░░░░░░ 6
 - [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities.
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
-- [x] Enhanced Welcome System with: [██████░░░░] 63% (5/8)
+- [x] Enhanced Welcome System with: [████████░░] 75% (6/8)
     - [x] Customizable welcome images and backgrounds
     - [x] Multiple style options (Image, Text, Embed)
     - [ ] Real-time preview functionality
@@ -34,7 +34,7 @@ Overall Progress: █████████████░░░░░░░ 6
 
 ### Version 0.9
 
-- Finalize and roll out the Dynamic Help Menu for easier navigation of bot features.
+- Finalize and roll out the Dynamic Help Menu for easier navigation of bot features. *maybe it will get canaled*
 - Implement a Unique User Card System to showcase personalized user stats.
 - Add a streamlined Ticket System for efficient issue management.
 - Introduce a Level System with rewards to encourage user engagement.
