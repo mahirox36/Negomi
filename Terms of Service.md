@@ -1,6 +1,6 @@
 # Terms of Service
 
-Last Updated: November 19, 2024
+Last Updated: January 31, 2025
 
 ## 1. Acceptance of Terms
 
@@ -33,5 +33,7 @@ Users agree to:
 We reserve the right to modify these terms at any time. We will notify users of any changes by updating the "Last Updated" date.
 
 ## 6. Contact Information
-
-For any questions about these Terms, please contact `mahiroc36@gmail.com`.
+For questions, concerns, or data requests:
+* Email: mahiroc36@gmail.com
+* Discord: mahirox36
+* Response Time: Within 48-72 hours
