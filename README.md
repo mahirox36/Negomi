@@ -11,8 +11,6 @@
 - Backup Servers, including all types of channels (excluding Forums for now), with their permissions in the same order. Roles with their permissions and colors.
 - Fun and Engaging Commands
 
-*Note: All features are customizable except the greeting image.*
-
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
@@ -21,6 +19,18 @@
 - [ ] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities.
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
+- [x] Enhanced Welcome System with:
+    - [x] Customizable welcome images and backgrounds
+    - [x] Multiple style options (Image, Text, Embed)
+    - [ ] Real-time preview functionality
+    - [x] Adjustable text and avatar positions
+    - [x] Font size and color customization
+    - [x] Avatar border and size controls
+    - [x] Smart caching system for better performance
+- [x] Web Dashboard Integration:
+    - [ ] Real-time bot statistics
+    - [ ] Server monitoring capabilities
+    - [x] Command listings
 
 ### Version 0.9
 
