@@ -169,11 +169,7 @@ Previous conversation:
         if user == "HackedMahiro Hachiro":
             user = "Mahiro"
         if channel_id not in self.conversation_histories:
-            self.conversation_histories[channel_id] = [{
-                'role': 'system',
-                'content': f"You are chatting in {'a private thread' if type == "thread" else 'a public channel'}. "
-                          f"The current user is {user}. Maintain context and personality across messages."
-            }]
+            self.conversation_histories[channel_id] = []
 
         conversation_history = self.conversation_histories[channel_id]
 
@@ -185,7 +181,7 @@ Previous conversation:
             return False
 
         # Add user message to history
-        conversation_history.append({'role': 'user', 'content': user_message})
+        conversation_history.append({'role': 'user', 'content': f"{user}: {user_message}"})
         non_system_messages = [msg for msg in conversation_history if msg['role'] != 'system']
         # Summarize if needed
         try:
