@@ -13,31 +13,16 @@ For conversations with {name2}, maintain a cute tone as he is your {relationship
 Communication takes place in Discord DMs or servers, so keep your messages under 2000 characters. {other_stuff} 
 """
 
-class ServerSettings:
-    def __init__(self):
-        self.public_channels: Dict[int, int] = {}  # guild_id: channel_id
-        self.load_settings()
-
-    def load_settings(self):
-        try:
-            with open("Data/Features/AI/server_settings.json", "r") as f:
-                self.public_channels = loads(f.read())
-        except:
-            self.public_channels = {}
-
-    def save_settings(self):
-        with open("Data/Features/AI/server_settings.json", "w") as f:
-            f.write(dumps(self.public_channels))
-
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.conversation_manager = ConversationManager()
         self.typing_manager = TypingManager(client)
-        self.server_settings = ServerSettings()
+        self.settings = DataManager("AI", file="settings", default={
+            "public_channels": {},  # guild_id: channel_id
+            "active_threads": {}    # user_id: thread_id
+        })
         self.ready = False
-        self.active_threads: Dict[int, int] = {}  # user_id: thread_id
-        
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -62,15 +47,16 @@ class AI(commands.Cog):
 
         # Handle private threads
         if isinstance(message.channel, Thread):
-            if message.channel.id in self.active_threads.values():
-                await self.handle_ai_response(message)
+            active_threads = self.settings.get("active_threads", {})
+            if str(message.channel.id) in active_threads.values():
+                await self.handle_ai_response(message, "thread")
                 return
 
         # Handle public channels
         if isinstance(message.channel, TextChannel):
-            guild_id = message.guild.id
-            if guild_id in self.server_settings.public_channels:
-                if message.channel.id == self.server_settings.public_channels[guild_id]:
+            public_channels = self.settings.get("public_channels", {})
+            if str(message.guild.id) in public_channels:
+                if message.channel.id == int(public_channels[str(message.guild.id)]):
                     await self.handle_ai_response(message)
                     return
 
@@ -78,7 +64,7 @@ class AI(commands.Cog):
         if isinstance(message.channel, DMChannel) or self.client.user.mentioned_in(message):
             await self.handle_ai_response(message)
 
-    async def handle_ai_response(self, message: Message):
+    async def handle_ai_response(self, message: Message, type: str="public"):
         if not self.ready:
             await message.reply(embed=warn_embed("AI is still starting up", "AI Warning"))
             return
@@ -89,7 +75,7 @@ class AI(commands.Cog):
             content = message.clean_content.replace(f"<@{self.client.user.id}>", "Negomi")
 
             response = self.conversation_manager.get_response(
-                str(message.channel.id), name, content
+                str(message.channel.id), name, content, type
             )
 
             if response is offline:
@@ -121,27 +107,42 @@ class AI(commands.Cog):
             return
 
         thread = await ctx.channel.create_thread(
-            name=f"AI Chat with {ctx.author.name}",
+            name=f"AI Chat with {ctx.user.name}",
             type=ChannelType.private_thread
         )
-        self.active_threads[ctx.author.id] = thread.id
-        await ctx.respond(embed=info_embed(f"Created private chat thread {thread.mention}", "AI Created!"))
-        await thread.send(f"Hello {ctx.author.mention}! How can I help you today?")
+        
+        # Update active threads in settings
+        active_threads = self.settings.get("active_threads", {})
+        active_threads[str(ctx.user.id)] = str(thread.id)
+        self.settings.set("active_threads", active_threads)
+        self.settings.save()
+
+        await ctx.send(embed=info_embed(f"Created private chat thread {thread.mention}", "AI Created!"))
+        await thread.send(f"Hello {ctx.user.mention}! How can I help you today?")
 
     @ai.subcommand(name="set_public", description="Set channel for public AI chat")
     @has_permissions(administrator=True)
     async def set_public(self, ctx: init, channel: TextChannel):
-        self.server_settings.public_channels[ctx.guild.id] = channel.id
-        self.server_settings.save_settings()
-        await ctx.respond(embed=info_embed(f"Set {channel.mention} as public AI chat channel", "AI Enabled!"))
+        public_channels = self.settings.get("public_channels", {})
+        public_channels[str(ctx.guild.id)] = str(channel.id)
+        self.settings.set("public_channels", public_channels)
+        self.settings.save()
+        
+        await ctx.send(embed=info_embed(f"Set {channel.mention} as public AI chat channel", "AI Enabled!"))
 
     @ai.subcommand(name="disable_public", description="Disable public AI chat")
     @has_permissions(administrator=True)
     async def disable_public(self, ctx: init):
-        if ctx.guild.id in self.server_settings.public_channels:
-            del self.server_settings.public_channels[ctx.guild.id]
-            self.server_settings.save_settings()
-        await ctx.respond(embed=info_embed("Disabled public AI chat", "AI Disabled!"))
+        public_channels = self.settings.get("public_channels", {})
+        guild_id = str(ctx.guild.id)
+        
+        if guild_id in public_channels:
+            del public_channels[guild_id]
+            self.settings.set("public_channels", public_channels)
+            self.settings.save()
+            return await ctx.send(embed=info_embed("Disabled public AI chat", "AI Disabled!"))
+            
+        await ctx.send(embed=error_embed("Public AI chat is already disabled", "AI Disabled!"))
 
     @ai.subcommand(name="join", description="Join a voice channel")
     async def join(self, ctx:init):

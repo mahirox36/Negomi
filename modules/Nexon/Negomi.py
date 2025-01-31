@@ -58,7 +58,7 @@ async def download_model(model_name: str) -> None:
 class ConversationManager:
     def __init__(self, model: str = "Negomi"):
         self.conversation_histories = {}
-        self.history_file = Path("Data/AI/history.json")
+        self.history_file = Path("Data/Features/AI/history.json")
         self.summary_threshold = 20
         self.keep_recent = 8
         self.model = model
@@ -164,14 +164,14 @@ Previous conversation:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_response(self, channel_id: str, user: str, user_message: str):
+    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public"):
         """Process user message and get AI response with improved context handling."""
         if user == "HackedMahiro Hachiro":
             user = "Mahiro"
         if channel_id not in self.conversation_histories:
             self.conversation_histories[channel_id] = [{
                 'role': 'system',
-                'content': f"You are chatting in {'a private thread' if 'thread' in channel_id else 'a public channel'}. "
+                'content': f"You are chatting in {'a private thread' if type == "thread" else 'a public channel'}. "
                           f"The current user is {user}. Maintain context and personality across messages."
             }]
 
