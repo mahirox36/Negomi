@@ -7,13 +7,17 @@ class descriptionNone:
         return "No description Provided"
 
 home_embed = info_embed(
-    "Hello, I am Negomi Made By my master/papa Mahiro\n\
+    "**⚠️WARNING⚠️**\n\
+    This Command is Outdated please visit the website by using command`/website` for realtime commands,\n\n\
+    Hello, I am Negomi Made By my master/papa Mahiro\n\
     What Can I do you ask? Well a lot of stuff.\n\n\
     To get started Check Select List Below!", 
     title="🏠 Home"
 )
 homeAdmin_embed = info_embed(
-    "Welcome Admin! Here's' stuff that only shows for admins.\n\n\
+    "**⚠️WARNING⚠️**\n\
+    This Command is Outdated please visit the website by using command`/website` for realtime commands,\n\n\
+    Welcome Admin! Here's' stuff that only shows for admins.\n\n\
     To get started Check Select List Below!", 
     title="🏠 Admin Home"
 )
