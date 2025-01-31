@@ -16,7 +16,7 @@
 ### Version 0.8:
 
 - [ ] Expand the backup system to include forum channels.
-- [ ] Enhance AI integration to handle more advanced prompts.
+- [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities.
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
 - [x] Enhanced Welcome System with:
@@ -29,7 +29,6 @@
     - [x] Smart caching system for better performance
 - [x] Web Dashboard Integration:
     - [ ] Real-time bot statistics
-    - [ ] Server monitoring capabilities
     - [x] Command listings
 
 ### Version 0.9
