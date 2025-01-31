@@ -35,7 +35,7 @@ from nextcord import (
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
-    IntegrationType, Reaction, Thread
+    IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage
 )
 from nextcord.ext import tasks
 #Type Errors
