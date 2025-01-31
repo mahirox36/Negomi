@@ -14,20 +14,21 @@
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
-
+Overall Progress: █████████████░░░░░░░ 64% (9/14)
 - [ ] Expand the backup system to include forum channels.
 - [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities.
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
-- [x] Enhanced Welcome System with:
+- [x] Enhanced Welcome System with: [██████░░░░] 63% (5/8)
     - [x] Customizable welcome images and backgrounds
     - [x] Multiple style options (Image, Text, Embed)
     - [ ] Real-time preview functionality
+    - [ ] Edit Text in the Image
     - [x] Adjustable text and avatar positions
     - [x] Font size and color customization
     - [x] Avatar border and size controls
     - [x] Smart caching system for better performance
-- [x] Web Dashboard Integration:
+- [x] Web Dashboard Integration: [█████░░░░░] 50% (1/2)
     - [ ] Real-time bot statistics
     - [x] Command listings
 
