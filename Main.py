@@ -215,7 +215,7 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, CommandDisabled):
             return
         if not ctx.response.is_done():
-            await ctx.response.send_message(embed=error_embed(error,title="An unexpected error occurred"))
+            await ctx.response.send_message(embed=error_embed(str(error), title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner
@@ -269,7 +269,7 @@ class DiscordBot(commands.Bot):
             return
         elif isinstance(error, CommandDisabled):
             return
-        await ctx.reply(embed=error_embed(error,title="An unexpected error occurred"))
+        await ctx.reply(embed=error_embed(str(error), title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner
