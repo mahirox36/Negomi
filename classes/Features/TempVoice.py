@@ -648,9 +648,7 @@ class TempVoice(commands.Cog):
             if not file.exists():
                 return
 
-            # Skip if member is moving between temp channels
-            if get_before(file2.data, before, member) is not None:
-                # member.move_to(None, reason="Creating to many Channels")
+            if get_before(file2.data, before, member) is not None or get_before(file2.data, after, member) is not None:
                 return
             
             # Get channel settings
