@@ -14,11 +14,18 @@
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
-Overall Progress: █████████████░░░░░░░ 64% (9/14)
-- [ ] Expand the backup system to include forum channels.
+Overall Progress: ████████████░░░░░░░░ 61% (11/18)
 - [x] Enhance AI integration to handle more advanced prompts.
-- [ ] Introduce an Achievement System to reward users for their activities.
+- [ ] Introduce an Achievement System to reward users for their activities: 
+    - [x] Core Achievement System [██████████] 100%
+    - [ ] Achievements [░░░░░░░░░░] 0% (0/20)
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
+- [x] Expand the backup system: [████░░░░░░] 40% (2/5)
+    - [ ] Add file encryption option
+    - [ ] Include server icon and banner backup (Protected files only)
+    - [x] Channel-specific role permissions
+    - [x] Forum channel support
+    - [ ] Implement creator-only import restrictions
 - [x] Enhanced Welcome System with: [████████░░] 75% (6/8)
     - [x] Customizable welcome images and backgrounds
     - [x] Multiple style options (Image, Text, Embed)

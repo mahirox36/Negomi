@@ -1,18 +1,26 @@
 from modules.Nexon import *
 import json
-__version__ = 2.2
-__VersionsSupported__ = [2.2]
+__version__ = 2.3
+__VersionsSupported__ = [2.2, 2.3]
 
-#TODO: Add Protected File Type
+#TODO: Add Option to Encrypt File
 #TODO: Add if it should Include the Server Icon and banner (Only with the protected file type)
 #TODO: Add roles permission support for channels
-#TODO: make it that it also import the Rules channel
+#TODO: also make an option to only the user that exported can imported
+#TODO: make it save Guild's Info
 
 class ChannelTypeError(Exception):
     def __init__(self, channel_name: str, support: bool, *args):
         self.channel = channel_name
         self.support = support
         super().__init__(*args)
+
+class ChannelCreationError(Exception):
+    def __init__(self, channel_name: str, error_message: str, *args):
+        self.channel = channel_name
+        self.message = f"Failed to create channel: {error_message}"
+        super().__init__(*args)
+
 class Backup(commands.Cog):
     def __init__(self, client: Client):
         self.client = client
@@ -98,51 +106,73 @@ class Backup(commands.Cog):
             file_data.close()
 
     async def create_channel_data(self, channel):
+        base_data = {
+            "Name": channel.name,
+            "Permission": await self.get_all_permission_overwrites(channel),
+            "PermissionSynced": channel.permissions_synced,
+        }
+
         if isinstance(channel, TextChannel):
-            overwrites = channel.overwrites_for(channel.guild.default_role)
-            permissions_dict = {
-                "allow": overwrites.pair()[0].value,
-                "deny": overwrites.pair()[1].value
-            }
             return {
-                "Name": channel.name,
-                "Permission": permissions_dict,
-                "PermissionSynced": channel.permissions_synced,
+                **base_data,
                 "isAgeRestricted": channel.is_nsfw(),
                 "isAnnouncement": channel.is_news(),
                 "slowModeDuration": channel.slowmode_delay,
                 "channelTopic": channel.topic or "",
-                "type": "text"
+                "type": "text",
+                "defaultThreadSlowmode": channel.default_thread_slowmode_delay,
+                "defaultAutoArchiveDuration": channel.default_auto_archive_duration
             }
         elif isinstance(channel, VoiceChannel):
-            overwrites = channel.overwrites_for(channel.guild.default_role)
-            permissions_dict = {
-                "allow": overwrites.pair()[0].value,
-                "deny": overwrites.pair()[1].value
-            }
             return {
-                "Name": channel.name,
-                "Permission": permissions_dict,
-                "PermissionSynced": channel.permissions_synced,
+                **base_data,
                 "userLimit": channel.user_limit,
+                "bitrate": channel.bitrate,
+                "rtcRegion": channel.rtc_region,
+                "videoQualityMode": channel.video_quality_mode,
                 "type": "voice"
             }
-        elif isinstance(channel, StageChannel):
-            overwrites = channel.overwrites_for(channel.guild.default_role)
-            permissions_dict = {
-                "allow": overwrites.pair()[0].value,
-                "deny": overwrites.pair()[1].value
-            }
+        elif isinstance(channel, ForumChannel):
+            channel.slowmode_delay
             return {
-                "Name": channel.name,
-                "Permission": permissions_dict,
-                "PermissionSynced": channel.permissions_synced,
+                **base_data,
+                "type": "forum",
+                "isAgeRestricted": channel.is_nsfw(),
+                "guidelines": channel.topic or "",
+                "defaultSlowMode": channel.default_thread_slowmode_delay,
+                "SlowMode": channel.slowmode_delay,
+                "defaultReactionEmoji": str(channel.default_reaction) if channel.default_reaction else None,
+                "defaultLayout": channel.default_forum_layout.value if channel.default_forum_layout else 0,
+                "defaultSortOrder": channel.default_sort_order.value if channel.default_sort_order else 0,
+                "availableTags": [
+                    {
+                        "name": tag.name,
+                        "moderated": tag.moderated,
+                        "emoji": str(tag.emoji) if tag.emoji else None,
+                    }
+                    for tag in channel.available_tags
+                ]
+            }
+        elif isinstance(channel, StageChannel):
+            return {
+                **base_data,
                 "userLimit": channel.user_limit,
                 "channelTopic": channel.topic or "",
                 "nsfw": channel.is_nsfw(),
                 "type": "stage"
             }
         return None
+
+    async def get_all_permission_overwrites(self, channel):
+        overwrites_data = {}
+        for target, overwrite in channel.overwrites.items():
+            key = f"role:{target.id}" if isinstance(target, Role) else f"member:{target.id}"
+            overwrites_data[key] = {
+                "allow": overwrite.pair()[0].value,
+                "deny": overwrite.pair()[1].value,
+                "name": target.name
+            }
+        return overwrites_data
 
     @backup.subcommand(name="import",
                   description="Import server configuration from a backup file")
@@ -202,49 +232,98 @@ class Backup(commands.Cog):
                         embed=warn_embed(f"Channel with the name `{e.channel}` cannot be imported due the channel type, you have to turn Community in your server"))
                     else: await ctx.channel.send(
                         embed=warn_embed(f"Channel with the name `{e.channel}` isn't supported yet"))
+                except ChannelCreationError as e:
+                    await ctx.channel.send(
+                        embed=error_embed(e.message))
         bot_names = "Bots Names:\n" + "\n".join(data["bot_name"])
         await ctx.channel.send(bot_names)
         await ctx.send(embed=info_embed("Import completed successfully!", "Import Complete"))
 
     async def create_channel(self, guild: Guild, channel_data: dict, category, community: bool):
         channel_type = channel_data.get("type", None)
-        allow_permissions = Permissions(channel_data["Permission"]["allow"])
-        deny_permissions = Permissions(channel_data["Permission"]["deny"])
-        overwrite = {guild.default_role: PermissionOverwrite.from_pair(allow=allow_permissions, deny=deny_permissions)} if not channel_data["PermissionSynced"] else {}
-        if channel_type == "text":
-            await guild.create_text_channel(
-                name=channel_data.get("Name"),
-                reason= "Importing from file",
-                category=category,
-                overwrites= overwrite,
-                slowmode_delay= channel_data.get("slowModeDuration", 0),
-                nsfw=channel_data.get("isAgeRestricted", False),
-                topic=channel_data.get("channelTopic", ""))
-        elif channel_type == "voice":
-            await guild.create_voice_channel(
-                name= channel_data.get("Name"),
-                reason= "Importing from file",
-                category=category,
-                user_limit=channel_data.get("userLimit", 0),
-                overwrites=overwrite)
-        elif community: 
-            if channel_type == "stage":
-                await guild.create_stage_channel(
-                name= channel_data.get("Name"),
-                reason= "Importing from file",
-                category=category,
-                user_limit=channel_data.get("userLimit", 0),
-                topic=channel_data.get("channelTopic", ""),
-                nsfw=channel_data.get("nsfw", False),
-                overwrites=overwrite)
-            else: 
-                raise ChannelTypeError(channel_data.get("Name"), False)
-        else:
-            if channel_type in ["stage", "forum"]:
+        overwrites = await self.build_permission_overwrites(guild, channel_data["Permission"])
+        
+        base_kwargs = {
+            "name": channel_data["Name"],
+            "reason": "Importing from file",
+            "category": category,
+            "overwrites": overwrites
+        }
+
+        try:
+            # Check community-required channels first
+            if not community and channel_type in ["forum", "stage"]:
                 raise ChannelTypeError(channel_data.get("Name"), True)
+
+            if channel_type == "text":
+                return await guild.create_text_channel(
+                    **base_kwargs,
+                    slowmode_delay=channel_data.get("slowModeDuration", 0),
+                    nsfw=channel_data.get("isAgeRestricted", False),
+                    topic=channel_data.get("channelTopic", "")
+                )
+            elif channel_type == "voice":
+                return await guild.create_voice_channel(
+                    **base_kwargs,
+                    user_limit=channel_data.get("userLimit", 0),
+                    bitrate=channel_data.get("bitrate", 64000),
+                    rtc_region=channel_data.get("rtcRegion", None),
+                    video_quality_mode=channel_data.get("videoQualityMode", 1)
+                )
+            elif channel_type == "forum":
+                tags = []
+                for tag_data in channel_data.get("availableTags", []):
+                    tags.append(ForumTag(
+                        name=tag_data["name"],
+                        moderated=tag_data["moderated"],
+                        emoji=tag_data["emoji"] if tag_data["emoji"] else None
+                    ))
+                
+                channel = await guild.create_forum_channel(
+                    **base_kwargs,
+                    topic=channel_data.get("guidelines", ""),
+                    default_thread_slowmode_delay=channel_data.get("defaultSlowMode", 0),
+                    available_tags=tags,
+                    default_reaction=channel_data.get("defaultReactionEmoji", None),
+                    default_forum_layout=ForumLayoutType(channel_data.get("defaultLayout", 0)),
+                    default_sort_order=SortOrderType(channel_data.get("defaultSortOrder", 0))
+                )
+                await channel.edit(nsfw=channel_data.get("isAgeRestricted", False), slowmode_delay=channel_data.get("slowmode_delay", False))
+                return channel
+            elif channel_type == "stage":
+                return await guild.create_stage_channel(
+                    **base_kwargs,
+                    user_limit=channel_data.get("userLimit", 0),
+                    topic=channel_data.get("channelTopic", ""),
+                    nsfw=channel_data.get("nsfw", False)
+                )
             else:
                 raise ChannelTypeError(channel_data.get("Name"), False)
-                
+
+        except Exception as e:
+            raise ChannelCreationError(channel_data["Name"], str(e))
+
+    async def build_permission_overwrites(self, guild: Guild, permission_data: dict):
+        overwrites = {}
+        for key, data in permission_data.items():
+            target_type, target_id = key.split(":")
+            target = None
+            
+            if target_type == "role":
+                target = guild.get_role(int(target_id))
+                if not target:
+                    # Try to find role by name
+                    target = utils.get(guild.roles, name=data["name"])
+            else:  # member
+                target = guild.get_member(int(target_id))
+
+            if target:
+                overwrites[target] = PermissionOverwrite.from_pair(
+                    allow=Permissions(data["allow"]),
+                    deny=Permissions(data["deny"])
+                )
+        
+        return overwrites
 
 def setup(client):
     client.add_cog(Backup(client))

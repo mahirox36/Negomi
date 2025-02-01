@@ -35,7 +35,7 @@ from nextcord import (
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
-    IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage
+    IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage, ForumTag, SortOrderType, ForumLayoutType
 )
 from nextcord.ext import tasks
 #Type Errors
@@ -47,6 +47,7 @@ from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelec
 from nextcord.ext.application_checks import *
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
+from nextcord import utils
 import sys
 
 
