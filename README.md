@@ -14,7 +14,7 @@
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
-Overall Progress: ████████████░░░░░░░░ 61% (11/18)
+Overall Progress: █████████████████░░░ 83% (15/18)
 - [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities: 
     - [x] Core Achievement System [██████████] 100%
