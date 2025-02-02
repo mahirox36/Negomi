@@ -20,12 +20,12 @@ Overall Progress: ████████████░░░░░░░░ 6
     - [x] Core Achievement System [██████████] 100%
     - [ ] Achievements [░░░░░░░░░░] 0% (0/20)
 - [x] Launch a Time Capsule feature, allowing users to save messages for future unveiling.
-- [x] Expand the backup system: [████░░░░░░] 40% (2/5)
-    - [ ] Add file encryption option
-    - [ ] Include server icon and banner backup (Protected files only)
+- [x] Expand the backup system: [██████████] 100% (5/5)
+    - [x] Add file encryption option
+    - [x] Include server icon and banner backup (Protected files only)
     - [x] Channel-specific role permissions
     - [x] Forum channel support
-    - [ ] Implement creator-only import restrictions
+    - [x] Implement creator-only import restrictions
 - [x] Enhanced Welcome System with: [████████░░] 75% (6/8)
     - [x] Customizable welcome images and backgrounds
     - [x] Multiple style options (Image, Text, Embed)

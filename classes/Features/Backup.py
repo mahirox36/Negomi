@@ -1,13 +1,13 @@
+import aiohttp
 from modules.Nexon import *
 import json
-__version__ = 2.3
-__VersionsSupported__ = [2.2, 2.3]
+from cryptography.fernet import Fernet
+import base64
+import os
+import uuid
+__version__ = 2.4
+__VersionsSupported__ = [2.2, 2.3, 2.4]
 
-#TODO: Add Option to Encrypt File
-#TODO: Add if it should Include the Server Icon and banner (Only with the protected file type)
-#TODO: Add roles permission support for channels
-#TODO: also make an option to only the user that exported can imported
-#TODO: make it save Guild's Info
 
 class ChannelTypeError(Exception):
     def __init__(self, channel_name: str, support: bool, *args):
@@ -24,6 +24,17 @@ class ChannelCreationError(Exception):
 class Backup(commands.Cog):
     def __init__(self, client: Client):
         self.client = client
+        self.key = os.getenv('BACKUP_KEY', Fernet.generate_key())
+        # Generate key based on MAC address
+        def get_mac_based_key():
+            mac = uuid.getnode()
+            mac_bytes = mac.to_bytes(6, 'big')
+            # Extend to 32 bytes for Fernet key
+            extended = mac_bytes * 6  # 36 bytes
+            return base64.urlsafe_b64encode(extended[:32])
+
+        self.key = get_mac_based_key()
+        self.cipher = Fernet(self.key)
 
     
     @slash_command(name="backup", 
@@ -35,21 +46,30 @@ class Backup(commands.Cog):
     @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
     @feature()
     @cooldown(10)
-    async def export(self, ctx: init):
+    async def export(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
-        await self.exportFunction(ctx)
+        await self.exportFunction(ctx, encrypt, include_assets, creator_only)
 
-    async def exportFunction(self, ctx: init):
+    async def exportFunction(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
         data = {
             "Info": {
                 "version": __version__,
                 "isCommunityServer": "COMMUNITY" in ctx.guild.features,
-                "features": ctx.guild.features
-                },
+                "features": ctx.guild.features,
+                "creator_id": ctx.user.id if creator_only else None,
+                "encrypted": encrypt
+            },
             "Categories": [],
             "roles": [],
             "bot_name": []
         }
+
+        if include_assets:
+            data["Assets"] = {
+                "icon_url": str(ctx.guild.icon.url) if ctx.guild.icon else None,
+                "banner_url": str(ctx.guild.banner.url) if ctx.guild.banner else None,
+                "splash_url": str(ctx.guild.splash.url) if ctx.guild.splash else None
+            }
 
         # Export roles first
         for role in reversed(ctx.guild.roles):
@@ -97,9 +117,17 @@ class Backup(commands.Cog):
         # Create and send the file
         file_data = io.StringIO()
         try:
-            json.dump(data, file_data, indent=2, ensure_ascii=False)
+            json_data = json.dumps(data, indent=2, ensure_ascii=False)
+            if encrypt:
+                encrypted_data = self.cipher.encrypt(json_data.encode())
+                file_data.write(base64.b64encode(encrypted_data).decode())
+                ext = ".negomi"
+            else:
+                file_data.write(json_data)
+                ext = ".json"
+            
             file_data.seek(0)
-            filename = f"backup-v2-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}.json"
+            filename = f"backup-v{__version__}-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}{ext}"
             discord_file = File(file_data, filename=filename)
             await ctx.send(file=discord_file)
         finally:
@@ -182,14 +210,31 @@ class Backup(commands.Cog):
             await ctx.send(embed=error_embed("Only the owner of the guild can import.", "Import Error"))
             return
 
-        if not file.filename.endswith(".json"):
-            await ctx.send(embed=error_embed("Invalid file type. Please upload a `.json` file.", "Error"))
+        if not (file.filename.endswith(".json") or file.filename.endswith(".negomi")):
+            await ctx.send(embed=error_embed("Invalid file type. Please upload a .json or .negomi file.", "Error"))
+            return
+
+        file_content = await file.read()
+        try:
+            content_str = file_content.decode()
+            try:
+                # Try to decode as base64 and decrypt
+                encrypted_data = base64.b64decode(content_str)
+                decrypted_data = self.cipher.decrypt(encrypted_data)
+                data = json.loads(decrypted_data)
+            except:
+                # If decryption fails, try parsing as plain JSON
+                data = json.loads(content_str)
+        except Exception as e:
+            await ctx.send(embed=error_embed(f"Failed to parse backup file: {str(e)}", "Parse Error"))
+            return
+
+        # Check creator restriction
+        if data["Info"].get("creator_id") and data["Info"]["creator_id"] != ctx.user.id:
+            await ctx.send(embed=error_embed("This backup can only be imported by its creator.", "Permission Error"))
             return
 
         created_roles = {}
-        file_content = await file.read()
-        data = json.loads(file_content)
-
         if data["Info"].get("version") not in __VersionsSupported__:
             await ctx.send(embed=error_embed("Unsupported backup version.", "Version Error"))
             return
@@ -235,6 +280,22 @@ class Backup(commands.Cog):
                 except ChannelCreationError as e:
                     await ctx.channel.send(
                         embed=error_embed(e.message))
+        
+        # Import server assets if included
+        if "Assets" in data and data["Assets"]:
+            try:
+                if data["Assets"]["icon_url"]:
+                    icon_data = await self.download_asset(data["Assets"]["icon_url"])
+                    await ctx.guild.edit(icon=icon_data)
+                if data["Assets"]["banner_url"]:
+                    banner_data = await self.download_asset(data["Assets"]["banner_url"])
+                    await ctx.guild.edit(banner=banner_data)
+                if data["Assets"]["splash_url"]:
+                    splash_data = await self.download_asset(data["Assets"]["splash_url"])
+                    await ctx.guild.edit(splash=splash_data)
+            except Exception as e:
+                await ctx.send(embed=warn_embed(f"Failed to import some server assets: {str(e)}"))
+
         bot_names = "Bots Names:\n" + "\n".join(data["bot_name"])
         await ctx.channel.send(bot_names)
         await ctx.send(embed=info_embed("Import completed successfully!", "Import Complete"))
@@ -263,12 +324,13 @@ class Backup(commands.Cog):
                     topic=channel_data.get("channelTopic", "")
                 )
             elif channel_type == "voice":
+                rtc_region= VoiceRegion(channel_data.get("rtcRegion")) if channel_data.get("rtcRegion", None) is not None else None
                 return await guild.create_voice_channel(
                     **base_kwargs,
                     user_limit=channel_data.get("userLimit", 0),
                     bitrate=channel_data.get("bitrate", 64000),
-                    rtc_region=channel_data.get("rtcRegion", None),
-                    video_quality_mode=channel_data.get("videoQualityMode", 1)
+                    rtc_region=rtc_region,
+                    video_quality_mode=VideoQualityMode(channel_data.get("videoQualityMode", 1))
                 )
             elif channel_type == "forum":
                 tags = []
@@ -324,6 +386,13 @@ class Backup(commands.Cog):
                 )
         
         return overwrites
+
+    async def download_asset(self, url: str) -> bytes:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.read()
+                raise Exception(f"Failed to download asset: {response.status}")
 
 def setup(client):
     client.add_cog(Backup(client))
