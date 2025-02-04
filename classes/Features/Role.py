@@ -31,7 +31,7 @@ class Request(ui.View):
                                         ,author=[guild.name,guild.icon.url]),ephemeral= True)
 
 
-class Rolez(commands.Cog):
+class Roles(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         #Not allowed Words for roles
@@ -280,4 +280,4 @@ class Rolez(commands.Cog):
     
 
 def setup(client):
-    client.add_cog(Rolez(client))
+    client.add_cog(Roles(client))

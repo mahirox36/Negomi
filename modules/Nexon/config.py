@@ -6,18 +6,12 @@ from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.27"
+VERSION = "0.28"
 
-@dataclass
-class IPCConfig:
-    secret: str = field(default_factory=lambda: secrets.token_urlsafe(32))
-    port: int = 25401
 
 @dataclass
 class DashboardConfig:
     enabled: bool = True
-    host: str = "0.0.0.0"
-    port: int = 25400
 
 @dataclass
 class GeneralConfig:
@@ -90,7 +84,6 @@ class Bot_Config:
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     Commands_Settings: CommandsSettings = field(default_factory=CommandsSettings)
     AI: AISettings = field(default_factory=AISettings)
-    IPC: IPCConfig = field(default_factory=IPCConfig)
     Dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234, 43214321])
     AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234, 43214321])
@@ -115,9 +108,6 @@ class Bot_Config:
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
-            "IPC": {
-                k: v for k, v in self.IPC.__dict__.items()
-            },
             "Dashboard": {
                 k: v for k, v in self.Dashboard.__dict__.items()
             },
@@ -136,7 +126,6 @@ class Bot_Config:
             Welcome_Settings=WelcomeConfig(**data.get("Welcome", {})),
             Commands_Settings=CommandsSettings(**data.get("Commands", {})),
             AI=AISettings(**data.get("AI", {})),
-            IPC=IPCConfig(**data.get("IPC", {})),
             Dashboard=DashboardConfig(**data.get("Dashboard", {})),
             Testing_guilds_id=data.get("TESTING GUILDS ID", []),
             AI_AllowedServers=data.get("AI_AllowedServers", []),
@@ -159,7 +148,6 @@ class ConfigManager:
             "Welcome",
             "Commands",
             "AI",
-            "IPC",
             "Dashboard",
             "TESTING GUILDS ID",
             "AI_AllowedServers",
@@ -306,11 +294,6 @@ TESTING_GUILD_ID = BotConfig.Testing_guilds_id
 AI_AllowedServers = BotConfig.AI_AllowedServers
 AI_AllowedUsersID = BotConfig.AI_AllowedUsersID
 
-# IPC
-ipc_secret = BotConfig.IPC.secret
-ipc_port = BotConfig.IPC.port
 
 # Dashboard
 dashboard_enabled = BotConfig.Dashboard.enabled
-dashboard_host = BotConfig.Dashboard.host
-dashboard_port = BotConfig.Dashboard.port

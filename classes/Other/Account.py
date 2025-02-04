@@ -161,10 +161,24 @@ class Account(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message:Message):
+        if message.author.id == self.client.user.id:
+            user_manager = UserData(self.client.user)
+            user_manager.record_bot_message()
+            
         if message.author.bot:
             return
         userData = UserData(message.author)
         await userData.incrementMessageCount(message)
+    
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx):
+        user_manager = UserData(self.client.user)
+        user_manager.record_command_processed(ctx.command.name)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        user_manager = UserData(self.client.user)
+        user_manager.record_error(ctx.command.name, str(error))
     
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction:Reaction, user: Member | User):

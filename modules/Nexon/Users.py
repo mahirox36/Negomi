@@ -38,6 +38,23 @@ class AttachmentTypes:
         return asdict(self)
 
 @dataclass
+class BotStatistics:
+    messages_sent: int = 0
+    commands_processed: int = 0
+    errors_encountered: int = 0
+    features_used: Dict[str, int] = field(default_factory=dict)
+    command_errors: Dict[str, List[str]] = field(default_factory=dict)
+    
+    def to_dict(self) -> dict:
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'BotStatistics':
+        if isinstance(data, cls):
+            return data
+        return cls(**data)
+
+@dataclass
 class UserData:
     # Basic Info
     name: str 
@@ -86,6 +103,9 @@ class UserData:
     reputation: int = 0 #TODO
 
     custom_data: Dict[str, Any] = field(default_factory=dict)
+    
+    # Add bot-specific statistics field
+    bot_stats: Optional[BotStatistics] = field(default=None)
     
     def set_custom_data(self, key: str, value: Any) -> None:
         """Set a custom data field"""
@@ -144,6 +164,11 @@ class UserData:
         # Handle milestones if it doesn't exist
         if 'milestones' not in data:
             data['milestones'] = {}
+        
+        # Handle bot statistics
+        if 'bot_stats' in data and isinstance(data['bot_stats'], dict):
+            data['bot_stats'] = BotStatistics.from_dict(data['bot_stats'])
+        
         instance = cls(**data)
         instance.custom_data = custom_data
         return instance
@@ -196,7 +221,10 @@ class UserData:
             # Achievement Tracking
             "badges": list(self.badges),
             "milestones": self.milestones,
-            "reputation": self.reputation
+            "reputation": self.reputation,
+            
+            # Bot Statistics
+            "bot_stats": self.bot_stats.to_dict() if self.bot_stats else None
         }
         data['custom_data'] = self.custom_data
         return data
@@ -370,14 +398,58 @@ class UserManager(DataManager):
         except:
             pass
 
+    
+    def init_bot_stats(self):
+        """Initialize bot statistics if not present"""
+        if not self.user_data.bot_stats:
+            self.user_data.bot_stats = BotStatistics()
+            self.save()
+
+    def record_bot_message(self):
+        """Record a message sent by the bot"""
+        self.init_bot_stats()
+        self.user_data.bot_stats.messages_sent += 1
+        self.save()
+
+    def record_command_processed(self, command_name: str):
+        """Record a processed command"""
+        self.init_bot_stats()
+        self.user_data.bot_stats.commands_processed += 1
+        self.user_data.bot_stats.features_used[command_name] = \
+            self.user_data.bot_stats.features_used.get(command_name, 0) + 1
+        self.save()
+
+    def record_error(self, command_name: str, error_message: str):
+        """Record an error that occurred"""
+        self.init_bot_stats()
+        self.user_data.bot_stats.errors_encountered += 1
+        if command_name not in self.user_data.bot_stats.command_errors:
+            self.user_data.bot_stats.command_errors[command_name] = []
+        self.user_data.bot_stats.command_errors[command_name].append(error_message)
+        self.save()
+
+    def get_bot_stats_summary(self) -> dict:
+        """Get a summary of bot statistics"""
+        if not self.user_data.bot_stats:
+            return {}
+            
+        stats = self.user_data.bot_stats
+        return {
+            "messages_sent": stats.messages_sent,
+            "commands_processed": stats.commands_processed,
+            "errors": stats.errors_encountered,
+            "top_features": dict(sorted(
+                stats.features_used.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:10]),
+        }
+    
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to UserData object"""
         if hasattr(self._user_data, name):
             return getattr(self._user_data, name)
         raise AttributeError(f"'UserManager' object has no attribute '{name}'")
-    
-    
-    
 
 
 def load_json_files(directory):
