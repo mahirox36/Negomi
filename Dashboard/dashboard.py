@@ -1,71 +1,63 @@
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
 import uvicorn
 from nextcord.ext import ipc
 import asyncio
-from modules.Nexon import logger, BotConfig
+from modules.Nexon import logger
 
 class Dashboard:
     def __init__(self):
         self.app = FastAPI()
         self.logger = logger
         self.ipc = ipc.Client(
-            secret_key=BotConfig.IPC.secret,
-            port=BotConfig.IPC.port or 25401
+            port=8765
         )
         
         # Setup routes
-        self.app.mount("/static", StaticFiles(directory="Dashboard/web/static"), name="static")
-        self.templates = Jinja2Templates(directory="Dashboard/web")
         self.setup_routes()
 
     def setup_routes(self):
-        @self.app.get("/")
-        async def home(request: Request):
-            try:
-                stats = await self.ipc.request("get_bot_stats")
-                return self.templates.TemplateResponse(
-                    "index.html", 
-                    {"request": request, "stats": stats}
-                )
-            except Exception as e:
-                self.logger.error(f"Dashboard error: {str(e)}")
-                return {"error": f"{str(e)}"}
-
-        @self.app.get("/icon")
-        async def icon(request: Request):
-            try:
-                url = await self.ipc.request("get_icon")
-                return {"icon": url}
-            except Exception as e:
-                self.logger.error(f"Dashboard error: {str(e)}")
-                return {"error": f"{str(e)}"}
-
-        @self.app.get("/commands")
-        async def commands(request: Request):
-            try:
-                stats = await self.ipc.request("get_commands")
-                return self.templates.TemplateResponse(
-                    "commands.html", 
-                    {"request": request, "stats": stats}
-                )
-            except Exception as e:
-                self.logger.error(f"Dashboard error: {str(e)}")
-                return {"error": f"{str(e)}"}
+        @self.app.get("/get_all_commands")
+        async def get_all_commands(request: Request):
+            stats = await self.ipc.request("get_commands")
+            return stats
+        @self.app.get("/get_detailed_stats")
+        async def get_all_commands(request: Request):
+            stats = await self.ipc.request("get_detailed_stats")
+            return stats
 
     async def start(self):
         """Start the dashboard"""
+        self.logger.info("Starting web dashboard...")
+
+        # Start npm process
+        npm_process = await asyncio.create_subprocess_shell(
+            "cd Dashboard/web && npm run dev",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        # Start FastAPI server
         config = uvicorn.Config(
-            self.app,
-            host=BotConfig.Dashboard.host or "0.0.0.0",
-            port=BotConfig.Dashboard.port or 25400,
-            log_config=None  # Disable uvicorn's logging
+            app=self.app,
+            host="127.0.0.1",
+            log_config=None,
+            port=25400,
         )
         server = uvicorn.Server(config)
         
-        self.logger.info(f"Starting dashboard on http://{config.host if not "0.0.0.0" else "127.0.0.1"}:{config.port}")
-        await server.serve()
+        try:
+            # Run both the npm process and FastAPI server
+            self.logger.info("Web dashboard started.")
+            await asyncio.gather(
+                server.serve(),
+                npm_process.communicate()
+            )
+        except Exception as e:
+            self.logger.error(f"Error starting dashboard: {e}")
+            if npm_process.returncode is None:
+                npm_process.terminate()
+            raise
+
 
 def run_dashboard():
     """Helper function to run dashboard in separate process"""

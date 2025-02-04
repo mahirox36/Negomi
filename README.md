@@ -14,7 +14,7 @@
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
-Overall Progress: █████████████████░░░ 83% (15/18)
+Overall Progress: █████████████████░░░ 85% (17/20)
 - [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities: 
     - [x] Core Achievement System [██████████] 100%
@@ -35,8 +35,9 @@ Overall Progress: █████████████████░░░ 8
     - [x] Font size and color customization
     - [x] Avatar border and size controls
     - [x] Smart caching system for better performance
-- [x] Web Dashboard Integration: [█████░░░░░] 50% (1/2)
-    - [ ] Real-time bot statistics
+- [x] Web Dashboard Integration: [██████████] 100% (3/3)
+    - [x] better Website
+    - [x] Real-time bot statistics
     - [x] Command listings
 
 ### Version 0.9
