@@ -60,6 +60,7 @@ class UserData:
     name: str 
     joined_at: str
     unique_names: Set[str] = field(default_factory=set)
+    last_updated: Optional[datetime] = None
     
     # Message Statistics
     total_messages: int = 0
@@ -69,6 +70,7 @@ class UserData:
     # Content Analysis
     attachments_sent: int = 0
     attachment_types: AttachmentTypes = field(default_factory=AttachmentTypes)
+    gif_sent: int = 0
     mentions_count: int = 0
     unique_users_mentioned: Set[int] = field(default_factory=set)
     emoji_count: int = 0
@@ -98,7 +100,7 @@ class UserData:
     birthdate: Optional[datetime] = None
     
     # Achievement Tracking
-    badges: Set[str] = field(default_factory=set) #TODO
+    badges: Set[str] = field(default_factory=set)
     milestones: Dict[str, any] = field(default_factory=dict) #TODO
     reputation: int = 0 #TODO
 
@@ -122,54 +124,90 @@ class UserData:
         self.set_custom_data(key, value)
     
     @classmethod
-    def from_dict(cls, data: dict) -> 'UserData':
-        # Handle none case
+    def from_dict(cls, data: Optional[dict] = None) -> 'UserData':
+        """
+        Safely create a UserData instance from a dictionary with default values for missing fields.
+        """
         if data is None:
-            return cls("Unknown", str(datetime.now()))
+            data = {}
 
-        # Make a copy to avoid modifying the input
         data = data.copy()
-        
+
+        # Extract and handle custom data separately
         custom_data = data.pop('custom_data', {})
-        
-        # Convert datetime strings to datetime objects if they exist
-        if data.get('birthdate'):
-            data['birthdate'] = datetime.fromisoformat(data['birthdate'])
-            
-        # Convert attachment_types dict to AttachmentTypes object
+
+        # Define defaults for all fields
+        defaults = {
+            'name': "Unknown",
+            'birthdate': None,
+            'joined_at': None,
+            'last_updated': datetime.now(),
+            'unique_users_mentioned': set(),
+            'unique_emojis_used': set(),
+            'unique_custom_emojis_used': set(),
+            'unique_domains': set(),
+            'unique_names': set(),
+            'badges': set(),
+            'favorite_commands': {},
+            'preferred_channels': {},
+            'milestones': {},
+            'attachment_types': AttachmentTypes(),
+            'bot_stats': BotStatistics()
+        }
+
+        # Process datetime fields
+        for field in ['birthdate', 'last_updated']:
+            if isinstance(data.get(field), str):
+                try:
+                    data[field] = datetime.fromisoformat(data[field])
+                except (ValueError, TypeError):
+                    data[field] = defaults[field]
+            elif field not in data:
+                data[field] = defaults[field]
+
+        # Process set fields
+        set_fields = [
+            'unique_users_mentioned', 'unique_emojis_used', 
+            'unique_custom_emojis_used', 'unique_domains',
+            'unique_names', 'badges'
+        ]
+        for field in set_fields:
+            try:
+                data[field] = set(data.get(field, []))
+            except (TypeError, ValueError):
+                data[field] = set()
+
+        # Process dictionary fields
+        dict_fields = ['favorite_commands', 'preferred_channels', 'milestones']
+        for field in dict_fields:
+            if not isinstance(data.get(field), dict):
+                data[field] = {}
+
+        # Handle complex objects
         if 'attachment_types' in data:
             if isinstance(data['attachment_types'], dict):
-                data['attachment_types'] = AttachmentTypes.from_dict(data['attachment_types'])
-            elif isinstance(data['attachment_types'], AttachmentTypes):
-                pass  # Keep as is
-            else:
-                data['attachment_types'] = AttachmentTypes()  # Default if invalid
-        
-        # Convert sets from lists if they come from JSON
-        data['unique_users_mentioned'] = set(data.get('unique_users_mentioned', []))
-        data['unique_emojis_used'] = set(data.get('unique_emojis_used', []))
-        data['unique_custom_emojis_used'] = set(data.get('unique_custom_emojis_used', []))
-        data['unique_domains'] = set(data.get('unique_domains', []))
-        data['unique_names'] = set(data.get('unique_names', []))
-        data['badges'] = set(data.get('badges', []))
-        
-        # Handle favorite_commands if it doesn't exist
-        if 'favorite_commands' not in data:
-            data['favorite_commands'] = {}
-            
-        # Handle preferred_channels if it doesn't exist
-        if 'preferred_channels' not in data:
-            data['preferred_channels'] = {}
-            
-        # Handle milestones if it doesn't exist
-        if 'milestones' not in data:
-            data['milestones'] = {}
-        
-        # Handle bot statistics
-        if 'bot_stats' in data and isinstance(data['bot_stats'], dict):
-            data['bot_stats'] = BotStatistics.from_dict(data['bot_stats'])
-        
-        instance = cls(**data)
+                try:
+                    data['attachment_types'] = AttachmentTypes.from_dict(data['attachment_types'])
+                except (ValueError, TypeError):
+                    data['attachment_types'] = AttachmentTypes()
+            elif not isinstance(data['attachment_types'], AttachmentTypes):
+                data['attachment_types'] = AttachmentTypes()
+        else:
+            data['attachment_types'] = AttachmentTypes()
+
+        if 'bot_stats' in data:
+            if isinstance(data['bot_stats'], dict):
+                try:
+                    data['bot_stats'] = BotStatistics.from_dict(data['bot_stats'])
+                except (ValueError, TypeError):
+                    data['bot_stats'] = BotStatistics()
+            elif not isinstance(data['bot_stats'], BotStatistics):
+                data['bot_stats'] = BotStatistics()
+        else:
+            data['bot_stats'] = BotStatistics()
+
+        # Create instance with processed data
+        instance = cls(**{k: data.get(k, v) for k, v in defaults.items()})
         instance.custom_data = custom_data
         return instance
 
@@ -179,6 +217,7 @@ class UserData:
             "name": self.name,
             "joined_at": self.joined_at,
             "unique_names": list(self.unique_names),
+            "last_updated": self.last_updated.isoformat() if self.last_updated else None,
             
             # Message Statistics
             "total_messages": self.total_messages,
@@ -188,6 +227,7 @@ class UserData:
             # Content Analysis
             "attachments_sent": self.attachments_sent,
             "attachment_types": self.attachment_types.to_dict(),
+            "gif_sent": self.gif_sent,
             "mentions_count": self.mentions_count,
             "unique_users_mentioned": list(self.unique_users_mentioned),
             "emoji_count": self.emoji_count,
@@ -233,7 +273,8 @@ class UserData:
     def from_member(cls, member: Member) -> 'UserData':
         return cls(
             name=get_name(member),
-            joined_at=str(member.created_at)
+            joined_at=str(member.created_at),
+            last_updated=datetime.now()
         )
 
 
@@ -281,6 +322,7 @@ class UserManager(DataManager):
         else:
             self.user_data.unique_names.add(self.user_data.name)
             self.user_data.name = get_name(user)
+            self.user_data.last_updated = datetime.now()
             return self.save()
     
     async def BadgeDetect(self, message: Union[Message, init]) -> None:
@@ -335,7 +377,7 @@ class UserManager(DataManager):
     async def incrementMessageCount(self, message: Message):
         self.generalUpdateInfo(message.author)
         await self.BadgeDetect(message)
-        await self.BadgeDetect(False)
+        # await self.BadgeDetect(False)
         content = message.content
         self.user_data.total_messages += 1
         self.user_data.character_count += len(content.replace(" ", ""))
@@ -374,11 +416,14 @@ class UserManager(DataManager):
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", content)
         self.user_data.links_shared += len(links)
         self.user_data.unique_domains.update(links)
+        gifs = re.findall(r'https?://tenor\.com/\S+', content)
+        self.user_data.gif_sent += len(gifs)
         
         self.save()
     
     def increment_command_count(self, command_name: str) -> None:
         """Increment the command usage count"""
+        
         self._user_data.commands_used += 1
         self._user_data.favorite_commands[command_name] = \
             self._user_data.favorite_commands.get(command_name, 0) + 1

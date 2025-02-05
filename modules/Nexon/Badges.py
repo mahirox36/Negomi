@@ -3,7 +3,7 @@ from typing import Optional, Union, Dict, Callable, List
 from enum import Enum
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QFormLayout, QLabel,
     QLineEdit, QTextEdit, QPushButton, QFileDialog, QWidget, QMessageBox,
@@ -40,11 +40,9 @@ class RequirementType(Enum):
     TIME_BASED = "time_based"
     OWNER_INTERACTION = "owner_interaction"
     INACTIVE_DURATION = "inactive_duration"
-    RAPID_RESPONSE = "rapid_response"
     MESSAGE_RATE = "message_rate"
     UNIQUE_EMOJI_COUNT = "unique_emoji_count"
     SPECIFIC_EMOJI = "specific_emoji"
-    ACTIVITY_STREAK = "activity_streak"
     REVIVAL = "revival"
     ALL_COMMANDS = "all_commands"
 
@@ -265,7 +263,7 @@ class BadgeEditor(QMainWindow):
         
         # Save image
         image_name = f"{title.lower().replace(' ', '_')}_badge.{self.image_path.split('.')[-1]}"
-        saved_image_path = os.path.join(self.output_folder, image_name)
+        saved_image_path = os.path.join(self.output_folder, image_name.replace("/", " "))
         with open(self.image_path, "rb") as src, open(saved_image_path, "wb") as dest:
             dest.write(src.read())
         
@@ -284,7 +282,7 @@ class BadgeEditor(QMainWindow):
         badge_data = {
             "title": title,
             "description": description,
-            "image_path": f"Assets/Badges/{image_name}",
+            "image_path": f"Assets/Badges/{image_name.replace("/", " ")}",
             "requirements": requirements,
             "points": points
         }
@@ -377,19 +375,13 @@ class BadgeManager:
             except ValueError:
                 return False
         
-        elif req.type == RequirementType.MESSAGE_RATE:
-            recent_messages = len([msg for msg in self.user_data.recent_messages 
-                                if (datetime.now() - msg).total_seconds() < 60])
-            return check_numeric_requirement(recent_messages)
         elif req.type == RequirementType.ALL_COMMANDS:
             total_commands = len(self.bot.application_commands)
             used_commands = len(self.user_data.favorite_commands)
             return check_numeric_requirement(used_commands)
         if isinstance(message, Message):
             if req.type == RequirementType.GIF_SENT:
-                if message.attachments:
-                    return any(att.filename.lower().endswith(('.gif', '.gifv')) for att in message.attachments)
-                return any(url for url in re.findall(r'https?://\S+', message.content) if url.lower().endswith(('.gif', '.gifv')))
+                return req.compare(self.user_data.gif_sent, req.value)
             
             elif req.type == RequirementType.OWNER_INTERACTION:
                 # return message.author.id == int(req.specific_value)
@@ -405,8 +397,14 @@ class BadgeManager:
             
             elif req.type == RequirementType.SPECIFIC_EMOJI:
                 emojisExtracted = extract_emojis(req.specific_value)
-                # femboy_emojis = ["👗", "🎀", "💝", "🌸"]
                 return any(emoji in message.content for emoji in emojisExtracted)
+            elif req.type == RequirementType.INACTIVE_DURATION:
+                future_time = self.user_data.last_updated + timedelta(hours=float(req.value))
+                if future_time < datetime.now():
+                    return True
+                else: 
+                    return False
+                
             
             elif req.type == RequirementType.MESSAGE_SENT:
                 return True
@@ -430,7 +428,7 @@ class BadgeManager:
                     return False
                 try:
                     pattern = re.compile(req.specific_value, re.IGNORECASE)
-                    return bool(pattern.search(message.content))
+                    return bool(pattern.search(message.content.lower()))
                 except re.error:
                     # Fallback to simple string matching if regex is invalid
                     return req.specific_value.lower() in message.content.lower()
