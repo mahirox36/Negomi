@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 from typing import Optional, Union, Dict, Callable, List
 from enum import Enum
@@ -12,6 +13,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from nextcord import User, Member, Message, Interaction
+from nextcord.ext.commands import Bot
 import re
 from typing import TYPE_CHECKING
 try:
@@ -375,10 +377,6 @@ class BadgeManager:
             except ValueError:
                 return False
         
-        elif req.type == RequirementType.ALL_COMMANDS:
-            total_commands = len(self.bot.application_commands)
-            used_commands = len(self.user_data.favorite_commands)
-            return check_numeric_requirement(used_commands)
         if isinstance(message, Message):
             if req.type == RequirementType.GIF_SENT:
                 return req.compare(self.user_data.gif_sent, req.value)
@@ -432,13 +430,18 @@ class BadgeManager:
                 except re.error:
                     # Fallback to simple string matching if regex is invalid
                     return req.specific_value.lower() in message.content.lower()
+        elif isinstance(message, Interaction):
+            if req.type == RequirementType.ALL_COMMANDS:
+                total_commands = len(message.client.get_application_commands())
+                used_commands = len(self.user_data.favorite_commands)
+                return total_commands == used_commands
         return False
 
     async def check_badges(self, message: Optional[Message | Interaction] = None) -> List[Badge]:
         earned_badges = []
         for badge in self.badges.values():
             if badge.title not in self.user_data.badges:
-                requirements_met = all(await self.check_requirement(req, message) for req in badge.requirements)
+                requirements_met = all(await asyncio.gather(*(self.check_requirement(req, message) for req in badge.requirements)))
                 if requirements_met:
                     logger.info(f"User earned badge: {badge.title}")
                     earned_badges.append(badge)

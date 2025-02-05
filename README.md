@@ -34,7 +34,7 @@
 ## 📚 Custom Libraries for This Bot:
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
-- [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcord Shortcuts
+- [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, Users Info collecting System, IPC Server, Logger, Data System, Badge System and Nextcord Shortcuts
 
 ## 💡 Got Ideas or Issues?
 
