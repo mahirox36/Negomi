@@ -171,14 +171,14 @@ class Account(commands.Cog):
         await userData.incrementMessageCount(message)
     
     @commands.Cog.listener()
-    async def on_application_command_completion(self, ctx):
+    async def on_application_command_completion(self, ctx: init):
         user_manager = UserData(self.client.user)
-        user_manager.record_command_processed(ctx.command.name)
+        user_manager.record_command_processed(ctx.application_command.name)
 
     @commands.Cog.listener()
-    async def on_application_command_error(self, ctx, error):
+    async def on_application_command_error(self, ctx: init, error: Exception):
         user_manager = UserData(self.client.user)
-        user_manager.record_error(ctx.command.name, str(error))
+        user_manager.record_error(ctx.application_command.name, str(error))
     
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction:Reaction, user: Member | User):
