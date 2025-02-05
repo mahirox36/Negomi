@@ -160,6 +160,7 @@ class Welcome(commands.Cog):
             draw = ImageDraw.Draw(background)
             font = await self._get_font(settings.get("font_size", 48))
             text = f"Welcome {member_name}!"
+            text = str(settings.get("text", "Welcome {member}!")).format(member=member_name)
             
             # Add text shadow
             shadow_color = self._adjust_color(settings.get("font_color", "#FFFFFF"), -50)
@@ -305,6 +306,7 @@ class Welcome(commands.Cog):
             "embed_color": colors.Info.value,
             "image_settings": {
                 "background_url": "https://raw.githubusercontent.com/mahirox36/Negomi/refs/heads/main/Assets/img/Welcome.png",
+                "text": "Welcome {member}!",
                 "avatar_size": [128, 128],
                 "avatar_position": [100, 100],
                 "text_position": [250, 150],
@@ -367,6 +369,7 @@ class Welcome(commands.Cog):
                           message: str = SlashOption(description="Welcome message using variables like {mention}"),
                           channel: TextChannel = SlashOption(description="Channel to send welcome messages")):
         try:
+            await ctx.response.defer()
             # Validate channel permissions
             required_perms = ['send_messages', 'embed_links', 'attach_files']
             missing_perms = [perm for perm in required_perms 
@@ -430,6 +433,7 @@ class Welcome(commands.Cog):
     @feature()
     @guild_only()
     async def preview(self, ctx: init):
+        await ctx.response.defer(ephemeral=True)
         config = await self.get_welcome_config(ctx.guild_id)
         if not config:
             await ctx.send("Please set up welcome message first using /welcome setup", ephemeral=True)
@@ -453,8 +457,11 @@ class Welcome(commands.Cog):
         )
         embed.add_field(name="Available Options", value="""
 • Background - Set a custom background image
+• Text - Set a custom Text inside of the image
 • Text Position - Adjust where the welcome text appears
 • Avatar Position - Adjust where the user's avatar appears
+• Font Size - Adjust the font size
+• Avatar Size - Adjust user's pfp size
 • Colors - Change text and border colors
         """)
 
@@ -667,6 +674,11 @@ class WelcomeCustomizer(ui.View):
     async def background_button(self, button: Button, interaction: Interaction):
         modal = BackgroundModal(self)
         await interaction.response.send_modal(modal)
+        
+    @button(label="Text", style=ButtonStyle.blurple)
+    async def text_change(self, button: Button, interaction: Interaction):
+        modal = TextModal(self)
+        await interaction.response.send_modal(modal)
 
     @button(label="Text Position", style=ButtonStyle.green)
     async def text_position(self, button: Button, interaction: Interaction):
@@ -794,6 +806,21 @@ class BackgroundModal(ui.Modal):
 
     async def callback(self, interaction: Interaction):
         await self.parent.update_config(interaction, "image_settings.background_url", self.url.value)
+
+class TextModal(ui.Modal):
+    def __init__(self, parent: WelcomeCustomizer):
+        super().__init__(title="Set Text Image")
+        self.parent = parent
+        self.text = ui.TextInput(
+            label="Text inside the Image",
+            placeholder="Welcome {member}!",
+            default_value="Welcome {member}!",
+            required=True
+        )
+        self.add_item(self.text)
+
+    async def callback(self, interaction: Interaction):
+        await self.parent.update_config(interaction, "image_settings.text", self.text.value)
 
 class ColorPicker(ui.View):
     def __init__(self, parent: WelcomeCustomizer):

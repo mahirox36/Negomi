@@ -14,7 +14,7 @@
 ## 🗺️ Roadmap:
 
 ### Version 0.8:
-Overall Progress: █████████████████░░░ 85% (17/20)
+Overall Progress: ███████████████████░ 94% (18/19)
 - [x] Enhance AI integration to handle more advanced prompts.
 - [ ] Introduce an Achievement System to reward users for their activities: 
     - [x] Core Achievement System [██████████] 100%
@@ -26,15 +26,15 @@ Overall Progress: █████████████████░░░ 8
     - [x] Channel-specific role permissions
     - [x] Forum channel support
     - [x] Implement creator-only import restrictions
-- [x] Enhanced Welcome System with: [████████░░] 75% (6/8)
+- [x] Enhanced Welcome System with: [██████████] 100% (7/7)
     - [x] Customizable welcome images and backgrounds
     - [x] Multiple style options (Image, Text, Embed)
-    - [ ] Real-time preview functionality
-    - [ ] Edit Text in the Image
+    - [x] Edit Text in the Image
     - [x] Adjustable text and avatar positions
     - [x] Font size and color customization
     - [x] Avatar border and size controls
     - [x] Smart caching system for better performance
+    - [ ] Real-time preview functionality (delayed for another version)
 - [x] Web Dashboard Integration: [██████████] 100% (3/3)
     - [x] better Website
     - [x] Real-time bot statistics
