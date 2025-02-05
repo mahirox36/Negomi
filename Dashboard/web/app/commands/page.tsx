@@ -112,7 +112,7 @@ export default function CommandsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.5}}
             className="md:w-1/3 flex gap-2"
           >
             {['all', 'admin', 'slash', 'user'].map((filter) => (
@@ -151,7 +151,7 @@ export default function CommandsPage() {
                   key={category}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: categoryIndex * 0.1 }}
+                  transition={{ duration: 0.3}}
                   className="bg-white/10 backdrop-blur-lg rounded-xl p-8 flex flex-col" // Added flex-col
                 >
                   <motion.h2 
@@ -176,7 +176,6 @@ export default function CommandsPage() {
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ 
                             duration: 0.2,
-                            delay: cmdIndex * 0.05,
                           }}
                           whileHover={{ 
                             scale: 1.02,

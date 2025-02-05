@@ -33,7 +33,7 @@ export default function QuickStart() {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
+              transition={{ duration: 0.5}}
               viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
               className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-filter backdrop-blur-lg"

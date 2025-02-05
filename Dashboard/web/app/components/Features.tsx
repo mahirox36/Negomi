@@ -7,37 +7,47 @@ export default function Features() {
     {
       icon: "🛡️",
       title: "Advanced Moderation",
-      description:
-        "Comprehensive moderator management system with role hierarchy, token authentication, and automated security features.",
+      description: "Comprehensive moderator management system with role hierarchy, token authentication, and automated security features.",
     },
     {
-      icon: "🎭",
+      icon: "🎭", 
       title: "Custom Roles",
-      description:
-        "Let members create and customize their own roles. Perfect for communities and servers with boosters!",
+      description: "Create and customize unique roles with advanced permissions and appearance settings for your community members.",
     },
     {
       icon: "🔊",
       title: "Temporary Voice",
-      description:
-        "Dynamic voice channels with full user control - customize names, limits, privacy settings and more.",
+      description: "Create dynamic voice channels with customizable names, user limits, privacy settings, and full member control.",
     },
     {
       icon: "🤖",
-      title: "AI Integration",
-      description:
-        "Engage with an intelligent AI assistant that can help manage your server and interact with members.",
+      title: "AI Integration", 
+      description: "Intelligent AI assistant that enhances server management and provides engaging member interactions and support.",
     },
     {
       icon: "👋",
-      title: "Welcome System",
-      description: "Greet new members with customizable welcome messages and beautifully generated welcome images.",
+      title: "Advanced Welcome System",
+      description: "Fully customizable welcome system with personalized messages, image generation, and extensive configuration options.",
     },
     {
       icon: "💾",
-      title: "Backup System",
-      description:
-        "Comprehensive server backups including channels, roles, permissions and more for complete peace of mind.",
+      title: "Comprehensive Backup",
+      description: "Complete server backup solution covering channels, roles, permissions, and settings for maximum data protection.",
+    },
+    {
+      icon: "🎯",
+      title: "Achievement System",
+      description: "Built-in achievement system that rewards member participation and engagement with predefined ranks.",
+    },
+    {
+      icon: "⏳",
+      title: "Time Capsule",
+      description: "Schedule and store messages for future delivery with customizable timing and delivery options.",
+    },
+    {
+      icon: "🎮",
+      title: "Fun Commands",
+      description: "Extensive collection of interactive commands and mini-games to boost community engagement and activity.",
     },
   ]
 
@@ -56,12 +66,12 @@ export default function Features() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+        {features.map((feature, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.5 }}  // Removed index * 0.1 delay
               viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
               className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-filter backdrop-blur-lg"
