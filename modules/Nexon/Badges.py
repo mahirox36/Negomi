@@ -292,14 +292,14 @@ class BadgeEditor(QMainWindow):
         # Save to JSON
         json_file = os.path.join(self.output_folder, "badges.json")
         if os.path.exists(json_file):
-            with open(json_file, "r") as file:
+            with open(json_file, "r", encoding="utf-8") as file:
                 data = json.load(file)
         else:
             data = []
         
         data.append(badge_data)
-        with open(json_file, "w") as file:
-            json.dump(data, file, indent=4)
+        with open(json_file, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
         
         QMessageBox.information(self, "Success", "Badge saved successfully!")
         self.clear_inputs()
@@ -324,7 +324,7 @@ class BadgeManager:
     
     def load_badges(self) -> Dict[str, Badge]:
         try:
-            with open("Assets/Badges/badges.json", "r") as f:
+            with open("Assets/Badges/badges.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return {badge_data["title"]: Badge.from_dict(badge_data) 
                         for badge_data in data}
@@ -354,7 +354,6 @@ class BadgeManager:
                 return check_numeric_requirement(self.user_data.favorite_commands.get(cmd_name, 0))
         elif req.type == RequirementType.TIME_BASED:
             current_time = datetime.now()
-            logger.info(current_time)
             try:
                 time_pattern = r'(\d{1,2}):(\d{2})\s*(AM|PM)?'
                 match = re.match(time_pattern, req.specific_value.strip().upper())
@@ -409,8 +408,9 @@ class BadgeManager:
             
             elif req.type == RequirementType.EMOJI_USED:
                 emoji_pattern = r'[\U0001F300-\U0001F9FF]|[\u2600-\u26FF\u2700-\u27BF]'
+                emojisExtracted = extract_emojis(message.content)
                 if req.specific_value:
-                    return req.specific_value in message.content
+                    return set(list(req.specific_value)) & set(emojisExtracted)
                 emojis_in_msg = len(re.findall(emoji_pattern, message.content))
                 return check_numeric_requirement(emojis_in_msg)
 
@@ -443,7 +443,6 @@ class BadgeManager:
             if badge.title not in self.user_data.badges:
                 requirements_met = all(await asyncio.gather(*(self.check_requirement(req, message) for req in badge.requirements)))
                 if requirements_met:
-                    logger.info(f"User earned badge: {badge.title}")
                     earned_badges.append(badge)
                     self.user_data.badges.add(badge.title)
                     self.user_data.reputation += badge.points

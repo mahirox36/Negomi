@@ -1,19 +1,5 @@
 [
     {
-        "title": "The Femboy Kisser",
-        "description": "Send Any femboy emoji",
-        "image_path": "Assets/Badges/the_femboy_kisser_badge.jpg",
-        "requirements": [
-            {
-                "type": "emoji_used",
-                "value": 1,
-                "specific_value": "\ud83d\udc57\n\ud83c\udf80\n\ud83d\udc9d\n\ud83c\udf38",
-                "comparison": "equal"
-            }
-        ],
-        "points": 10
-    },
-    {
         "title": "Meet The Creator",
         "description": "Meet the owner of the bot",
         "image_path": "Assets/Badges/meet_the_creator_badge.jpg",
@@ -212,5 +198,19 @@
             }
         ],
         "points": 55
+    },
+    {
+        "title": "The Femboy Kisser",
+        "description": "Send Any femboy emoji",
+        "image_path": "Assets/Badges/the_femboy_kisser_badge.jpg",
+        "requirements": [
+            {
+                "type": "emoji_used",
+                "value": 1,
+                "specific_value": "👗🎀💝🌸",
+                "comparison": "equal"
+            }
+        ],
+        "points": 10
     }
 ]
