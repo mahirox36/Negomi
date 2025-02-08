@@ -15,19 +15,86 @@
 
 ## 🗺️ Roadmap
 
-### Version 0.9 (working on roadmap)
+### Version 0.9
 
-- Implement a Unique User Card System to showcase personalized user stats.
-- Add a streamlined Ticket System for efficient issue management.
-- Introduce a Level System with rewards to encourage user engagement.
+- Overall Progress: ░░░░░░░░░░░░░░░░░░░░ 0% (0/35)
+
+#### Advanced User Profile System
+
+- Implement a Dynamic User Card System: [░░░░░░░░░░] 0% (0/7)
+  - [ ] Customizable Profile Picture with frames and effects
+  - [ ] Detailed User Statistics Dashboard
+  - [ ] Interactive User Data Visualization (messages, activity, etc.)
+  - [ ] Customizable Background Themes and Animations
+  - [ ] Achievement Showcase Section
+  - [ ] Social Links Integration
+  - [ ] Profile Badges Display Area
+
+#### Enhanced Ticket Management
+
+- Comprehensive Ticket System: [░░░░░░░░░░] 0% (0/12)
+  - [ ] Multi-Action Ticket Controls (close, escalate, transfer, prioritize)
+  - [ ] Advanced Confirmation System with Reason Logging
+  - [ ] Rich Text Editor for Ticket Messages
+  - [ ] Ticket Analytics Dashboard for Admins
+  - [ ] Two-Type Channel System:
+    - [ ] Thread-Based Tickets
+    - [ ] Dedicated Channel Tickets
+  - [ ] Unique Ticket ID Generator with Prefix Options
+  - [ ] Custom Ticket Categories and Tags
+  - [ ] Ticket Priority Levels
+  - [ ] Auto-Assignment System
+  - [ ] Response Templates Library
+  - [ ] Time Tracking and SLA Monitoring
+  - [ ] Ticket History and Audit Log
+
+#### Advanced Leveling System
+
+- Dynamic Level Progression: [░░░░░░░░░░] 0% (0/8)
+  - [ ] Custom Level Configuration:
+    - `/level add [Name] [Color] [XP Required] [Optional Role] [Level Icon]`
+  - [ ] Interactive Level Management Dashboard
+  - [ ] Flexible XP Modifiers:
+    - Voice Activity: `[Time in Voice] × [Channel Multiplier] = XP`
+    - Text Activity: `[Message Count] × [Channel Type Bonus] = XP`
+  - [ ] Activity Tracking Options:
+    - [ ] Separate Voice/Text XP Tracking
+    - [ ] Combined XP System
+  - [ ] Anti-Abuse Protection System
+  - [ ] Custom Level-Up Announcements
+  - [ ] Role Rewards Automation
+  - [ ] XP Boosters and Events System
+
+#### Custom Achievement Framework
+
+- Guild Achievement System: [░░░░░░░░░░] 0% (0/8)
+  - [ ] Achievement Creation Command:
+    `/badges create [Title] [Description] [Image] [Points]`
+  - [ ] Interactive Achievement Builder:
+    - [ ] Requirement Management Panel
+    - [ ] Progress Tracking System
+    - [ ] Reward Configuration
+  - [ ] Achievement Categories:
+    - [ ] Server Activity
+    - [ ] Community Engagement
+    - [ ] Special Events
+    - [ ] Custom Milestones
+  - [ ] Achievement Management Commands:
+    - [ ] `/badges edit` - Modify existing achievements
+    - [ ] `/badges list` - View all achievements
+    - [ ] `/badges delete` - Remove achievements
+    - [ ] `/badges preview` - Preview achievement appearance
+  - [ ] Progress Tracking Dashboard
+  - [ ] Achievement Notification System
+  - [ ] Leaderboard Integration
+  - [ ] Achievement Statistics and Analytics
 
 ### Version 0.10
 
 - Develop a Server Economy with virtual currency and rewards.
 - Create engaging Custom mini games for community interaction.
-- Add a Server Settings Customizer for admins to manage features effortlessly.
+- Add a Server Page in Dashboard for admins to manage features effortlessly.
 - Expand the Level System with additional rewards and customization options.
-- Enhance the Achievement System, allowing guilds to make their own Achievement
 
 ### *More in Future Updates*
 

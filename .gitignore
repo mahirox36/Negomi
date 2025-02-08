@@ -17,3 +17,5 @@ Secrets Ideas.md
 Assets/Badges/*.jpg
 Assets/Badges/*.jpeg
 Assets/Badges/*.png
+.venv
+Roadmap/
