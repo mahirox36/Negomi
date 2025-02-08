@@ -1,6 +1,6 @@
 # Negomi Discord Bot 0.8
 
-## 🚀 Features:
+## 🚀 Features
 
 - 🛡️ Advanced Moderation - Complete moderator system with role hierarchy and security automation
 - 🎭 Custom Roles - Member-created roles with full customization options
@@ -13,7 +13,7 @@
 - 🎛️ Web Dashboard - Real-time statistics and command management
 - 🎮 Fun Commands - Engaging community interactions
 
-## 🗺️ Roadmap:
+## 🗺️ Roadmap
 
 ### Version 0.9 (working on roadmap)
 
@@ -31,7 +31,7 @@
 
 ### *More in Future Updates*
 
-## 📚 Custom Libraries for This Bot:
+## 📚 Custom Libraries for This Bot
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
 - [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, Users Info collecting System, IPC Server, Logger, Data System, Badge System and Nextcord Shortcuts
