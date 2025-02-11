@@ -420,7 +420,7 @@ class Welcome(commands.Cog):
             )
             embed.set_footer(text="Use /welcome customize to personalize the appearance")
             
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed,ephemeral=True)
             
         except Exception as e:
             logger.error(f"Welcome setup error in {ctx.guild_id}: {e}")
@@ -465,7 +465,7 @@ class Welcome(commands.Cog):
 • Colors - Change text and border colors
         """)
 
-        await ctx.send(embed=embed, view=WelcomeCustomizer(config))
+        await ctx.send(embed=embed, view=WelcomeCustomizer(config), ephemeral=True)
 
     @welcome.subcommand("style", "Change welcome message style")
     @feature()
@@ -492,13 +492,13 @@ class Welcome(commands.Cog):
             # Check feature and get cached config
             await check_feature_inside(member.guild.id, cog=self)
             config = await self.get_welcome_config(member.guild.id)
-            if not config or not config.enabled:
+            if not config or not config.get("channel_id"):
                 return
 
             # Get channel with validation
-            channel = member.guild.get_channel(config.channel_id)
+            channel = member.guild.get_channel(config.get("channel_id"))
             if not channel:
-                logger.warning(f"Welcome channel {config.channel_id} not found in {member.guild.id}")
+                logger.warning(f"Welcome channel {config.get("channel_id")} not found in {member.guild.id}")
                 return
 
             # Send welcome message with proper rate limiting
@@ -540,11 +540,11 @@ class Welcome(commands.Cog):
                     # Get guild and config
                     guild = self.client.get_guild(guild_id)
                     config = await self.get_welcome_config(guild_id)
-                    if not guild or not config or not config.enabled:
+                    if not guild or not config or not config.get("enabled"):
                         continue
 
                     # Validate channel
-                    channel = guild.get_channel(config.channel_id)
+                    channel = guild.get_channel(config.get("channel_id"))
                     if not channel:
                         continue
 
