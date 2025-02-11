@@ -1,7 +1,7 @@
 .secrets/
 logs/
 __pycache__/
-test*
+*test*
 Data/
 *.bat
 Todo*
