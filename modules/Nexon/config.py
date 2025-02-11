@@ -6,12 +6,13 @@ from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.28"
+VERSION = "0.29"
 
 
 @dataclass
 class DashboardConfig:
     enabled: bool = True
+    domain: str = ""
 
 @dataclass
 class GeneralConfig:
@@ -66,10 +67,6 @@ class WelcomeConfig:
     text_color_rgb: tuple[int, int, int] = (70, 243, 243)
 
 @dataclass
-class CommandsSettings:
-    enable_advanced_viewing: bool = True
-
-@dataclass
 class AISettings:
     enabled: bool = False
     ip: str = "127.0.0.1"
@@ -82,12 +79,9 @@ class Bot_Config:
     Logger: LoggerConfig = field(default_factory=LoggerConfig)
     General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
     Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
-    Commands_Settings: CommandsSettings = field(default_factory=CommandsSettings)
     AI: AISettings = field(default_factory=AISettings)
     Dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234, 43214321])
-    AI_AllowedServers: List[int] = field(default_factory=lambda: [12341234, 43214321])
-    AI_AllowedUsersID: List[int] = field(default_factory=lambda: [43214321, 12341234])
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the config to a dictionary format."""
@@ -102,9 +96,6 @@ class Bot_Config:
             "Welcome": {
                 k: v for k, v in self.Welcome_Settings.__dict__.items()
             },
-            "Commands": {
-                k: v for k, v in self.Commands_Settings.__dict__.items()
-            },
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
@@ -112,8 +103,6 @@ class Bot_Config:
                 k: v for k, v in self.Dashboard.__dict__.items()
             },
             "TESTING GUILDS ID": self.Testing_guilds_id,
-            "AI_AllowedServers": self.AI_AllowedServers,
-            "AI_AllowedUsersID": self.AI_AllowedUsersID
         }
     
     @classmethod
@@ -124,12 +113,9 @@ class Bot_Config:
             Logger=LoggerConfig(**data.get("Logger", {})),
             General_Embeds_Colour=ColorConfig.from_dict(data.get("Embeds Colour", {})),
             Welcome_Settings=WelcomeConfig(**data.get("Welcome", {})),
-            Commands_Settings=CommandsSettings(**data.get("Commands", {})),
             AI=AISettings(**data.get("AI", {})),
             Dashboard=DashboardConfig(**data.get("Dashboard", {})),
             Testing_guilds_id=data.get("TESTING GUILDS ID", []),
-            AI_AllowedServers=data.get("AI_AllowedServers", []),
-            AI_AllowedUsersID=data.get("AI_AllowedUsersID", [])
         )
 
 @dataclass
@@ -146,12 +132,9 @@ class ConfigManager:
             "Logger",
             "Embeds Colour",
             "Welcome",
-            "Commands",
             "AI",
             "Dashboard",
-            "TESTING GUILDS ID",
-            "AI_AllowedServers",
-            "AI_AllowedUsersID"
+            "TESTING GUILDS ID"
         ]
         self.config.set_layout(self.layout)
         self.BotConfig: Optional[Bot_Config] = None
@@ -269,9 +252,6 @@ Level = BotConfig.Logger.level
 colors = BotConfig.General_Embeds_Colour
 colours = BotConfig.General_Embeds_Colour
 
-# Commands
-EnableAdvanceViewing = BotConfig.Commands_Settings.enable_advanced_viewing
-
 #AI
 enableAI = BotConfig.AI.enabled
 ip = BotConfig.AI.ip
@@ -291,9 +271,8 @@ textColor = BotConfig.Welcome_Settings.text_color_rgb
 
 # Advanced Settings
 TESTING_GUILD_ID = BotConfig.Testing_guilds_id
-AI_AllowedServers = BotConfig.AI_AllowedServers
-AI_AllowedUsersID = BotConfig.AI_AllowedUsersID
 
 
 # Dashboard
 dashboard_enabled = BotConfig.Dashboard.enabled
+dashboard_domain = BotConfig.Dashboard.domain

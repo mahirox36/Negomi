@@ -81,7 +81,7 @@ class Other(commands.Cog):
         await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.",ephemeral=True)
     @slash_command(name="website", description="The Bot's Website.")
     async def website(self, ctx: init):
-        link = f"http://{get("https://api64.ipify.org?format=text").text}:25400"
+        link = f"http://{get("https://api64.ipify.org?format=text").text}:25400" if dashboard_domain == "" else dashboard_domain
         button = Button(label="Go to Website", url=link, style=ButtonStyle.primary)
 
         # Create a view and add the button
