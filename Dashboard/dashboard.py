@@ -31,7 +31,7 @@ class Dashboard:
 
         # Start npm process
         npm_process = await asyncio.create_subprocess_shell(
-            "cd Dashboard/web && npm run dev",
+            "cd Dashboard/web && node .next/standalone/server.js",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
