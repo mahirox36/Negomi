@@ -208,7 +208,6 @@ class Welcome(commands.Cog):
                 logger.debug(f"Using cached background for URL: {url}")
                 return self.background_cache[url].copy()
 
-            logger.info(f"Fetching background from URL: {url}")
             
             # Validate URL format
             if not url.startswith(('http://', 'https://')):
@@ -238,8 +237,6 @@ class Welcome(commands.Cog):
                 if image.mode != 'RGBA':
                     logger.error(f"Failed to convert image to RGBA mode. Current mode: {image.mode}")
                     raise ValueError("Failed to convert image to RGBA")
-
-                logger.info(f"Successfully loaded background image. Size: {image.size}")
                 
                 # Cache the successful image
                 self.background_cache[url] = image
