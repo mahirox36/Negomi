@@ -155,10 +155,8 @@ class AI(commands.Cog):
 
     @slash_command("ask", "ask Gemini/Llama3.2 AI.", integration_types=[
         IntegrationType.user_install,
-        IntegrationType.guild_install,
     ],
     contexts=[
-        InteractionContextType.guild,
         InteractionContextType.bot_dm,
         InteractionContextType.private_channel,
     ],)
