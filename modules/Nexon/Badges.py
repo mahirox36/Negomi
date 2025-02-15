@@ -36,16 +36,17 @@ class RequirementType(Enum):
     CUSTOM_EMOJI_USED = "custom_emoji_used"
     ATTACHMENT_SENT = "attachment_sent"
     MENTION_COUNT = "mention_count"
+    UNIQUE_MENTION_COUNT = "unique_mention_count"
     LINK_SHARED = "link_shared"
     CONTENT_MATCH = "content_match"
     CHANNEL_ACTIVITY = "channel_activity"
     TIME_BASED = "time_based"
     OWNER_INTERACTION = "owner_interaction"
     INACTIVE_DURATION = "inactive_duration"
-    MESSAGE_RATE = "message_rate"
+    # MESSAGE_RATE = "message_rate"
     UNIQUE_EMOJI_COUNT = "unique_emoji_count"
     SPECIFIC_EMOJI = "specific_emoji"
-    REVIVAL = "revival"
+    # REVIVAL = "revival"
     ALL_COMMANDS = "all_commands"
 
 class ComparisonType(Enum):
@@ -345,6 +346,8 @@ class BadgeManager:
             return check_numeric_requirement(self.user_data.attachments_sent)
         elif req.type == RequirementType.MENTION_COUNT:
             return check_numeric_requirement(self.user_data.mentions_count)
+        elif req.type == RequirementType.UNIQUE_MENTION_COUNT:
+            return check_numeric_requirement(len(self.user_data.unique_users_mentioned))
         elif req.type == RequirementType.LINK_SHARED:
             return check_numeric_requirement(self.user_data.links_shared)
         elif req.type == RequirementType.CHANNEL_ACTIVITY:
