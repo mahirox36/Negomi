@@ -36,7 +36,7 @@ from nextcord import (
     Permissions, Role, slash_command, Activity, Attachment,
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
-    ui, SelectOption, Interaction, SlashOption, user_command, VoiceState,
+    ui, SelectOption, Interaction, SlashOption, user_command, VoiceState, message_command,
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
     IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage, ForumTag, SortOrderType, ForumLayoutType, VoiceRegion, VideoQualityMode
 )
