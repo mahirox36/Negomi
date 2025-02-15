@@ -1,5 +1,10 @@
 # Negomi Discord Bot 0.8
 
+## 🤖 Add Bot
+
+To add the bot to your server, click the link below:
+[Click here to add the bot](https://discord.com/discovery/applications/1304926952552923156)
+
 ## 🚀 Features
 
 - 🛡️ Advanced Moderation - Complete moderator system with role hierarchy and security automation
