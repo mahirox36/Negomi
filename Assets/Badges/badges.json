@@ -1,7 +1,7 @@
 [
     {
-        "title": "Meet The Creator",
-        "description": "Meet the owner of the bot",
+        "title": "Bot Creator's Confidant",
+        "description": "Have a direct interaction with the bot's owner",
         "image_path": "Assets/Badges/meet_the_creator_badge.jpg",
         "requirements": [
             {
@@ -28,7 +28,7 @@
         "points": 100
     },
     {
-        "title": "Monk Mode Master",
+        "title": "Bro I was Busy",
         "description": "Don't reply for a day",
         "image_path": "Assets/Badges/monk_mode_master_badge.jpeg",
         "requirements": [
@@ -177,8 +177,8 @@
         "image_path": "Assets/Badges/engagement_king queen_badge.jpeg",
         "requirements": [
             {
-                "type": "message_rate",
-                "value": 50,
+                "type": "unique_mention_count",
+                "value": 100,
                 "specific_value": "",
                 "comparison": "greater_equal"
             }
