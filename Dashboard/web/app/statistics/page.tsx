@@ -285,7 +285,7 @@ export default function StatisticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.guilds
               .sort((a, b) => b.member_count - a.member_count)
-              .slice(0, 6)
+              .slice(0, 9)
               .map((guild) => (
                 <motion.div
                   key={guild.id}
