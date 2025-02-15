@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from nextcord.ext import ipc
 from nextcord.ext.commands import Bot
-from nextcord import UserApplicationCommand, SlashApplicationCommand, ForumChannel, BaseApplicationCommand
+from nextcord import UserApplicationCommand, SlashApplicationCommand, ForumChannel, BaseApplicationCommand, IntegrationType
 from typing import Callable, Dict, List, Optional, Any
 from threading import Thread
 import psutil
@@ -80,15 +80,22 @@ class IPCManager:
                                 admin_only = False
                         except:
                             admin_only = False
-
+                        try: 
+                            userInstalled = IntegrationType.user_install in command.integration_types
+                            guildInstalled = IntegrationType.guild_install in command.integration_types
+                        except:
+                            userInstalled= False
+                            guildInstalled= True
                         
                         # Base command data
                         base_data = {
-                            "admin_only": admin_only,
-                            "permissions": list(set(required_permissions)),
-                            "guild_only": getattr(command, 'guild_only', False),
-                            "cooldown": getattr(command, 'cooldown', None),
-                            "category": command.parent_cog.__class__.__name__ if command.parent_cog else "No Category",
+                            "admin_only"        : admin_only,
+                            "permissions"       : list(set(required_permissions)),
+                            "guild_only"        : getattr(command, 'guild_only', False),
+                            "cooldown"          : getattr(command, 'cooldown', None),
+                            "category"          : command.parent_cog.__class__.__name__ if command.parent_cog else "No Category",
+                            "user_installed"    : userInstalled,
+                            "guild_installed"   : guildInstalled,
                         }
 
                         if isinstance(command, UserApplicationCommand):
@@ -97,7 +104,7 @@ class IPCManager:
                                 "name": command.name,
                                 "description": command.description or "User context command",
                                 "usage": f"Right-click user → Apps → {command.name}",
-                                "type": "user",
+                                "type": "member",
                                 "examples": getattr(command, 'examples', []),
                             }
                             commands.append(commandJson)
