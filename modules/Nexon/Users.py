@@ -100,9 +100,12 @@ class UserData:
     birthdate: Optional[datetime] = None
     
     # Achievement Tracking
-    badges: Set[str] = field(default_factory=set)
+    badges: Set[int] = field(default_factory=set)
     milestones: Dict[str, any] = field(default_factory=dict) #TODO
     reputation: int = 0 #TODO
+    
+    #Version
+    version: int = 1
 
     custom_data: Dict[str, Any] = field(default_factory=dict)
     
@@ -123,6 +126,20 @@ class UserData:
     def __setitem__(self, key: str, value: Any) -> None:
         self.set_custom_data(key, value)
     
+    def migrate_user_data(data: dict) -> dict:
+        version = data.get('version', 0)  # Default to version 0 if not present
+        if version == 0:
+            # Migrate from version 0 to version 1
+            data['version'] = 1
+            if data["badges"]:
+                data["badges"] = set()
+
+        # if version == 1:
+        #     data['version'] = 2
+        #     if 'another_new_field' not in data:
+        #         data['another_new_field'] = 'default_value'
+        return data
+    
     @classmethod
     def from_dict(cls, data: Optional[dict] = None) -> 'UserData':
         """
@@ -132,6 +149,7 @@ class UserData:
             data = {}
 
         data = data.copy()
+        data = cls.migrate_user_data(data)
 
         # Extract and handle custom data separately
         custom_data = data.pop('custom_data', {})
@@ -262,6 +280,9 @@ class UserData:
             "badges": list(self.badges),
             "milestones": self.milestones,
             "reputation": self.reputation,
+            
+            #Version
+            'version': self.version,
             
             # Bot Statistics
             "bot_stats": self.bot_stats.to_dict() if self.bot_stats else None

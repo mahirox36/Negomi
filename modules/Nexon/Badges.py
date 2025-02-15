@@ -107,6 +107,7 @@ class BadgeRequirement:
 
 @dataclass
 class Badge:
+    id: int
     title: str
     description: str
     image_path: str
@@ -115,6 +116,7 @@ class Badge:
     
     def to_dict(self) -> dict:
         return {
+            "id": self.id,
             "title": self.title,
             "description": self.description,
             "image_path": self.image_path,
@@ -125,6 +127,7 @@ class Badge:
     @classmethod
     def from_dict(cls, data: dict) -> 'Badge':
         return cls(
+            id=data.get("id"),
             title=data["title"],
             description=data["description"],
             image_path=data["image_path"],
@@ -138,8 +141,13 @@ class BadgeEditor(QMainWindow):
         self.setWindowTitle("Badge Editor")
         self.setGeometry(100, 100, 800, 600)
         self.setStyleSheet("font-family: Arial; font-size: 14px;")
-        
+        self.badge_manager = BadgeManager
         self.init_ui()
+    def get_next_badge_id(self) -> int:
+        """Get the next available badge ID."""
+        if not self.badge_manager.badges:
+            return 1 
+        return max(self.badge_manager.badges.keys()) + 1
         
     def init_ui(self):
         self.main_widget = QWidget()
@@ -264,6 +272,7 @@ class BadgeEditor(QMainWindow):
             QMessageBox.warning(self, "No Requirements", "Please add at least one requirement.")
             return
         
+        badge_id = self.get_next_badge_id()  
         # Save image
         image_name = f"{title.lower().replace(' ', '_')}_badge.{self.image_path.split('.')[-1]}"
         saved_image_path = os.path.join(self.output_folder, image_name.replace("/", " "))
@@ -283,6 +292,7 @@ class BadgeEditor(QMainWindow):
         
         # Create badge data
         badge_data = {
+            "id": badge_id,
             "title": title,
             "description": description,
             "image_path": f"Assets/Badges/{image_name.replace("/", " ")}",
@@ -290,17 +300,9 @@ class BadgeEditor(QMainWindow):
             "points": points
         }
         
-        # Save to JSON
-        json_file = os.path.join(self.output_folder, "badges.json")
-        if os.path.exists(json_file):
-            with open(json_file, "r", encoding="utf-8") as file:
-                data = json.load(file)
-        else:
-            data = []
-        
-        data.append(badge_data)
-        with open(json_file, "w", encoding="utf-8") as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
+        new_badge = Badge.from_dict(badge_data)
+        self.badge_manager.badges[badge_id] = new_badge
+        self.badge_manager.save_badges(self.badge_manager.badges)
         
         QMessageBox.information(self, "Success", "Badge saved successfully!")
         self.clear_inputs()
@@ -319,7 +321,7 @@ class BadgeEditor(QMainWindow):
         self.requirements.clear()
 
 class BadgeManager:
-    def __init__(self, user_data: 'UserData'):
+    def __init__(self, user_data: Optional['UserData']):
         self.user_data = user_data
         self.badges = self.load_badges()
     
@@ -443,13 +445,12 @@ class BadgeManager:
     async def check_badges(self, message: Optional[Message | Interaction] = None) -> List[Badge]:
         earned_badges = []
         for badge in self.badges.values():
-            if badge.title not in self.user_data.badges:
+            if badge.id not in self.user_data.badges:
                 requirements_met = all(await asyncio.gather(*(self.check_requirement(req, message) for req in badge.requirements)))
                 if requirements_met:
                     earned_badges.append(badge)
-                    self.user_data.badges.add(badge.title)
+                    self.user_data.badges.add(badge.id)
                     self.user_data.reputation += badge.points
-
         return earned_badges
 
 if __name__ == "__main__":
