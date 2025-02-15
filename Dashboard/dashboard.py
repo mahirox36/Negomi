@@ -18,10 +18,10 @@ class Dashboard:
     def setup_routes(self):
         @self.app.get("/get_all_commands")
         async def get_all_commands(request: Request):
-            stats = await self.ipc.request("get_all_commands")
+            stats = await self.ipc.request("get_commands")
             return stats
         @self.app.get("/get_detailed_stats")
-        async def get_detailed_stats(request: Request):
+        async def get_all_commands(request: Request):
             stats = await self.ipc.request("get_detailed_stats")
             return stats
 
@@ -31,7 +31,7 @@ class Dashboard:
 
         # Start npm process
         npm_process = await asyncio.create_subprocess_shell(
-            "cd Dashboard/web && npm run start",
+            "cd Dashboard/web && npm run dev",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )

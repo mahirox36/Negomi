@@ -2,12 +2,9 @@
 import { NextResponse } from "next/server"
 import { getAllCommands } from "@/lib/ipc"
 
-export const dynamic = 'force-dynamic'
-export const fetchCache = 'force-no-store'
-
 export async function GET() {
   try {
-    const data = await getAllCommands() as any[]
+    const data = await getAllCommands()
     
     if (data && typeof data === 'object' && 'commands' in data) {
       return NextResponse.json(data.commands)
