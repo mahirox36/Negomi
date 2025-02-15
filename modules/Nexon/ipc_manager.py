@@ -63,11 +63,11 @@ class IPCManager:
                 "ping": round(self.bot.latency * 1000),
                 "uptime": (datetime.now() - self.bot.start_time).total_seconds()
             }
-        @self.route("get_commands")
-        async def get_commands(_):
+        @self.route("get_all_commands")
+        async def get_all_commands(_):
             return get_commands_func()
 
-        def get_commands_func(_: Optional[Any]):
+        def get_commands_func():
             if not self.commands:
                 commands = []
                 for command in self.bot.get_application_commands():
@@ -185,7 +185,7 @@ class IPCManager:
                 "voice_connections": len(self.bot.voice_clients),
                 "latency": round(self.bot.latency * 1000),
                 "uptime": (datetime.now() - self.bot.start_time).total_seconds(),
-                "command_count": len(get_commands_func("")),
+                "command_count": len(get_commands_func()),
                 "cogs_loaded": len(self.bot.cogs),
                 "shard_count": self.bot.shard_count or 1,
                 "current_shard": getattr(self.bot, "shard_id", 0),

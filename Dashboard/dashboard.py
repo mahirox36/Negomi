@@ -18,10 +18,10 @@ class Dashboard:
     def setup_routes(self):
         @self.app.get("/get_all_commands")
         async def get_all_commands(request: Request):
-            stats = await self.ipc.request("get_commands")
+            stats = await self.ipc.request("get_all_commands")
             return stats
         @self.app.get("/get_detailed_stats")
-        async def get_all_commands(request: Request):
+        async def get_detailed_stats(request: Request):
             stats = await self.ipc.request("get_detailed_stats")
             return stats
 
