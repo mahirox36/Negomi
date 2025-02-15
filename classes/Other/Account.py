@@ -1,5 +1,7 @@
 from modules.Nexon import *
 
+#TODO: make a badge list command with lock emoji if u didn't open it
+
 class MainPanel(View):
     def __init__(self, user: Member | User):
         super().__init__(timeout=900)

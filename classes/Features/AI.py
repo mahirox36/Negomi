@@ -15,6 +15,7 @@ For conversations with {name2}, maintain a cute tone as he is your {relationship
 Communication takes place in Discord DMs or servers, so keep your messages under 2000 characters. {other_stuff} 
 """
 
+#TODO: add a summarize message command
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -153,13 +154,46 @@ class AI(commands.Cog):
             
         await ctx.send(embed=error_embed("Public AI chat is already disabled", "AI Disabled!"))
 
+    
+    @message_command("Summarize", integration_types=[
+        IntegrationType.user_install,
+    ],
+    contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel,
+    ])
+    async def summarize(self, ctx: init, target:Message):
+        ctx.response.defer(ephemeral=True)
+        message = target.content
+        prompt = f"Please provide a concise summary of the following text:\n\n{message}"
+        if self.gemini:
+            response = self.gemini.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=1024,
+                    temperature=0.3
+                )
+            )
+            if len(response.text) > 4096:
+                split_texts = self.split_response(response.text)
+                return await ctx.send(embeds=[info_embed(text, title="Summary") for text in split_texts])
+            await ctx.send(embed=info_embed(response.text, title="Summary"))
+        else:
+            response = generate(prompt, "llama3.2")
+            if len(response) > 4096:
+                split_texts = self.split_response(response)
+                return await ctx.send(embeds=[info_embed(text, title="Summary") for text in split_texts])
+            await ctx.send(embed=info_embed(response, title="Summary"))
+    
     @slash_command("ask", "ask Gemini/Llama3.2 AI.", integration_types=[
         IntegrationType.user_install,
     ],
     contexts=[
         InteractionContextType.bot_dm,
         InteractionContextType.private_channel,
-    ],)
+    ])
     async def ask(self, ctx:init, message: str, ephemeral: bool=False):
         await ctx.response.defer(ephemeral=ephemeral)
         if self.gemini:

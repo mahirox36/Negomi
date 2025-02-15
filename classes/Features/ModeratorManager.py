@@ -1,7 +1,6 @@
 from datetime import timedelta
 from modules.Nexon import *
 
-#TODO: Highly Customable
 class ModeratorManager(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
