@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 from rich import print as pprint
 
-VERSION = "0.29"
+VERSION = "0.30"
 
 
 @dataclass
@@ -72,6 +72,7 @@ class AISettings:
     ip: str = "127.0.0.1"
     allow_all_servers: bool = False
     allow_all_users: bool = False
+    Gemini_API: str = ""
 
 @dataclass
 class Bot_Config:
@@ -257,6 +258,7 @@ enableAI = BotConfig.AI.enabled
 ip = BotConfig.AI.ip
 allowAllServers = BotConfig.AI.allow_all_servers
 allowAllUsers  = BotConfig.AI.allow_all_users
+Gemini_API  = BotConfig.AI.Gemini_API
 
 # Welcome
 Welcome_enabled = BotConfig.Welcome_Settings.enabled

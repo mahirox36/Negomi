@@ -1,6 +1,8 @@
 from json import dumps, loads
 from modules.Nexon import *
 from typing import Dict, Optional
+from google import genai
+from google.genai import types
 
 
 system = """
@@ -23,6 +25,7 @@ class AI(commands.Cog):
             "active_threads": {}    # user_id: thread_id
         })
         self.ready = False
+        self.gemini: Optional[genai.Client] = genai.Client(api_key=Gemini_API) if Gemini_API else None
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -120,7 +123,10 @@ class AI(commands.Cog):
         await ctx.send(embed=info_embed(f"Created private chat thread {thread.mention}", "AI Created!"))
         await thread.send(f"Hello {ctx.user.mention}! How can I help you today?")
 
-    @ai.subcommand(name="set_public", description="Set channel for public AI chat")
+    @ai.subcommand(name="public")
+    async def public(self, ctx: init):
+        pass
+    @public.subcommand(name="set", description="Set channel for public AI chat")
     @has_permissions(administrator=True)
     async def set_public(self, ctx: init, channel: TextChannel):
         public_channels = self.settings.get("public_channels", {})
@@ -130,7 +136,10 @@ class AI(commands.Cog):
         
         await ctx.send(embed=info_embed(f"Set {channel.mention} as public AI chat channel", "AI Enabled!"))
 
-    @ai.subcommand(name="disable_public", description="Disable public AI chat")
+    def split_response(response_text, max_length=4096):
+        return [response_text[i:i+max_length] for i in range(0, len(response_text), max_length)]
+    
+    @public.subcommand(name="disable", description="Disable public AI chat")
     @has_permissions(administrator=True)
     async def disable_public(self, ctx: init):
         public_channels = self.settings.get("public_channels", {})
@@ -144,6 +153,35 @@ class AI(commands.Cog):
             
         await ctx.send(embed=error_embed("Public AI chat is already disabled", "AI Disabled!"))
 
+    @slash_command("ask", "ask Gemini/Llama3.2 AI.", integration_types=[
+        IntegrationType.user_install,
+        IntegrationType.guild_install,
+    ],
+    contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel,
+    ],)
+    async def ask(self, ctx:init, message: str, ephemeral: bool=False):
+        await ctx.response.defer(ephemeral=ephemeral)
+        if self.gemini:
+            response= self.gemini.models.generate_content(
+                model='gemini-2.0-flash', 
+                contents=message,
+                config=types.GenerateContentConfig(max_output_tokens=1024)
+            )
+            
+            if len(response.text) > 4096:
+                split_texts = self.split_response(response.text)
+                return await ctx.send(embeds=[info_embed(text,title="") for text in split_texts], ephemeral=ephemeral)   
+            await ctx.send(embed=info_embed(response.text,title=""), ephemeral=ephemeral)
+        else:
+            response = generate(message, "llama3.2")
+            if len(response) > 4096:
+                split_texts = self.split_response(response)
+                return await ctx.send(embeds=[info_embed(text,title="") for text in split_texts], ephemeral=ephemeral)
+            await ctx.send(embed=info_embed(response,title=""), ephemeral=ephemeral)
+    
     @ai.subcommand(name="join", description="Join a voice channel")
     async def join(self, ctx:init):
         if not ctx.user.voice:
