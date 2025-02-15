@@ -15,6 +15,7 @@ For conversations with {name2}, maintain a cute tone as he is your {relationship
 Communication takes place in Discord DMs or servers, so keep your messages under 2000 characters. {other_stuff} 
 """
 
+#TODO: add a summarize message command
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client

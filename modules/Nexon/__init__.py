@@ -6,6 +6,9 @@ Core Library with Functions, Classes, Bot Config, Embeds, AI System, and Nextcor
 import nest_asyncio
 nest_asyncio.apply()
 
+
+#TODO: make custom Interaction, Member, Guild
+
 from .DataManager import DataManager
 from .BetterID import BetterID
 from .config import BotConfig
