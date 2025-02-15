@@ -1,6 +1,6 @@
 [
     {
-        "id":1,
+        "id": 1,
         "title": "Bot Creator's Confidant",
         "description": "Have a direct interaction with the bot's owner",
         "image_path": "Assets/Badges/meet_the_creator_badge.jpg",
@@ -15,7 +15,7 @@
         "points": 50
     },
     {
-        "id":2,
+        "id": 2,
         "title": "Touch Grass Champion",
         "description": "Send 1000 messages",
         "image_path": "Assets/Badges/touch_grass_champion_badge.jpeg",
@@ -30,7 +30,7 @@
         "points": 100
     },
     {
-        "id":3,
+        "id": 3,
         "title": "Bro I was Busy",
         "description": "Don't reply for a day",
         "image_path": "Assets/Badges/monk_mode_master_badge.jpeg",
@@ -45,7 +45,7 @@
         "points": 25
     },
     {
-        "id":4,
+        "id": 4,
         "title": "The Truth Speaker",
         "description": "Tell someone that they are a simp",
         "image_path": "Assets/Badges/the_truth_speaker_badge.jpeg",
@@ -66,7 +66,7 @@
         "points": 15
     },
     {
-        "id":5,
+        "id": 5,
         "title": "Early Bird Champion",
         "description": "Send a message at exactly 4:20 AM",
         "image_path": "Assets/Badges/early_bird_champion_badge.jpeg",
@@ -87,7 +87,7 @@
         "points": 30
     },
     {
-        "id":6,
+        "id": 6,
         "title": "Night Owl",
         "description": "Send messages between 9:00 AM and 3:00 AM",
         "image_path": "Assets/Badges/night_owl_badge.jpeg",
@@ -108,7 +108,7 @@
         "points": 50
     },
     {
-        "id":7,
+        "id": 7,
         "title": "Emoji Master",
         "description": "Use 10 unique emojis in a single message",
         "image_path": "Assets/Badges/emoji_master_badge.jpeg",
@@ -123,7 +123,7 @@
         "points": 30
     },
     {
-        "id":8,
+        "id": 8,
         "title": "GIF Enthusiast",
         "description": "Share 50 GIFs",
         "image_path": "Assets/Badges/gif_enthusiast_badge.jpeg",
@@ -138,7 +138,7 @@
         "points": 40
     },
     {
-        "id":9,
+        "id": 9,
         "title": "Community Supporter",
         "description": "Receive 200 reactions on your messages",
         "image_path": "Assets/Badges/community_supporter_badge.jpeg",
@@ -153,7 +153,7 @@
         "points": 60
     },
     {
-        "id":10,
+        "id": 10,
         "title": "Link Scholar",
         "description": "Share 50 unique links in the server",
         "image_path": "Assets/Badges/link_scholar_badge.jpg",
@@ -168,7 +168,7 @@
         "points": 45
     },
     {
-        "id":11,
+        "id": 11,
         "title": "Command Explorer",
         "description": "Use all available bot commands at least once",
         "image_path": "Assets/Badges/command_explorer_badge.jpeg",
@@ -183,7 +183,7 @@
         "points": 100
     },
     {
-        "id":12,
+        "id": 12,
         "title": "Engagement King/Queen",
         "description": "Mention 100 different members",
         "image_path": "Assets/Badges/engagement_king queen_badge.jpeg",
@@ -198,7 +198,7 @@
         "points": 50
     },
     {
-        "id":13,
+        "id": 13,
         "title": "Media Maven",
         "description": "Share 100 attachments (images, files, etc.)",
         "image_path": "Assets/Badges/media_maven_badge.jpeg",
@@ -213,7 +213,7 @@
         "points": 55
     },
     {
-        "id":14,
+        "id": 14,
         "title": "The Femboy Kisser",
         "description": "Send Any femboy emoji",
         "image_path": "Assets/Badges/the_femboy_kisser_badge.jpg",

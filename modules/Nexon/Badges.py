@@ -141,13 +141,14 @@ class BadgeEditor(QMainWindow):
         self.setWindowTitle("Badge Editor")
         self.setGeometry(100, 100, 800, 600)
         self.setStyleSheet("font-family: Arial; font-size: 14px;")
-        self.badge_manager = BadgeManager
+        self.badge_manager = BadgeManager(None)
         self.init_ui()
     def get_next_badge_id(self) -> int:
         """Get the next available badge ID."""
         if not self.badge_manager.badges:
             return 1 
-        return max(self.badge_manager.badges.keys()) + 1
+        max_id = max(badge.id for badge in self.badge_manager.badges.values())
+        return max_id + 1
         
     def init_ui(self):
         self.main_widget = QWidget()
@@ -300,9 +301,17 @@ class BadgeEditor(QMainWindow):
             "points": points
         }
         
-        new_badge = Badge.from_dict(badge_data)
-        self.badge_manager.badges[badge_id] = new_badge
-        self.badge_manager.save_badges(self.badge_manager.badges)
+        # Save to JSON
+        json_file = os.path.join(self.output_folder, "badges.json")
+        if os.path.exists(json_file):
+            with open(json_file, "r", encoding="utf-8") as file:
+                data = json.load(file)
+        else:
+            data = []
+        
+        data.append(badge_data)
+        with open(json_file, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
         
         QMessageBox.information(self, "Success", "Badge saved successfully!")
         self.clear_inputs()
