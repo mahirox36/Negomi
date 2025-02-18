@@ -8,9 +8,9 @@ except:
 from datetime import datetime
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Set, Optional, Union
-from nextcord import Member, Message, User
-from nextcord import Interaction as init, File
-from nextcord.ext.application_checks import check
+from nexon import Guild, Member, Message, User
+from nexon import Interaction as init, File, Interaction
+from nexon.ext.application_checks import check
 import re
 import json
 from pathlib import Path
@@ -291,7 +291,7 @@ class UserData:
         return data
 
     @classmethod
-    def from_member(cls, member: Member) -> 'UserData':
+    def from_member(cls, member: Member | User) -> 'UserData':
         return cls(
             name=get_name(member),
             joined_at=str(member.created_at),

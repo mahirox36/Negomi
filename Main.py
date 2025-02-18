@@ -6,8 +6,8 @@ from typing import Generator, Optional
 from pathlib import Path
 import asyncio
 from datetime import datetime
-import nextcord
-from nextcord.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
+import nexon
+from nexon.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 import ollama
 from modules.Nexon import *
 import multiprocessing
@@ -15,7 +15,7 @@ from Dashboard.dashboard import run_dashboard
 
 class DiscordBot(commands.Bot):
     def __init__(self):
-        intents = nextcord.Intents.all()
+        intents = nexon.Intents.all()
         super().__init__(
             command_prefix=prefix,
             intents=intents,
@@ -27,7 +27,7 @@ class DiscordBot(commands.Bot):
         
         self.start_time = datetime.now()
         
-        self.owner: Optional[User] = owner # type: ignore
+        self.owner: Optional[User] = owner
         self._cleanup_done = asyncio.Event()
         
         # Setup logging
@@ -138,8 +138,8 @@ class DiscordBot(commands.Bot):
             self._ready_called = True
             
             await self.change_presence(
-                activity=nextcord.Activity(
-                    type=nextcord.ActivityType.watching,
+                activity=nexon.Activity(
+                    type=nexon.ActivityType.watching,
                     name=Presence
                 )
             )
@@ -158,7 +158,7 @@ class DiscordBot(commands.Bot):
             if self.owner != None:
                 channel = await self.owner.create_dm()
                 message: Message = await channel.send(
-                    embed=nextcord.Embed(
+                    embed=nexon.Embed(
                         title="Status Update",
                         description="Bot has successfully started",
                         color=colors.Info.value
@@ -298,7 +298,7 @@ async def main():
     
     try:
         await bot.start(token)
-    except nextcord.LoginFailure:
+    except nexon.LoginFailure:
         bot.logger.error("""
         Failed to login. Please check:
         1. Your token in the config file

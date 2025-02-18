@@ -107,7 +107,7 @@ To add the bot to your server, click the link below:
 ## 📚 Custom Libraries for This Bot
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
-- [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, Users Info collecting System, IPC Server, Logger, Data System, Badge System and Nextcord Shortcuts
+- [Nexon](https://github.com/mahirox36/Nexon): A Python wrapper for the Discord API forked from nextcord with additional stuff
 
 ## 💡 Got Ideas or Issues?
 

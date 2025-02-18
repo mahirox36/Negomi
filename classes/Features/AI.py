@@ -15,7 +15,7 @@ For conversations with {name2}, maintain a cute tone as he is your {relationship
 Communication takes place in Discord DMs or servers, so keep your messages under 2000 characters. {other_stuff} 
 """
 
-#TODO: add a summarize message command
+
 class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
@@ -164,7 +164,7 @@ class AI(commands.Cog):
         InteractionContextType.private_channel,
     ])
     async def summarize(self, ctx: init, target:Message):
-        ctx.response.defer(ephemeral=True)
+        await ctx.response.defer(ephemeral=True)
         message = target.content
         prompt = f"Please provide a concise summary of the following text:\n\n{message}"
         if self.gemini:
@@ -191,10 +191,11 @@ class AI(commands.Cog):
         IntegrationType.user_install,
     ],
     contexts=[
+        InteractionContextType.guild,
         InteractionContextType.bot_dm,
-        InteractionContextType.private_channel,
+        InteractionContextType.private_channel
     ])
-    async def ask(self, ctx:init, message: str, ephemeral: bool=False):
+    async def ask(self, ctx:init, message: str, ephemeral: bool=True):
         await ctx.response.defer(ephemeral=ephemeral)
         if self.gemini:
             response= self.gemini.models.generate_content(

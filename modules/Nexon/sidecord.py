@@ -4,10 +4,10 @@ from typing import Dict, List, Optional, Union, NewType
 
 import emoji
 from modules.Nexon import *
-from nextcord import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, Thread, User, Client, TextChannel, VoiceChannel
-from nextcord.ext import commands
-from nextcord.ext.application_checks import check
-from nextcord.errors import ApplicationCheckFailure
+from nexon import ApplicationCheckFailure, DMChannel, Embed, Guild, Member, PermissionOverwrite, Interaction as init, Permissions, Thread, User, Client, TextChannel, VoiceChannel
+from nexon.ext import commands
+from nexon.ext.application_checks import check
+from nexon.errors import ApplicationCheckFailure
 from .DataManager import DataManager
 from .config import colors, overwriteOwner
 from .logger import logger

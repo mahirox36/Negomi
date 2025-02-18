@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime
 from nextcord.ext import ipc
-from nextcord.ext.commands import Bot
-from nextcord import UserApplicationCommand, SlashApplicationCommand, ForumChannel, BaseApplicationCommand
+from nexon.ext.commands import Bot
+from nexon import UserApplicationCommand, SlashApplicationCommand, ForumChannel, BaseApplicationCommand
 from typing import Callable, Dict, List, Optional, Any
 from threading import Thread
 import psutil

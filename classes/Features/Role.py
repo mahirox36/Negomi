@@ -1,18 +1,17 @@
-import nextcord
 from modules.Nexon import *
 from modules.config import Color
 
 class Request(ui.View):
     def __init__(self,guild_id,client: commands.Bot, fromUser: Member):
         super().__init__(timeout=None)
-        self.Accept = ui.Button(label=f"✅ Accept", style=nextcord.ButtonStyle.green)
+        self.Accept = ui.Button(label=f"✅ Accept", style=ButtonStyle.green)
         self.Accept.callback = self.Accept
         self.add_item(self.Accept)
         self.guild_id= guild_id
         self.client = client
         self.fromUser =fromUser
 
-    async def Accept(self, ctx: nextcord.Interaction):
+    async def Accept(self, ctx: Interaction):
         guild= self.client.get_guild(self.guild_id)
         file = DataManager("Roles", self.guild_id, "MembersRoles")
         role = guild.get_role(user["roleID"])
@@ -269,7 +268,7 @@ class Roles(commands.Cog):
 
     @create_role.on_autocomplete("color")
     @role_edit.on_autocomplete("color")
-    async def name_autocomplete(self, interaction: nextcord.Interaction, current: str):
+    async def name_autocomplete(self, interaction: Interaction, current: str):
         colors = [i for i in self.colors.keys()]
         suggestions = [name for name in colors if name.lower().startswith(current.lower())]
         if (suggestions == []) and (current.startswith("#")):

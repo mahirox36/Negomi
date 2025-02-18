@@ -10,7 +10,7 @@ from .config import Format, colors, Level
 
 
 
-def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging.INFO) -> tuple[logging.Logger, logging.Logger]:
+def setup_logger(names: list[str] = ["negomi", "nexon"], level: int = logging.INFO) -> tuple[logging.Logger, logging.Logger]:
     """
     Set up comprehensive loggers with Rich formatting and file logging
     
@@ -69,7 +69,7 @@ def setup_logger(names: list[str] = ["negomi", "nextcord"], level: int = logging
         
         loggers[name] = logger
 
-    return (loggers["negomi"], loggers['nextcord'])
+    return (loggers["negomi"], loggers['nexon'])
 
 logger, nextcord_logger = setup_logger()
 

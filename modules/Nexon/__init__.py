@@ -7,8 +7,6 @@ import nest_asyncio
 nest_asyncio.apply()
 
 
-#TODO: make custom Interaction, Member, Guild
-
 from .DataManager import DataManager
 from .BetterID import BetterID
 from .config import BotConfig
@@ -31,7 +29,7 @@ import asyncio
 import io
 from datetime import datetime
 # Every class/functions I used in nextcord
-from nextcord import (
+from nexon import (
     Client, Interaction as init, Member, Interaction,
     Permissions, Role, slash_command, Activity, Attachment,
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
@@ -40,19 +38,16 @@ from nextcord import (
     User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
     IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage, ForumTag, SortOrderType, ForumLayoutType, VoiceRegion, VideoQualityMode
 )
-from nextcord.ext import tasks
+from nexon.ext import tasks
 #Type Errors
-from nextcord import (
+from nexon import (
     HTTPException, Forbidden
 )
 # Other Stuff Like UI, application_checks, commands
-from nextcord.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
-from nextcord.ext.application_checks import *
-from nextcord.ext import commands
-from nextcord.ext.commands import Bot
-from nextcord import utils
+from nexon.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
+from nexon.ext.application_checks import *
+from nexon.ext import commands
+from nexon.ext.commands import Bot
+from nexon import utils
 import sys
 
-
-def clear():
-    os.system("cls" if os.name == "nt" else "clear")

@@ -12,8 +12,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from nextcord import User, Member, Message, Interaction
-from nextcord.ext.commands import Bot
+from nexon import User, Member, Message, Interaction
+from nexon.ext.commands import Bot
 import re
 from typing import TYPE_CHECKING
 try:
@@ -105,12 +105,15 @@ class BadgeRequirement:
             return actual_value <= self.value
         return False
 
+
+#TODO: instead of creating new id it get the id of the emojis (need to change in the settings)
 @dataclass
 class Badge:
     id: int
     title: str
     description: str
     image_path: str
+    # emoji: str
     requirements: List[BadgeRequirement]
     points: int = 0
     
@@ -120,6 +123,7 @@ class Badge:
             "title": self.title,
             "description": self.description,
             "image_path": self.image_path,
+            # "emoji": self.emoji,
             "requirements": [req.to_dict() for req in self.requirements],
             "points": self.points
         }
@@ -131,6 +135,7 @@ class Badge:
             title=data["title"],
             description=data["description"],
             image_path=data["image_path"],
+            # emoji=data["emoji"],
             requirements=[BadgeRequirement.from_dict(req) for req in data["requirements"]],
             points=data.get("points", 0)
         )
@@ -190,6 +195,8 @@ class BadgeEditor(QMainWindow):
         
         self.description_input = QTextEdit()
         self.form_layout.addRow("Description:", self.description_input)
+        self.emoji_input = QTextEdit()
+        self.form_layout.addRow("Emoji:", self.emoji_input)
         
         self.points_input = QSpinBox()
         self.points_input.setRange(0, 1000)
@@ -263,6 +270,7 @@ class BadgeEditor(QMainWindow):
             
         title = self.title_input.text().strip()
         description = self.description_input.toPlainText().strip()
+        emoji = self.emoji_input.toPlainText().strip()
         points = self.points_input.value()
         
         if not title or not description:
@@ -296,6 +304,7 @@ class BadgeEditor(QMainWindow):
             "id": badge_id,
             "title": title,
             "description": description,
+            "emoji": emoji,
             "image_path": f"Assets/Badges/{image_name.replace("/", " ")}",
             "requirements": requirements,
             "points": points
@@ -321,6 +330,7 @@ class BadgeEditor(QMainWindow):
         self.image_label.setText("No Image Selected")
         self.title_input.clear()
         self.description_input.clear()
+        self.emoji_input.clear()
         self.points_input.setValue(0)
         
         # Clear requirements
