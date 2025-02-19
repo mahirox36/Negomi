@@ -45,7 +45,7 @@ class Backup(commands.Cog):
     
     @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
     @feature()
-    @cooldown(10)
+    @cooldown(15)
     async def export(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
         await self.exportFunction(ctx, encrypt, include_assets, creator_only)
@@ -112,7 +112,7 @@ class Backup(commands.Cog):
         # Export bot names
         for member in ctx.guild.members:
             if member.bot:
-                data["bot_name"].append(f"<@{member.id}> - {get_name(member)}")
+                data["bot_name"].append(f"<@{member.id}> - {member.display_name}")
 
         # Create and send the file
         file_data = io.StringIO()

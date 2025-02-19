@@ -134,7 +134,7 @@ class DiscordBot(commands.Bot):
             global owner
             self.owner = await set_owner(self) # type: ignore
             owner = self.owner
-            logger.info(f"Owner Have been set to {get_name(self.owner)}") # type: ignore
+            logger.info(f"Owner Have been set to {self.owner.display_name}") # type: ignore
             self._ready_called = True
             
             await self.change_presence(
@@ -146,7 +146,7 @@ class DiscordBot(commands.Bot):
             
             await self.sync_application_commands()
             
-            self.logger.info(f"{get_name(self.user)} is online!")
+            self.logger.info(f"{self.user.display_name} is online!")
             
             if send_to_owner_enabled:
                 await self._send_startup_message()
@@ -164,7 +164,7 @@ class DiscordBot(commands.Bot):
                         color=colors.Info.value
                     )
                 )
-                self.logger.info(f"Sent to {get_name(self.owner)} ({self.owner.id}) with the message ID {message.id}")
+                self.logger.info(f"Sent to {self.owner.display_name} ({self.owner.id}) with the message ID {message.id}")
             else:
                 logger.warning("There is no owner")
         except Exception as e:
@@ -177,7 +177,7 @@ class DiscordBot(commands.Bot):
             err = error.original
         except AttributeError:
             err = error
-        if isinstance(err, SlashCommandOnCooldown):
+        if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
                 embed=error_embed(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
                 ephemeral=True)

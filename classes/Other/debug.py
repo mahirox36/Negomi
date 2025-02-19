@@ -65,7 +65,7 @@ class Debug(commands.Cog):
         embed.add_field(name="✉️ Messages Sent", value=f"**{self.message_count}**", inline=False)
 
         # Footer with client Name
-        embed.set_footer(text=f"Requested by {get_name(user)} ({user})", icon_url=user.avatar.url)
+        embed.set_footer(text=f"Requested by {user.display_name} ({user})", icon_url=user.avatar.url)
         return embed
     
     @slash_command(name="debug",description="Displays detailed debug information about the bot.")

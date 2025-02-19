@@ -21,11 +21,6 @@ def PermissionsWith(create_instant_invite: Optional[bool]= None,kick_members: Op
 
 owner: Optional[User] = None
 
-def get_name(user:Member):
-    return user.global_name if user.global_name else user.display_name
-
-def everyone(guild:Guild):
-    return guild.default_role
 
 def debug_embed(
     description: str = None,
@@ -135,30 +130,8 @@ class ApplicationNotOwnerGuild(ApplicationCheckFailure):
     def __init__(self,user:Member,guild:Guild) -> None:
         super().__init__()
         self.guild= guild.name
-        self.user= get_name(user)
+        self.user= user.display_name
 
-
-cooldowns= {}
-def cooldown(cooldown_time: int):
-    async def predicate(ctx: init) -> bool:
-        global cooldowns
-        name = ctx.application_command.name
-        user_id = ctx.user.id
-
-        if name not in cooldowns:
-            cooldowns[name] = {}
-
-        # Check if the user is on cooldown
-        if user_id in cooldowns[name]:
-            time_left = cooldowns[name][user_id] - time.time()
-            if time_left > 0:
-                raise SlashCommandOnCooldown(time_left)
-
-        # Set a new cooldown for the user
-        cooldowns[name][user_id] = time.time() + cooldown_time
-        return True
-
-    return check(predicate)
 
 def is_owner_guild():
     async def predicate(ctx: init) -> bool:

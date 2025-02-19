@@ -24,10 +24,10 @@ async def check(ctx: init, data: Dict | List) -> bool:
         return False
     return True
 
-def UserSettings(member):
+def UserSettings(member: User | Member):
     user = DataManager("TempVoice", file=f"{member.id}")
     Default = {
-        "Name": get_name(member) + "'s Chat",
+        "Name": member.display + "'s Chat",
         "Hide": True,
         "Lock": True,
         "Max": 0,
@@ -97,7 +97,7 @@ class EditNameModal(Modal):
         self.channel = channel
 
         self.name = TextInput(label="New Name", placeholder=ctx.user.global_name + "'s Chat" if ctx.user.global_name != None
-            else get_name(ctx.user) + "'s Chat", required=True, max_length=100, min_length=1)
+            else ctx.user.display_name + "'s Chat", required=True, max_length=100, min_length=1)
         self.add_item(self.name)
 
     async def callback(self, interaction: Interaction):
@@ -157,12 +157,12 @@ class ControlPanel(View):
         channeled = get_channel(self.data,ctx)
         if self.user.data["Hide"] == True:
             self.user.data["Hide"] = False
-            await channeled.set_permissions(everyone(ctx.guild),view_channel=True,
+            await channeled.set_permissions(ctx.guild.default_role,view_channel=True,
                                             connect=True if self.user.data["Lock"] == False else False)
             await ctx.send(embed=info_embed("The channel is showing", title="Operation Success"),ephemeral=True)
         else:
             self.user.data["Hide"] = True
-            await channeled.set_permissions(everyone(ctx.guild),view_channel=False,
+            await channeled.set_permissions(ctx.guild.default_role,view_channel=False,
                                             connect=True if self.user.data["Lock"] == False else False)
             await ctx.send(embed=info_embed("The channel is hiding", title="Operation Success"),ephemeral=True)
         self.user.save()
@@ -175,12 +175,12 @@ class ControlPanel(View):
         channeled = get_channel(self.data,ctx)
         if self.user.data["Lock"] == True:
             self.user.data["Lock"] = False
-            await channeled.set_permissions(everyone(ctx.guild),connect=True,
+            await channeled.set_permissions(ctx.guild.default_role,connect=True,
                 view_channel=True if self.user.data["Hide"] == False else False)
             await ctx.send(embed=info_embed("The channel is Unlocked", title="Operation Success"),ephemeral=True)
         else:
             self.user.data["Lock"] = True
-            await channeled.set_permissions(everyone(ctx.guild),connect=False,
+            await channeled.set_permissions(ctx.guild.default_role,connect=False,
                 view_channel=True if self.user.data["Hide"] == False else False)
             await ctx.send(embed=info_embed("The channel is Locked", title="Operation Success"),ephemeral=True)
         self.user.save()
@@ -259,7 +259,7 @@ class TempVoice(commands.Cog):
         file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         await check(ctx,file.data)
         channel = get_channel(file.data,ctx)
-        name = get_name(ctx.user)
+        name = ctx.user.display_name
         await channel.set_permissions(user, view_channel=True, connect=True)
         try:
             await user.send(embed=info_embed(
@@ -369,14 +369,14 @@ class TempVoice(commands.Cog):
                 user_settings.save()
 
             # Remove user and set permissions
-            await target.move_to(None, reason=f"Banned by {get_name(member)}: {reason}")
+            await target.move_to(None, reason=f"Banned by {member.display_name}: {reason}")
             await channel.set_permissions(target, connect=False, view_channel=False)
 
             # Try to DM the user
             try:
                 await target.send(
                     embed=warn_embed(
-                        f"You have been banned from {channel.name} by {get_name(member)}\n"
+                        f"You have been banned from {channel.name} by {member.display_name}\n"
                         f"Reason: {reason}"
                     )
                 )
@@ -390,7 +390,7 @@ class TempVoice(commands.Cog):
 
             await ctx.send(
                 embed=info_embed(
-                    f"Banned {get_name(target)}\nReason: {reason}",
+                    f"Banned {target.display_name}\nReason: {reason}",
                     title="Member Banned"
                 ),
                 ephemeral=True
@@ -450,7 +450,7 @@ class TempVoice(commands.Cog):
             try:
                 await target.send(
                     embed=warn_embed(
-                        f"You have been kicked from {channel.name} by {get_name(member)}\n"
+                        f"You have been kicked from {channel.name} by {member.display_name}\n"
                         f"Reason: {reason}"
                     )
                 )
@@ -458,7 +458,7 @@ class TempVoice(commands.Cog):
                 pass  # DM failed, continue anyway
 
             # Kick the user
-            await target.move_to(None, reason=f"Kicked by {get_name(member)}: {reason}")
+            await target.move_to(None, reason=f"Kicked by {member.display_name}: {reason}")
 
             # Re-enable channel cleanup
             if cleanup_disabled:
@@ -467,7 +467,7 @@ class TempVoice(commands.Cog):
 
             await ctx.send(
                 embed=info_embed(
-                    f"Kicked {get_name(target)}\nReason: {reason}",
+                    f"Kicked {target.display_name}\nReason: {reason}",
                     title="Member Kicked"
                 ),
                 ephemeral=True
@@ -734,7 +734,7 @@ class TempVoice(commands.Cog):
             }
         
         return {
-            "name": get_name(member) + "'s Chat",
+            "name": member.display_name + "'s Chat",
             "connect": False,
             "view": False,
             "max": 0
@@ -744,7 +744,7 @@ class TempVoice(commands.Cog):
                                  settings: dict, category_id: int) -> VoiceChannel:
         """Create temporary voice channel with proper settings"""
         overwrites = {
-            everyone(guild): PermissionOverwriteWith(
+            guild.default_role: PermissionOverwriteWith(
                 connect=settings["connect"],
                 view_channel=settings["view"]
             ),

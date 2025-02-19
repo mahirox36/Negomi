@@ -26,7 +26,7 @@ class Request(ui.View):
         file.save()
         member= guild.get_member(ctx.user.id)
         await member.add_roles(role)
-        await ctx.send(embed=info_embed(title=f"You Joined a {get_name(self.fromUser)}'s Role",description=f"In {guild.name} and Role {role.name}"
+        await ctx.send(embed=info_embed(title=f"You Joined a {self.fromUser.display_name}'s Role",description=f"In {guild.name} and Role {role.name}"
                                         ,author=[guild.name,guild.icon.url]),ephemeral= True)
 
 
@@ -190,7 +190,7 @@ class Roles(commands.Cog):
 
 
     @role.subcommand(name="add",description="Add the role to a user")
-    @cooldown(3)
+    @cooldown(15)
     @feature()
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
@@ -220,15 +220,15 @@ class Roles(commands.Cog):
         #Send DM or Channel
         role = guild.get_role(user["roleID"])
         try:
-            await member.send(member.mention,embed=info_embed(title=f"You got Invited by {get_name(ctx.user)}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await member.send(member.mention,embed=info_embed(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
                               view=view)
         except:
-            await ctx.channel.send(member.mention,embed=info_embed(title=f"You got Invited by {get_name(ctx.user)}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await ctx.channel.send(member.mention,embed=info_embed(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
                                 view=view)
         await ctx.send(embed=info_embed(title="Invited!",description=f"You have Invited {member.mention}"))
 
     @role.subcommand(name="remove",description="Remove the role from a user")
-    @cooldown(3)
+    @cooldown(15)
     @feature()
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
@@ -263,7 +263,7 @@ class Roles(commands.Cog):
         file.save()
         await member.remove_roles(role)
 
-        await ctx.send(embed=info_embed(f"The {get_name(member)} Removed!", title="Member Removed!"),ephemeral=True)
+        await ctx.send(embed=info_embed(f"The {member.display_name} Removed!", title="Member Removed!"),ephemeral=True)
     
 
     @create_role.on_autocomplete("color")

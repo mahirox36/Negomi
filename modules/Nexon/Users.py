@@ -1,6 +1,6 @@
 try:
     from .DataManager import DataManager
-    from .sidecord import get_name, extract_emojis, info_embed
+    from .sidecord import extract_emojis, info_embed
     from .logger import logger
     from .Badges import BadgeManager, Badge
 except: 
@@ -293,7 +293,7 @@ class UserData:
     @classmethod
     def from_member(cls, member: Member | User) -> 'UserData':
         return cls(
-            name=get_name(member),
+            name=member.display_name,
             joined_at=str(member.created_at),
             last_updated=datetime.now()
         )
@@ -338,11 +338,11 @@ class UserManager(DataManager):
         return self._user_data
     
     def generalUpdateInfo(self, user: Member | User):
-        if get_name(user) == self.user_data.name:
+        if user.display_name == self.user_data.name:
             return
         else:
             self.user_data.unique_names.add(self.user_data.name)
-            self.user_data.name = get_name(user)
+            self.user_data.name = user.display_name
             self.user_data.last_updated = datetime.now()
             return self.save()
     

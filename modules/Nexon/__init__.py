@@ -11,8 +11,8 @@ from .DataManager import DataManager
 from .BetterID import BetterID
 from .config import BotConfig
 from .config import *
-from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, get_name, everyone, debug_embed, info_embed, warn_embed, \
-    error_embed, SlashCommandOnCooldown,HaveHigherRole, ApplicationNotOwnerGuild, cooldown, is_owner_guild, \
+from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, debug_embed, info_embed, warn_embed, \
+    error_embed,HaveHigherRole, ApplicationNotOwnerGuild, is_owner_guild, \
     FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
         CommandDisabled, enableByConfig, url, extract_emojis, contains_emoji, get_by_percent
 from .logger import logger, print

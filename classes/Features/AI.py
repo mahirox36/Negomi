@@ -75,7 +75,7 @@ class AI(commands.Cog):
 
         try:
             await self.typing_manager.start_typing(message.channel.id)
-            name = get_name(message.author)
+            name = message.author.display_name
             content = message.clean_content.replace(f"<@{self.client.user.id}>", "Negomi")
 
             response = self.conversation_manager.get_response(

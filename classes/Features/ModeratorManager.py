@@ -359,7 +359,7 @@ class ModeratorManager(commands.Cog):
                 role = ctx.guild.get_role(mod_data["currentRole"])
                 since = mod_data["since"]
                 embed.add_field(
-                    name=f"{get_name(member)}",
+                    name=f"{member.display_name}",
                     value=f"Role: {role.mention}\nSince: {since}",
                     inline=False
                 )
@@ -378,7 +378,7 @@ class ModeratorManager(commands.Cog):
             return
             
         mod_data = data[str(member.id)]
-        embed = info_embed(title=f"Moderator Information - {get_name(member)}")
+        embed = info_embed(title=f"Moderator Information - {member.display_name}")
         
         current_role = ctx.guild.get_role(mod_data["currentRole"])
         added_by = ctx.guild.get_member(mod_data["by"])

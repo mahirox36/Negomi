@@ -412,7 +412,7 @@ class Welcome(commands.Cog):
                     server=ctx.guild.name,
                     count=ctx.guild.member_count,
                     mention=ctx.user.mention,
-                    name=get_name(ctx.user)
+                    name=ctx.user.display_name
                 )
             )
             embed.set_footer(text="Use /welcome customize to personalize the appearance")
@@ -599,7 +599,7 @@ class Welcome(commands.Cog):
 
                         if not welcome_image:
                             welcome_image = await self.create_welcome_image(
-                                get_name(member),
+                                member.display_name,
                                 str(member.avatar.url),
                                 config["image_settings"]
                             )
@@ -656,7 +656,7 @@ class Welcome(commands.Cog):
                 server=member.guild.name,
                 count=member.guild.member_count,
                 mention=member.mention,
-                name=get_name(member)
+                name=member.display_name
             )
         except Exception:
             return f"Welcome {member.mention} to {member.guild.name}!"
