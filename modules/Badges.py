@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass, field
-from typing import Optional, Union, Dict, Callable, List
+from typing import Optional, Dict, List
 from enum import Enum
 import json
 import os
@@ -12,13 +12,11 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from nexon import User, Member, Message, Interaction
-from nexon.ext.commands import Bot
+from nexon import Message, Interaction
 import re
 from typing import TYPE_CHECKING
 try:
-    from .sidecord import extract_emojis, get_owner
-    from .logger import logger
+    from .utils import extract_emojis
 except: 
     pass
 if TYPE_CHECKING:
@@ -80,7 +78,7 @@ class BadgeRequirement:
             comparison=ComparisonType(data.get("comparison", "greater_equal"))
         )
 
-    def compare(self, actual_value: int, second_value:int = None) -> bool:
+    def compare(self, actual_value: int, second_value:Optional[int] = None) -> bool:
         if second_value:
             if self.comparison == ComparisonType.EQUAL:
                 return actual_value == second_value
@@ -131,7 +129,7 @@ class Badge:
     @classmethod
     def from_dict(cls, data: dict) -> 'Badge':
         return cls(
-            id=data.get("id"),
+            id=data["id"],
             title=data["title"],
             description=data["description"],
             image_path=data["image_path"],

@@ -1,19 +1,20 @@
 import datetime
 import os
-from typing import Dict, List, NewType
 import httpx
 import ollama
 from rich import print
 from json import dumps, loads
-from .logger import logger
+import logging
+logger = logging.getLogger("bot")
+
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
-from .config import ip
+from .DiscordConfig import ip
 from pathlib import Path
 
 CheckerClient = ollama.Client(ip, timeout = 1)
 client = ollama.Client(ip)
-offline = NewType("offline", False)
-online = NewType("online", True)
+offline = False
+online = True
 
 def isClientOnline():
     try:

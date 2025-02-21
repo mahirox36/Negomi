@@ -345,7 +345,7 @@ class Welcome(commands.Cog):
     @welcome.subcommand("how", "Learn how to configure welcome messages")
     @feature()
     async def how(self, ctx: init):
-        embed = info_embed(
+        embed = Embed.Info(
             title="Welcome Message Configuration Guide",
             description="Use these variables in your welcome message:"
         )
@@ -373,7 +373,7 @@ class Welcome(commands.Cog):
                            if not getattr(channel.permissions_for(ctx.guild.me), perm)]
             
             if missing_perms:
-                await ctx.send(embed=error_embed(
+                await ctx.send(embed=Embed.Error(
                     f"I need the following permissions in {channel.mention}: " +
                     ", ".join(missing_perms).replace('_', ' ').title(),"Missing Permissions"),
                     ephemeral=True
@@ -402,7 +402,7 @@ class Welcome(commands.Cog):
             member_file.save()
 
             # Send confirmation with preview
-            embed = info_embed(
+            embed = Embed.Info(
                 title="✅ Welcome System Configured",
                 description=f"Channel: {channel.mention}\nMessage Preview:"
             )
@@ -422,7 +422,7 @@ class Welcome(commands.Cog):
         except Exception as e:
             logger.error(f"Welcome setup error in {ctx.guild_id}: {e}")
             await ctx.send(
-                embed=error_embed("Failed to setup welcome system. Please try again."),
+                embed=Embed.Error("Failed to setup welcome system. Please try again."),
                 ephemeral=True
             )
 
@@ -448,7 +448,7 @@ class Welcome(commands.Cog):
             await ctx.send("Please set up welcome message first using /welcome setup", ephemeral=True)
             return
 
-        embed = info_embed(
+        embed = Embed.Info(
             title="Welcome Message Customization",
             description="Use the buttons below to customize your welcome message appearance:"
         )
@@ -616,7 +616,7 @@ class Welcome(commands.Cog):
                         ) if ctx is None else await ctx.send(
                             content=message,
                             file=File(welcome_image, f"welcome_{member.id}.png"),
-                            embed=info_embed("☝️ Above is how the welcome message will appear"),
+                            embed=Embed.Info("☝️ Above is how the welcome message will appear"),
                             ephemeral=True
                         )
                     else:
@@ -632,10 +632,10 @@ class Welcome(commands.Cog):
                         embed.set_thumbnail(url=member.avatar.url)
                     if config["image_settings"]["background_url"]:
                         embed.set_image(url=config["image_settings"]["background_url"])
-                    await channel.send(embed=embed) if ctx is None else await ctx.send(embeds=[embed, info_embed("☝️ Above is how the welcome message will appear")], ephemeral=True)
+                    await channel.send(embed=embed) if ctx is None else await ctx.send(embeds=[embed, Embed.Info("☝️ Above is how the welcome message will appear")], ephemeral=True)
                     
                 case _:
-                    await channel.send(message) if ctx is None else await ctx.send(message,embed=info_embed("☝️ Above is how the welcome message will appear"), ephemeral=True)
+                    await channel.send(message) if ctx is None else await ctx.send(message,embed=Embed.Info("☝️ Above is how the welcome message will appear"), ephemeral=True)
 
             # Cleanup cache if too large
             if len(self.image_cache) > 100:
@@ -646,7 +646,7 @@ class Welcome(commands.Cog):
             logger.error(f"Welcome message error in {member.guild.id}: {e}", exc_info=True)
             if ctx:
                 await ctx.send(
-                    embed=error_embed("Failed to preview welcome message. Check permissions and settings."),ephemeral=True
+                    embed=Embed.Error("Failed to preview welcome message. Check permissions and settings."),ephemeral=True
                 )
 
     async def format_welcome_message(self, member: Member, message: str) -> str:

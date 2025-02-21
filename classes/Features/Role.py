@@ -26,7 +26,7 @@ class Request(ui.View):
         file.save()
         member= guild.get_member(ctx.user.id)
         await member.add_roles(role)
-        await ctx.send(embed=info_embed(title=f"You Joined a {self.fromUser.display_name}'s Role",description=f"In {guild.name} and Role {role.name}"
+        await ctx.send(embed=Embed.Info(title=f"You Joined a {self.fromUser.display_name}'s Role",description=f"In {guild.name} and Role {role.name}"
                                         ,author=[guild.name,guild.icon.url]),ephemeral= True)
 
 
@@ -69,7 +69,7 @@ class Roles(commands.Cog):
         
         mode_text = "everyone" if mode == "everyone" else "only server boosters"
         await ctx.send(
-            embed=info_embed(
+            embed=Embed.Info(
                 title="Role Creation Mode Updated",
                 description=f"Role creation is now available to {mode_text}."
             ),
@@ -91,7 +91,7 @@ class Roles(commands.Cog):
         # If mode is boosters, check if user is a booster
         if mode == "boosters" and not ctx.user.premium_since:
             await ctx.send(
-                embed=error_embed(
+                embed=Embed.Error(
                     "Only server boosters can create roles. Boost the server to unlock this feature!"
                 ),
                 ephemeral=True
@@ -103,16 +103,16 @@ class Roles(commands.Cog):
         file = DataManager("Roles", guild, file="MembersRoles")
         try:
             if file.data.get(f"{ctx.user.id}") != None:
-                await ctx.send(embed=error_embed("You already have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You already have a role"),ephemeral=True)
                 return
         except AttributeError: file.data = {}
         if name.lower() in self.notAllowed:
-            await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
             return
         role = await guild.create_role(reason=f"{ctx.user.name}/{ctx.user.id} Created a role",
                                 name=name, color=color.value,hoist=True)
         await ctx.user.add_roles(role)
-        await ctx.send(embed=info_embed(f"You have created a role by the name: {name}", title="Role Created!"),ephemeral=True)
+        await ctx.send(embed=Embed.Info(f"You have created a role by the name: {name}", title="Role Created!"),ephemeral=True)
         data= {f"{ctx.user.id}":{
             "owner"     :True,
             "roleID"    :role.id,
@@ -133,26 +133,26 @@ class Roles(commands.Cog):
         try:
             user = file.data.get(f"{ctx.user.id}")
             if user == None:
-                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
             if user["owner"] == False:
-                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
                 return
         except AttributeError: 
-            await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
             return
         try:
             if name.lower() in self.notAllowed:
-                await ctx.send(embed=error_embed("This word/name isn't allowed"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
                 return
         except AttributeError:pass
         role = guild.get_role(user["roleID"])
         if (name == None) and (color == None):
-            await ctx.send(embed=error_embed("you haven't change anything ||trying to be funny?||"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("you haven't change anything ||trying to be funny?||"),ephemeral=True)
             return
         if name != None:await role.edit(name=name)
         if color!= None:await role.edit(color=color)
-        await ctx.send(embed=info_embed(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
+        await ctx.send(embed=Embed.Info(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
 
 
     @role.subcommand(name="delete",description="delete your own role")
@@ -163,17 +163,17 @@ class Roles(commands.Cog):
         try:
             user = file.data.get(f"{ctx.user.id}")
             if user == None:
-                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
             if user["owner"] == False:
-                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
                 return
         except AttributeError: 
-            await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
             return
         role = guild.get_role(user["roleID"])
         await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
-        await ctx.send(embed=info_embed(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
+        await ctx.send(embed=Embed.Info(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
         for i in user["members"]:
             del file.data[i]
         del file.data[f"{ctx.user.id}"]
@@ -196,36 +196,36 @@ class Roles(commands.Cog):
         guild = ctx.guild
         file = DataManager("Roles", guild, file="MembersRoles")
         if ctx.user.id == member.id:
-            await ctx.send(embed=error_embed("You can't add yourself"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You can't add yourself"),ephemeral=True)
             return
         elif member.bot:
-            await ctx.send(embed=error_embed("You can't add a bot"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You can't add a bot"),ephemeral=True)
             return
         try:
             user = dict(file.data.get(f"{ctx.user.id}"))
             user2= file.data.get(f"{member.id}")
             if user == None:
-                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
             if user2 != None:
-                await ctx.send(embed=error_embed("He/She already have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("He/She already have a role"),ephemeral=True)
                 return
             if user["owner"] == False:
-                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
                 return
         except AttributeError: 
-            await ctx.send(embed=error_embed("You & Him/Her Don't have a role"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You & Him/Her Don't have a role"),ephemeral=True)
             return
         view = Request(guild.id,self.client,ctx.user)
         #Send DM or Channel
         role = guild.get_role(user["roleID"])
         try:
-            await member.send(member.mention,embed=info_embed(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await member.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
                               view=view)
         except:
-            await ctx.channel.send(member.mention,embed=info_embed(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await ctx.channel.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
                                 view=view)
-        await ctx.send(embed=info_embed(title="Invited!",description=f"You have Invited {member.mention}"))
+        await ctx.send(embed=Embed.Info(title="Invited!",description=f"You have Invited {member.mention}"))
 
     @role.subcommand(name="remove",description="Remove the role from a user")
     @cooldown(15)
@@ -234,27 +234,27 @@ class Roles(commands.Cog):
         guild = ctx.guild
         file = DataManager("Roles", guild, file="MembersRoles")
         if ctx.user.id == member.id:
-            await ctx.send(embed=error_embed("You can't remove yourself"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You can't remove yourself"),ephemeral=True)
             return
         elif member.bot:
-            await ctx.send(embed=error_embed("You can't remove a bot"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You can't remove a bot"),ephemeral=True)
             return
         try:
             user = file.data.get(f"{ctx.user.id}")
             user2= file.data.get(f"{member.id}")
             if user == None:
-                await ctx.send(embed=error_embed("You Don't have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
             elif user2 == None:
-                await ctx.send(embed=error_embed("He/She doesn't have a role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("He/She doesn't have a role"),ephemeral=True)
                 return
             elif user["owner"] == False:
-                await ctx.send(embed=error_embed("You aren't the owner of the Role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
                 return
             elif user["roleID"] != user2["roleID"]:
-                await ctx.send(embed=error_embed("He/She doesn't have your role"),ephemeral=True)
+                await ctx.send(embed=Embed.Error("He/She doesn't have your role"),ephemeral=True)
         except AttributeError: 
-            await ctx.send(embed=error_embed("You & Him/Her Don't have a role"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("You & Him/Her Don't have a role"),ephemeral=True)
             return
         role = guild.get_role(user["roleID"])
         user["members"].remove(f"{member.id}")
@@ -263,7 +263,7 @@ class Roles(commands.Cog):
         file.save()
         await member.remove_roles(role)
 
-        await ctx.send(embed=info_embed(f"The {member.display_name} Removed!", title="Member Removed!"),ephemeral=True)
+        await ctx.send(embed=Embed.Info(f"The {member.display_name} Removed!", title="Member Removed!"),ephemeral=True)
     
 
     @create_role.on_autocomplete("color")

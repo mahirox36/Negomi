@@ -5,7 +5,7 @@ async def check(ctx: init, data: Dict | List) -> bool:
     try:
         ctx.user.voice.channel
     except:
-        await ctx.send(embed=warn_embed("You are not in a channel"), ephemeral=True)
+        await ctx.send(embed=Embed.Warning("You are not in a channel"), ephemeral=True)
         return False
     
     num = 0
@@ -16,11 +16,11 @@ async def check(ctx: init, data: Dict | List) -> bool:
             break
         num += 1
     else:
-        await ctx.send(embed=warn_embed("You haven't Created a Channel"), ephemeral=True)
+        await ctx.send(embed=Embed.Warning("You haven't Created a Channel"), ephemeral=True)
         return False
 
     if ctx.user.voice.channel.id != data[num].get(str(ctx.user.id)):
-        await ctx.send(embed=warn_embed("You are not the Owner of this channel!"), ephemeral=True)
+        await ctx.send(embed=Embed.Warning("You are not the Owner of this channel!"), ephemeral=True)
         return False
     return True
 
@@ -78,13 +78,13 @@ class EditMaxModal(Modal):
         try:
             num = int(self.max.value)
         except ValueError:
-            await ctx.send(embed=error_embed(f"Value \"{self.max.value}\" isn't a number"),ephemeral=True)
+            await ctx.send(embed=Embed.Error(f"Value \"{self.max.value}\" isn't a number"),ephemeral=True)
             return
         if num > 99:
-            await ctx.send(embed=error_embed("The Value should be less than or equal to 99"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("The Value should be less than or equal to 99"),ephemeral=True)
             return
         elif num < 0:
-            await ctx.send(embed=error_embed("The Value should be greater than or equal to 0"),ephemeral=True)
+            await ctx.send(embed=Embed.Error("The Value should be greater than or equal to 0"),ephemeral=True)
             return
         self.user["Max"] = num
         self.user.save()
@@ -146,7 +146,7 @@ class ControlPanel(View):
         try:
             modal = EditNameModal(get_channel(self.data,ctx),ctx)
         except Exception:
-            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            await ctx.send(embed=Embed.Warning("You haven't Created a Channel"),ephemeral=True)
             return
         await ctx.response.send_modal(modal)
         
@@ -159,12 +159,12 @@ class ControlPanel(View):
             self.user.data["Hide"] = False
             await channeled.set_permissions(ctx.guild.default_role,view_channel=True,
                                             connect=True if self.user.data["Lock"] == False else False)
-            await ctx.send(embed=info_embed("The channel is showing", title="Operation Success"),ephemeral=True)
+            await ctx.send(embed=Embed.Info("The channel is showing", title="Operation Success"),ephemeral=True)
         else:
             self.user.data["Hide"] = True
             await channeled.set_permissions(ctx.guild.default_role,view_channel=False,
                                             connect=True if self.user.data["Lock"] == False else False)
-            await ctx.send(embed=info_embed("The channel is hiding", title="Operation Success"),ephemeral=True)
+            await ctx.send(embed=Embed.Info("The channel is hiding", title="Operation Success"),ephemeral=True)
         self.user.save()
         return
     
@@ -177,12 +177,12 @@ class ControlPanel(View):
             self.user.data["Lock"] = False
             await channeled.set_permissions(ctx.guild.default_role,connect=True,
                 view_channel=True if self.user.data["Hide"] == False else False)
-            await ctx.send(embed=info_embed("The channel is Unlocked", title="Operation Success"),ephemeral=True)
+            await ctx.send(embed=Embed.Info("The channel is Unlocked", title="Operation Success"),ephemeral=True)
         else:
             self.user.data["Lock"] = True
             await channeled.set_permissions(ctx.guild.default_role,connect=False,
                 view_channel=True if self.user.data["Hide"] == False else False)
-            await ctx.send(embed=info_embed("The channel is Locked", title="Operation Success"),ephemeral=True)
+            await ctx.send(embed=Embed.Info("The channel is Locked", title="Operation Success"),ephemeral=True)
         self.user.save()
         return
     
@@ -193,7 +193,7 @@ class ControlPanel(View):
         try:
             modal = EditMaxModal(get_channel(self.data,ctx),ctx)
         except Exception:
-            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            await ctx.send(embed=Embed.Warning("You haven't Created a Channel"),ephemeral=True)
             return
         await ctx.response.send_modal(modal)
 
@@ -204,7 +204,7 @@ class ControlPanel(View):
         try:
             channeled = get_channel(self.data,ctx)
         except Exception:
-            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            await ctx.send(embed=Embed.Warning("You haven't Created a Channel"),ephemeral=True)
             return
         await channeled.purge(limit=10000)
 
@@ -215,7 +215,7 @@ class ControlPanel(View):
         try:
             channeled = get_channel(self.data,ctx)
         except Exception:
-            await ctx.send(embed=warn_embed("You haven't Created a Channel"),ephemeral=True)
+            await ctx.send(embed=Embed.Warning("You haven't Created a Channel"),ephemeral=True)
             return
         file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         num = 0
@@ -248,13 +248,13 @@ class TempVoice(commands.Cog):
     async def invite_function(ctx:init,user:Member,client):
         await ctx.response.defer(ephemeral=True)
         if ctx.user.id == user.id:
-            await ctx.send(embed=error_embed("You can't Invite yourself"))
+            await ctx.send(embed=Embed.Error("You can't Invite yourself"))
             return
         elif user.id == client.user.id:
-            await ctx.send(embed=error_embed("Are You trying to Invite me?",footer="No, You can't"))
+            await ctx.send(embed=Embed.Error("Are You trying to Invite me?",footer="No, You can't"))
             return
         elif user.bot:
-            await ctx.send(embed=error_embed("You can't Invite Bot"))
+            await ctx.send(embed=Embed.Error("You can't Invite Bot"))
             return
         file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
         await check(ctx,file.data)
@@ -262,13 +262,13 @@ class TempVoice(commands.Cog):
         name = ctx.user.display_name
         await channel.set_permissions(user, view_channel=True, connect=True)
         try:
-            await user.send(embed=info_embed(
+            await user.send(embed=Embed.Info(
                 f"You have Been Invited by {ctx.user.mention} to Channel {channel.mention}.\n[View The Channel]({channel.jump_url})",
                 "Invitation",
                 f"Click the Channel to Join it",[name,ctx.user.avatar.url]
                 ))
         except HTTPException:
-            ctx.channel.send(f"{user.mention}",embed=info_embed(
+            ctx.channel.send(f"{user.mention}",embed=Embed.Info(
                 f"{user.mention}, You have Been Invited by {ctx.user.mention} to Channel {channel.mention}.\n[View The Channel]({channel.jump_url})",
                 "Invitation",
                 f"Click the Channel to Join it",[name,ctx.user.avatar.url]
@@ -288,7 +288,7 @@ class TempVoice(commands.Cog):
         # Check if user is in a voice channel
         if not member.voice or not member.voice.channel:
             await ctx.send(
-                embed=error_embed("You must be in a voice channel to use this command"),
+                embed=Embed.Error("You must be in a voice channel to use this command"),
                 ephemeral=True
             )
             return False, None, None
@@ -299,7 +299,7 @@ class TempVoice(commands.Cog):
         # Check if target is in the same voice channel
         if not target.voice or target.voice.channel != channel:
             await ctx.send(
-                embed=error_embed(f"Target user must be in your voice channel to be {action}"),
+                embed=Embed.Error(f"Target user must be in your voice channel to be {action}"),
                 ephemeral=True
             )
             return False, None, None
@@ -311,7 +311,7 @@ class TempVoice(commands.Cog):
             if list(data.values())[0] == channel.id:
                 if str(member.id) != list(data.keys())[0]:
                     await ctx.send(
-                        embed=error_embed("You must be the channel owner to use this command"),
+                        embed=Embed.Error("You must be the channel owner to use this command"),
                         ephemeral=True
                     )
                     return False, None, None
@@ -319,7 +319,7 @@ class TempVoice(commands.Cog):
                 break
         else:
             await ctx.send(
-                embed=error_embed("This command can only be used in temporary voice channels"),
+                embed=Embed.Error("This command can only be used in temporary voice channels"),
                 ephemeral=True
             )
             return False, None, None
@@ -340,14 +340,14 @@ class TempVoice(commands.Cog):
 
         if target.id == member.id:
             await ctx.send(
-                embed=error_embed("You cannot ban yourself"),
+                embed=Embed.Error("You cannot ban yourself"),
                 ephemeral=True
             )
             return False
 
         if target.guild_permissions.administrator:
             await ctx.send(
-                embed=error_embed("You cannot ban administrators"),
+                embed=Embed.Error("You cannot ban administrators"),
                 ephemeral=True
             )
             return False
@@ -375,7 +375,7 @@ class TempVoice(commands.Cog):
             # Try to DM the user
             try:
                 await target.send(
-                    embed=warn_embed(
+                    embed=Embed.Warning(
                         f"You have been banned from {channel.name} by {member.display_name}\n"
                         f"Reason: {reason}"
                     )
@@ -389,7 +389,7 @@ class TempVoice(commands.Cog):
                     self.voice_states[guild_id][channel_id].pop('mod_action', None)
 
             await ctx.send(
-                embed=info_embed(
+                embed=Embed.Info(
                     f"Banned {target.display_name}\nReason: {reason}",
                     title="Member Banned"
                 ),
@@ -399,7 +399,7 @@ class TempVoice(commands.Cog):
 
         except Exception as e:
             await ctx.send(
-                embed=error_embed(f"Failed to ban user: {str(e)}"),
+                embed=Embed.Error(f"Failed to ban user: {str(e)}"),
                 ephemeral=True
             )
             return False
@@ -418,14 +418,14 @@ class TempVoice(commands.Cog):
 
         if target.id == member.id:
             await ctx.send(
-                embed=error_embed("You cannot kick yourself"),
+                embed=Embed.Error("You cannot kick yourself"),
                 ephemeral=True
             )
             return False
 
         if target.guild_permissions.administrator:
             await ctx.send(
-                embed=error_embed("You cannot kick administrators"),
+                embed=Embed.Error("You cannot kick administrators"),
                 ephemeral=True
             )
             return False
@@ -449,7 +449,7 @@ class TempVoice(commands.Cog):
             # Try to DM the user
             try:
                 await target.send(
-                    embed=warn_embed(
+                    embed=Embed.Warning(
                         f"You have been kicked from {channel.name} by {member.display_name}\n"
                         f"Reason: {reason}"
                     )
@@ -466,7 +466,7 @@ class TempVoice(commands.Cog):
                     self.voice_states[guild_id][channel_id].pop('mod_action', None)
 
             await ctx.send(
-                embed=info_embed(
+                embed=Embed.Info(
                     f"Kicked {target.display_name}\nReason: {reason}",
                     title="Member Kicked"
                 ),
@@ -476,7 +476,7 @@ class TempVoice(commands.Cog):
 
         except Exception as e:
             await ctx.send(
-                embed=error_embed(f"Failed to kick user: {str(e)}"),
+                embed=Embed.Error(f"Failed to kick user: {str(e)}"),
                 ephemeral=True
             )
             return False
@@ -492,7 +492,7 @@ class TempVoice(commands.Cog):
         checks = check(ctx,file.data)
         if await checks == False: return
         
-        await ctx.response.send_message(embed=info_embed(title="Control Panel",
+        await ctx.response.send_message(embed=Embed.Info(title="Control Panel",
                 description="Please Chose"),view=ControlPanel(file.data,ctx.user),
                 ephemeral=True)
 
@@ -574,7 +574,7 @@ class TempVoice(commands.Cog):
         }
         file.data = data
         file.save()
-        await ctx.send(embed=info_embed("Setup Done!"),ephemeral=True)
+        await ctx.send(embed=Embed.Info("Setup Done!"),ephemeral=True)
     
     async def _update_voice_state(self, member: Member, before: VoiceState, after: VoiceState) -> bool:
         """
@@ -744,16 +744,16 @@ class TempVoice(commands.Cog):
                                  settings: dict, category_id: int) -> VoiceChannel:
         """Create temporary voice channel with proper settings"""
         overwrites = {
-            guild.default_role: PermissionOverwriteWith(
+            guild.default_role: PermissionOverwrite(
                 connect=settings["connect"],
                 view_channel=settings["view"]
             ),
-            member: PermissionOverwriteWith(
+            member: PermissionOverwrite(
                 connect=True,
                 view_channel=True,
                 priority_speaker=True,
                 move_members=True,
-                stream=True  # Add stream permission to fix screen share issues
+                stream=True
             )
         }
 
@@ -799,7 +799,7 @@ class TempVoice(commands.Cog):
         """Send channel information message"""
         try:
             await channel.send(
-                embed=warn_embed(
+                embed=Embed.Warning(
                     "Only the Owner can change the settings of this channel, "
                     "even if they leave. Screen sharing and video are enabled.",
                     title="Channel Information",

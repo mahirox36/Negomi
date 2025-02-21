@@ -22,7 +22,7 @@ class AutoRole(commands.Cog):
         }
         file.save()
         
-        await ctx.send(embed=info_embed("Auto role setup successfully"))
+        await ctx.send(embed=Embed.Info("Auto role setup successfully"))
         
             
     @commands.Cog.listener()

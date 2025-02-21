@@ -27,7 +27,6 @@ class DiscordBot(commands.Bot):
         
         self.start_time = datetime.now()
         
-        self.owner: Optional[User] = owner
         self._cleanup_done = asyncio.Event()
         
         # Setup logging
@@ -91,8 +90,7 @@ class DiscordBot(commands.Bot):
                     "Working on Progress" in str(ext_path) or
                     "Arc" in str(ext_path) or
                     "." in ext_path.stem or
-                    (not enableAI and ext_path.stem == "AI") or
-                    (not Welcome_enabled and ext_path.stem == "Welcome")):
+                    (not enableAI and ext_path.stem == "AI")):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
                 
@@ -131,10 +129,6 @@ class DiscordBot(commands.Bot):
     async def on_ready(self) -> None:
         """Handler for when the bot is ready."""
         if not hasattr(self, '_ready_called'):
-            global owner
-            self.owner = await set_owner(self) # type: ignore
-            owner = self.owner
-            logger.info(f"Owner Have been set to {self.owner.display_name}") # type: ignore
             self._ready_called = True
             
             await self.change_presence(
@@ -155,18 +149,18 @@ class DiscordBot(commands.Bot):
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
         try:
-            if self.owner != None:
-                channel = await self.owner.create_dm()
-                message: Message = await channel.send(
-                    embed=nexon.Embed(
-                        title="Status Update",
-                        description="Bot has successfully started",
-                        color=colors.Info.value
-                    )
+            owner = self.get_user(self.owner_id)
+            if owner is None:
+                owner= await self.fetch_user(self.owner_id)
+            channel = await owner.create_dm()
+            message: Message = await channel.send(
+                embed=nexon.Embed.Info(
+                    title="Status Update",
+                    description="Bot has successfully started",
+                    author=[self.user.display_name, self.user.avatar.url]
                 )
-                self.logger.info(f"Sent to {self.owner.display_name} ({self.owner.id}) with the message ID {message.id}")
-            else:
-                logger.warning("There is no owner")
+            )
+            self.logger.info(f"Sent to {owner.display_name} ({owner.id}) with the message ID {message.id}")
         except Exception as e:
             self.logger.warning(f"Failed to send startup message: {str(e)}")
     
@@ -179,43 +173,41 @@ class DiscordBot(commands.Bot):
             err = error
         if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
-                embed=error_embed(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
+                embed=Embed.Error(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationMissingPermissions):
             missing = ", ".join(err.missing_permissions)
             await ctx.response.send_message(
-                embed=error_embed(f"You don't have {missing}", "Missing Permissions"),
+                embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationNotOwner):
             await ctx.response.send_message(
-                embed=error_embed(f"You are not the owner of the bot", "Not Owner"),
+                embed=Embed.Error(f"You are not the owner of the bot", "Not Owner"),
                 ephemeral=True)
             return
-        elif isinstance(err, ApplicationNotOwnerGuild):
-            await ctx.response.send_message(
-                embed=error_embed(f"You are not the owner of the Server {err.guild}", "Not Owner of Server"),
-                ephemeral=True)
+        # elif isinstance(err, ApplicationNotOwnerGuild):
+        #     await ctx.response.send_message(
+        #         embed=Embed.Error(f"You are not the owner of the Server {err.guild}", "Not Owner of Server"),
+        #         ephemeral=True)
             return
         elif isinstance(err, ApplicationNoPrivateMessage):
             await ctx.response.send_message(
-                embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
+                embed=Embed.Error(f"You can't Use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationPrivateMessageOnly):
             await ctx.response.send_message(
-                embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
+                embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return
         elif isinstance(error, FeatureDisabled):
             if error.send_error: await ctx.response.send_message(
-                embed=error_embed(error.message,"Feature Disabled",))
+                embed=Embed.Error(error.message,"Feature Disabled",))
             return 
-        elif isinstance(error, CommandDisabled):
-            return
         if not ctx.response.is_done():
-            await ctx.response.send_message(embed=error_embed(str(error), title="An unexpected error occurred"))
+            await ctx.response.send_message(embed=Embed.Error(str(error), title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner
@@ -239,37 +231,35 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, MissingPermissions):
             missing = ", ".join(error.missing_permissions)
             await ctx.reply(
-                embed=error_embed(f"You don't have {missing}", "Missing Permissions"))
+                embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"))
             return
         elif isinstance(error, NotOwner):
             await ctx.reply(
-                embed=error_embed(f"You are not the owner of the bot", "Not Owner"))
+                embed=Embed.Error(f"You are not the owner of the bot", "Not Owner"))
             return
         elif isinstance(error, FeatureDisabled):
             if error.send_error: await ctx.reply(
-                embed=error_embed(f"This Feature is disabled",
+                embed=Embed.Error(f"This Feature is disabled",
                                   "Feature Disabled"))
             return 
         # elif isinstance(error, NotOwnerGuild):
         #     await ctx.reply(
-        #         embed=error_embed(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),
+        #         embed=Embed.Error(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),
         #         ephemeral=True)
         #     return
         elif isinstance(error, NoPrivateMessage):
             await ctx.reply(
-                embed=error_embed(f"You can't Use this command in DM", "DM not Allowed"),
+                embed=Embed.Error(f"You can't Use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
         elif isinstance(error, PrivateMessageOnly):
             await ctx.reply(
-                embed=error_embed(f"You Only Can Do this Command in DM", "DM Only"),
+                embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return
         elif isinstance(error,commands.errors.CommandNotFound):
             return
-        elif isinstance(error, CommandDisabled):
-            return
-        await ctx.reply(embed=error_embed(str(error), title="An unexpected error occurred"))
+        await ctx.reply(embed=Embed.Error(str(error), title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner

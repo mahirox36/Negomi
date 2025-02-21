@@ -27,7 +27,7 @@ class Other(commands.Cog):
         phrase      = joke["setup"]
         punchline   = joke["punchline"]
         ID          = joke["id"]
-        await ctx.send(embed=info_embed(title=phrase,description=f"||{punchline}||",footer=f"id: {ID}"))
+        await ctx.send(embed=Embed.Info(title=phrase,description=f"||{punchline}||",footer=f"id: {ID}"))
 
     @slash_command(name="meme",description="Get a random Meme")
     async def meme(self,ctx:init):
@@ -49,7 +49,7 @@ class Other(commands.Cog):
     @slash_command(name="8ball", description="Ask the magic 8-ball a question")
     async def eight_ball(self,ctx: init, question: str):
         response = random.choice(self.eight_ball_responses)
-        await ctx.send(embed=info_embed(title=f"🎱 **Question:** {question}",
+        await ctx.send(embed=Embed.Info(title=f"🎱 **Question:** {question}",
                            description=f"**Answer:** {response}"))
         
         
@@ -62,7 +62,7 @@ class Other(commands.Cog):
         memberCount = str(interaction.guild.member_count)
         icon = str(interaction.guild.icon)
     
-        embed = info_embed(
+        embed = Embed.Info(
             title=name + " Info",
             description=description,
         )
@@ -89,7 +89,7 @@ class Other(commands.Cog):
         view.add_item(button)
 
         # Send the button in response to the command
-        await ctx.response.send_message(embed=info_embed("Click the button below to visit the website:","Negomi Website"), view=view,ephemeral=True)
+        await ctx.response.send_message(embed=Embed.Info("Click the button below to visit the website:","Negomi Website"), view=view,ephemeral=True)
     
     
 

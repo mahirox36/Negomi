@@ -1,14 +1,44 @@
+from typing import Union
+import emoji
 import random
 from string import hexdigits
 from typing import Any, Dict, List, Union
 from .DataManager import DataManager
 
+def get_by_percent(percent: Union[int, float] ,text: str, min_words: int = 5, returns: str = "") -> str:
+    """Get a specified percentage of words from a sentence.
 
+    Args:
+        percent (Union[int, float]): The percentage of words to return (between 0 and 100).
+        text (str): The input sentence to extract words from.
+        min_words (int, optional): Minimum number of words required to return any result. Defaults to 5.
 
-class BetterID:
+    Returns:
+        str: The extracted percentage of words from the input text, or an empty string if the text has fewer words than `min_words`.
+    """
+    if isinstance(percent, int):
+        percent /= 100
+    words = text.split()
+    if len(words) < min_words:
+        return returns
+
+    take_count = max(1, int(len(words) * percent))
+    return " ".join(words[:take_count])
+
+def extract_emojis(text: str) -> list:
+    """
+    Extract all emojis from a string.
+    """
+    return [char for char in text if char in emoji.EMOJI_DATA]
+
+def remove_numbers(text: str) -> str:
+    """Remove numbers from a string."""
+    return ''.join(char for char in text if not char.isdigit())
+
+class IDManager:
     def __init__(self,file: str = "codes",max:int = 7):
         self.max = max
-        self.file = DataManager("BetterID", default=[], file=file)
+        self.file = DataManager("IDManager", default=[], file=file)
     def create_random_id(self) -> str:
         code = ''.join(random.choice(hexdigits) for _ in range(self.max))
         for i in self.file.data:

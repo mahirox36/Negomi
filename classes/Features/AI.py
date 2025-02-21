@@ -20,7 +20,6 @@ class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.conversation_manager = ConversationManager()
-        self.typing_manager = TypingManager(client)
         self.settings = DataManager("AI", file="settings", default={
             "public_channels": {},  # guild_id: channel_id
             "active_threads": {}    # user_id: thread_id
@@ -53,6 +52,7 @@ class AI(commands.Cog):
         if isinstance(message.channel, Thread):
             active_threads = self.settings.get("active_threads", {})
             if str(message.channel.id) in active_threads.values():
+                await message.start_typing()
                 await self.handle_ai_response(message, "thread")
                 return
 
@@ -61,20 +61,21 @@ class AI(commands.Cog):
             public_channels = self.settings.get("public_channels", {})
             if str(message.guild.id) in public_channels:
                 if message.channel.id == int(public_channels[str(message.guild.id)]):
+                    await message.start_typing()
                     await self.handle_ai_response(message)
                     return
 
         # Handle mentions and DMs
         if isinstance(message.channel, DMChannel) or self.client.user.mentioned_in(message):
+            await message.start_typing()
             await self.handle_ai_response(message)
 
     async def handle_ai_response(self, message: Message, type: str="public"):
         if not self.ready:
-            await message.reply(embed=warn_embed("AI is still starting up", "AI Warning"))
+            await message.reply(embed=Embed.Warning("AI is still starting up", "AI Warning"))
             return
 
         try:
-            await self.typing_manager.start_typing(message.channel.id)
             name = message.author.display_name
             content = message.clean_content.replace(f"<@{self.client.user.id}>", "Negomi")
 
@@ -83,22 +84,22 @@ class AI(commands.Cog):
             )
 
             if response is offline:
-                await message.reply(embed=error_embed("AI is offline", "AI Offline"))
+                await message.reply(embed=Embed.Error("AI is offline", "AI Offline"))
                 return
             if response is False:
-                await message.reply(embed=debug_embed("Conversation cleared!"))
+                await message.reply(embed=Embed.Error("Conversation cleared!"))
                 return
             if not response:
-                await message.reply(embed=error_embed("Failed to generate response"))
+                await message.reply(embed=Embed.Error("Failed to generate response"))
                 return
 
             await message.reply(response)
 
         except Exception as e:
             logger.error(f"AI Response Error: {e}")
-            await message.reply(embed=error_embed("Something went wrong!"))
+            await message.reply(embed=Embed.Error("Something went wrong!"))
         finally:
-            await self.typing_manager.stop_typing(message.channel.id)
+            await message.stop_typing()
 
     @slash_command(name="ai")
     async def ai(self, ctx:init):
@@ -107,7 +108,7 @@ class AI(commands.Cog):
     @ai.subcommand(name="chat", description="Start a private chat thread")
     async def create_chat(self, ctx: init):
         if isinstance(ctx.channel, DMChannel):
-            await ctx.send(embed=error_embed("Cannot create threads in DMs"))
+            await ctx.send(embed=Embed.Error("Cannot create threads in DMs"))
             return
 
         thread = await ctx.channel.create_thread(
@@ -121,7 +122,7 @@ class AI(commands.Cog):
         self.settings.set("active_threads", active_threads)
         self.settings.save()
 
-        await ctx.send(embed=info_embed(f"Created private chat thread {thread.mention}", "AI Created!"))
+        await ctx.response.send_info(f"Created private chat thread {thread.mention}", "AI Created!")
         await thread.send(f"Hello {ctx.user.mention}! How can I help you today?")
 
     @ai.subcommand(name="public")
@@ -135,7 +136,7 @@ class AI(commands.Cog):
         self.settings.set("public_channels", public_channels)
         self.settings.save()
         
-        await ctx.send(embed=info_embed(f"Set {channel.mention} as public AI chat channel", "AI Enabled!"))
+        await ctx.response.send_info
 
     def split_response(response_text, max_length=4096):
         return [response_text[i:i+max_length] for i in range(0, len(response_text), max_length)]
@@ -150,9 +151,9 @@ class AI(commands.Cog):
             del public_channels[guild_id]
             self.settings.set("public_channels", public_channels)
             self.settings.save()
-            return await ctx.send(embed=info_embed("Disabled public AI chat", "AI Disabled!"))
+            return await ctx.response.send_info("Disabled public AI chat", "AI Disabled!")
             
-        await ctx.send(embed=error_embed("Public AI chat is already disabled", "AI Disabled!"))
+        await ctx.send(embed=Embed.Error("Public AI chat is already disabled", "AI Disabled!"))
 
     
     @message_command("Summarize", integration_types=[
@@ -178,14 +179,14 @@ class AI(commands.Cog):
             )
             if len(response.text) > 4096:
                 split_texts = self.split_response(response.text)
-                return await ctx.send(embeds=[info_embed(text, title="Summary") for text in split_texts])
-            await ctx.send(embed=info_embed(response.text, title="Summary"))
+                return await ctx.send(embeds=[Embed.Info(text, title="Summary") for text in split_texts])
+            await ctx.send(embed=Embed.Info(response.text, title="Summary"))
         else:
             response = generate(prompt, "llama3.2")
             if len(response) > 4096:
                 split_texts = self.split_response(response)
-                return await ctx.send(embeds=[info_embed(text, title="Summary") for text in split_texts])
-            await ctx.send(embed=info_embed(response, title="Summary"))
+                return await ctx.send(embeds=[Embed.Info(text, title="Summary") for text in split_texts])
+            await ctx.send(embed=Embed.Info(response, title="Summary"))
     
     @slash_command("ask", "ask Gemini/Llama3.2 AI.", integration_types=[
         IntegrationType.user_install,
@@ -206,21 +207,21 @@ class AI(commands.Cog):
             
             if len(response.text) > 4096:
                 split_texts = self.split_response(response.text)
-                return await ctx.send(embeds=[info_embed(text,title="") for text in split_texts], ephemeral=ephemeral)   
-            await ctx.send(embed=info_embed(response.text,title=""), ephemeral=ephemeral)
+                return await ctx.send(embeds=[Embed.Info(text,title="") for text in split_texts], ephemeral=ephemeral)   
+            await ctx.send(embed=Embed.Info(response.text,title=""), ephemeral=ephemeral)
         else:
             response = generate(message, "llama3.2")
             if len(response) > 4096:
                 split_texts = self.split_response(response)
-                return await ctx.send(embeds=[info_embed(text,title="") for text in split_texts], ephemeral=ephemeral)
-            await ctx.send(embed=info_embed(response,title=""), ephemeral=ephemeral)
+                return await ctx.send(embeds=[Embed.Info(text,title="") for text in split_texts], ephemeral=ephemeral)
+            await ctx.send(embed=Embed.Info(response,title=""), ephemeral=ephemeral)
     
     @ai.subcommand(name="join", description="Join a voice channel")
     async def join(self, ctx:init):
         if not ctx.user.voice:
-            return await ctx.send(embed=error_embed("You are not in a voice channel!", title="AI Error"))
+            return await ctx.send(embed=Embed.Error("You are not in a voice channel!", title="AI Error"))
         elif ctx.guild.voice_client:
-            return await ctx.send(embed=error_embed("I am already in a voice channel!", title="AI Error"))
+            return await ctx.send(embed=Embed.Error("I am already in a voice channel!", title="AI Error"))
         await ctx.user.voice.channel.connect()
         voice_client: VoiceClient = ctx.guild.voice_client
         audio_source = FFmpegPCMAudio("Assets/Musics/Magain Train.mp3") 
@@ -230,9 +231,9 @@ class AI(commands.Cog):
     @ai.subcommand(name="leave", description="Leave a voice channel")
     async def leave(self, ctx:init):
         if not ctx.guild.voice_client:
-            return await ctx.send(embed=error_embed("I am not in a voice channel!", title="AI Error"))
+            return await ctx.send(embed=Embed.Error("I am not in a voice channel!", title="AI Error"))
         elif ctx.guild.voice_client.channel != ctx.user.voice.channel:
-            return await ctx.send(embed=error_embed("You are not in the same voice channel as me!", title="AI Error"))
+            return await ctx.send(embed=Embed.Error("You are not in the same voice channel as me!", title="AI Error"))
         await ctx.guild.voice_client.disconnect()
 
 def setup(client):

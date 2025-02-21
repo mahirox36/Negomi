@@ -8,14 +8,22 @@ nest_asyncio.apply()
 
 
 from .DataManager import DataManager
-from .BetterID import BetterID
-from .config import BotConfig
-from .config import *
-from .sidecord import PermissionOverwriteWith, PermissionsWith, owner, debug_embed, info_embed, warn_embed, \
-    error_embed,HaveHigherRole, ApplicationNotOwnerGuild, is_owner_guild, \
-    FeatureDisabled, remove_numbers, get_feature_state, feature, check_feature_inside, set_owner, get_owner, TypingManager, \
-        CommandDisabled, enableByConfig, url, extract_emojis, contains_emoji, get_by_percent
-from .logger import logger, print
+from .DiscordConfig import *
+from .utils import extract_emojis, get_by_percent, remove_numbers, emoji, IDManager
+from .feature import get_feature_state, feature, check_feature_inside, FeatureDisabled
+
+import logging
+
+Level = logger_level.lower()
+if Level.startswith("n"): Level = logging.NOTSET
+elif Level.startswith("d"): Level = logging.DEBUG
+elif Level.startswith("i"): Level = logging.INFO
+elif Level.startswith("w"): Level = logging.WARNING
+elif Level.startswith("e"): Level = logging.ERROR
+elif Level.startswith("c"): Level = logging.CRITICAL
+else: Level = logging.INFO
+logger = logging.getLogger("bot")
+
 from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline
 from .Users import UserManager as UserData
 from .ipc_manager import IPCManager

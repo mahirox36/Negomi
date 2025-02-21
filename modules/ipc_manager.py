@@ -2,15 +2,14 @@ import asyncio
 from datetime import datetime
 from nextcord.ext import ipc
 from nexon.ext.commands import Bot
-from nexon import UserApplicationCommand, SlashApplicationCommand, ForumChannel, BaseApplicationCommand
+from nexon import UserApplicationCommand, SlashApplicationCommand, ForumChannel
 from typing import Callable, Dict, List, Optional, Any
 from threading import Thread
 import psutil
 import platform
-import os
-from .Users import load_json_files, analyze_data, UserManager, BotStatistics
-from .config import BotConfig
-from .logger import logger
+from .Users import load_json_files, analyze_data, UserManager
+import logging
+logger = logging.getLogger("bot")
 
 class IPCManager:
     def __init__(self, bot: Bot):

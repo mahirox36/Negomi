@@ -43,14 +43,14 @@ class Settings(commands.Cog):
 
         if feature in disabled_features:
             await ctx.send(
-                embed=error_embed("Feature Already Disabled", f"{feature} is already disabled"),
+                embed=Embed.Error("Feature Already Disabled", f"{feature} is already disabled"),
                 ephemeral=True
             )
             return
         
         if feature not in self.features:
             await ctx.send(
-                embed=error_embed("Invalid Feature", f"Feature '{feature}' does not exist")
+                embed=Embed.Error("Invalid Feature", f"Feature '{feature}' does not exist")
             )
             return
 
@@ -59,7 +59,7 @@ class Settings(commands.Cog):
             file.data = disabled_features
         
         await ctx.send(
-            embed=info_embed("Feature Disabled", f"{feature.capitalize()} has been disabled")
+            embed=Embed.Info("Feature Disabled", f"{feature.capitalize()} has been disabled")
         )
 
     @feature.subcommand("enable", "Enable a feature in your server") 
@@ -71,14 +71,14 @@ class Settings(commands.Cog):
 
         if feature in enabled_features:
             await ctx.send(
-                embed=error_embed("Feature Already Enabled", f"{feature} is already enabled"),
+                embed=Embed.Error("Feature Already Enabled", f"{feature} is already enabled"),
                 ephemeral=True
             )
             return
         
         if feature not in self.features:
             await ctx.send(
-                embed=error_embed("Invalid Feature", f"Feature '{feature}' does not exist")
+                embed=Embed.Error("Invalid Feature", f"Feature '{feature}' does not exist")
             )
             return
 
@@ -89,7 +89,7 @@ class Settings(commands.Cog):
             file.data = disabled_features
         
         await ctx.send(
-            embed=info_embed("Feature Enabled", f"{feature.capitalize()} has been enabled")
+            embed=Embed.Info("Feature Enabled", f"{feature.capitalize()} has been enabled")
         )
 
     @disable.on_autocomplete("feature")

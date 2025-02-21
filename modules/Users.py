@@ -1,15 +1,16 @@
 try:
     from .DataManager import DataManager
-    from .sidecord import extract_emojis, info_embed
-    from .logger import logger
+    from .utils import extract_emojis
+    import logging
+    logger = logging.getLogger("bot")
     from .Badges import BadgeManager, Badge
 except: 
-    from DataManager import DataManager
+    from modules.DataManager import DataManager
 from datetime import datetime
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Set, Optional, Union
-from nexon import Guild, Member, Message, User
-from nexon import Interaction as init, File, Interaction
+from nexon import Embed, Member, Message, User
+from nexon import Interaction as init, File
 from nexon.ext.application_checks import check
 import re
 import json
@@ -362,7 +363,7 @@ class UserManager(DataManager):
 
             # Create notification embed for each new badge
             for badge in new_badges:
-                embed = info_embed(
+                embed = Embed.Info(
                     title=f"🏆 New Badge Earned: {badge.title}!",
                     description=badge.description
                 )

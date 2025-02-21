@@ -49,7 +49,7 @@ class ModeratorManager(commands.Cog):
 
     def generate_token(self):
         """Generate a new unique token"""
-        better_id = BetterID("Moderator Manager", 42)
+        better_id = IDManager("Moderator Manager", 42)
         return better_id.generate()
 
     def get_mod_data(self, guild_id: int):
@@ -116,7 +116,7 @@ class ModeratorManager(commands.Cog):
             "admin": adminRole.id if adminRole else None
         }
         file.save()
-        await ctx.send(embed=info_embed("Moderator Manager setup successfully", "Moderator Manager"))
+        await ctx.send(embed=Embed.Info("Moderator Manager setup successfully", "Moderator Manager"))
     @manager.subcommand("add", "Add a Moderator")
     @feature()
     async def add(self, ctx: init, member: Member, role: Role):
@@ -126,22 +126,22 @@ class ModeratorManager(commands.Cog):
         data = DataManager("Moderator Manager", ctx.guild.id).data
         
         if data is None:
-            await ctx.send(embed=error_embed("Moderator Manager is not setup yet", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("Moderator Manager is not setup yet", "Moderator Manager"))
             return
         
         if role.id not in data.values():
-            await ctx.send(embed=error_embed("This role is not a Moderator role", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This role is not a Moderator role", "Moderator Manager"))
             return
 
         if str(member.id) in data:
-            await ctx.send(embed=error_embed("This member is already a Moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This member is already a Moderator", "Moderator Manager"))
             return
         try:
             staffRole = ctx.guild.get_role(data["staff"])
             await member.add_roles(role)
             await member.add_roles(staffRole)
         except:
-            await ctx.send(embed=error_embed(f"Error while adding Role. please check that the bot role is on top of the {role.mention} role", "Moderator Manager"),ephemeral=True)
+            await ctx.send(embed=Embed.Error(f"Error while adding Role. please check that the bot role is on top of the {role.mention} role", "Moderator Manager"),ephemeral=True)
 
         token = self.generate_token()
         
@@ -160,9 +160,9 @@ class ModeratorManager(commands.Cog):
         # DM the token to the new moderator
         try:
             await member.send(f"Your moderator token is: `{token}`\nThis token will be automatically refreshed every 60 days.")
-            await ctx.send(embed=info_embed(f"{member.mention} is now a {role.mention}\nToken has been sent via DM", "Moderator Manager"))
+            await ctx.send(embed=Embed.Info(f"{member.mention} is now a {role.mention}\nToken has been sent via DM", "Moderator Manager"))
         except:
-            await ctx.send(embed=warn_embed(f"{member.mention} is now a {role.mention}, but I couldn't DM them the token", "Moderator Manager"))
+            await ctx.send(embed=Embed.Warning(f"{member.mention} is now a {role.mention}, but I couldn't DM them the token", "Moderator Manager"))
     @manager.subcommand("promote", "Promote a moderator to a higher role")
     @feature()
     async def promote(self, ctx: init, member: Member):
@@ -172,7 +172,7 @@ class ModeratorManager(commands.Cog):
         roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
         if str(member.id) not in data:
-            await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This member is not a moderator", "Moderator Manager"))
             return
             
         current_role_id = data[str(member.id)]["currentRole"]
@@ -181,7 +181,7 @@ class ModeratorManager(commands.Cog):
         try:
             current_index = role_hierarchy.index(current_role_id)
             if current_index >= len(role_hierarchy) - 1:
-                await ctx.send(embed=error_embed("This moderator is already at the highest role", "Moderator Manager"))
+                await ctx.send(embed=Embed.Error("This moderator is already at the highest role", "Moderator Manager"))
                 return
                 
             new_role_id = role_hierarchy[current_index + 1]
@@ -196,9 +196,9 @@ class ModeratorManager(commands.Cog):
             await member.add_roles(new_role)
             await member.remove_roles(ctx.guild.get_role(current_role_id))
             
-            await ctx.send(embed=info_embed(f"{member.mention} has been promoted to {new_role.mention}", "Moderator Manager"))
+            await ctx.send(embed=Embed.Info(f"{member.mention} has been promoted to {new_role.mention}", "Moderator Manager"))
         except ValueError:
-            await ctx.send(embed=error_embed("Error in role hierarchy", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("Error in role hierarchy", "Moderator Manager"))
 
     @manager.subcommand("demote", "Demote a moderator to a lower role")
     @feature()
@@ -209,7 +209,7 @@ class ModeratorManager(commands.Cog):
         roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
         if str(member.id) not in data:
-            await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This member is not a moderator", "Moderator Manager"))
             return
             
         current_role_id = data[str(member.id)]["currentRole"]
@@ -218,7 +218,7 @@ class ModeratorManager(commands.Cog):
         try:
             current_index = role_hierarchy.index(current_role_id)
             if current_index <= 1:
-                await ctx.send(embed=error_embed("This moderator is already at the lowest role", "Moderator Manager"))
+                await ctx.send(embed=Embed.Error("This moderator is already at the lowest role", "Moderator Manager"))
                 return
                 
             new_role_id = role_hierarchy[current_index - 1]
@@ -233,9 +233,9 @@ class ModeratorManager(commands.Cog):
             await member.add_roles(new_role)
             await member.remove_roles(ctx.guild.get_role(current_role_id))
             
-            await ctx.send(embed=info_embed(f"{member.mention} has been demoted to {new_role.mention}", "Moderator Manager"))
+            await ctx.send(embed=Embed.Info(f"{member.mention} has been demoted to {new_role.mention}", "Moderator Manager"))
         except ValueError:
-            await ctx.send(embed=error_embed("Error in role hierarchy", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("Error in role hierarchy", "Moderator Manager"))
 
     @manager.subcommand("remove", "Remove a moderator")
     @feature()
@@ -245,7 +245,7 @@ class ModeratorManager(commands.Cog):
         data = file.load()
         
         if str(member.id) not in data:
-            await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This member is not a moderator", "Moderator Manager"))
             return
             
         # Remove all mod roles
@@ -256,7 +256,7 @@ class ModeratorManager(commands.Cog):
         del data[str(member.id)]
         file.save()
         
-        await ctx.send(embed=info_embed(f"{member.mention} has been removed from the moderator team", "Moderator Manager"))
+        await ctx.send(embed=Embed.Info(f"{member.mention} has been removed from the moderator team", "Moderator Manager"))
 
     @manager.subcommand("hacked", "Handle hacked moderator account")
     @feature()
@@ -273,14 +273,14 @@ class ModeratorManager(commands.Cog):
         data = file.load()
         
         if str(compromised_member.id) not in data:
-            await ctx.send(embed=error_embed("The specified account is not a moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("The specified account is not a moderator", "Moderator Manager"))
             return
             
         mod_data = data[str(compromised_member.id)]
         
         # Verify backup token
         if mod_data["token"] != backup_token:
-            await ctx.send(embed=error_embed("Invalid backup token provided", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("Invalid backup token provided", "Moderator Manager"))
             return
             
         # Create backup of mod data before any changes
@@ -331,7 +331,7 @@ class ModeratorManager(commands.Cog):
                 success_msg = f"Compromised account {compromised_member.mention} has been banned. No new account was provided for restoration."
             
             # Send success message
-            await ctx.send(embed=info_embed(success_msg, "Moderator Manager"))
+            await ctx.send(embed=Embed.Info(success_msg, "Moderator Manager"))
             
             # Log the action
             self.logger.info(f"Handled hacked moderator account: {compromised_member.id} banned" + 
@@ -339,7 +339,7 @@ class ModeratorManager(commands.Cog):
             
         except Exception as e:
             self.logger.error(f"Error handling hacked account: {e}")
-            await ctx.send(embed=error_embed(f"An error occurred while handling the hacked account: {str(e)}", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error(f"An error occurred while handling the hacked account: {str(e)}", "Moderator Manager"))
 
     @manager.subcommand("list", "List all moderators")
     @feature()
@@ -349,9 +349,9 @@ class ModeratorManager(commands.Cog):
         data = file.load()
         
         if not data:
-            await ctx.send(embed=warn_embed("No moderators found", "Moderator Manager"))
+            await ctx.send(embed=Embed.Warning("No moderators found", "Moderator Manager"))
             return
-        embed = info_embed(title="Moderator List")
+        embed = Embed.Info(title="Moderator List")
         
         for user_id, mod_data in data.items():
             member = ctx.guild.get_member(int(user_id))
@@ -374,11 +374,11 @@ class ModeratorManager(commands.Cog):
         data = file.load()
         
         if str(member.id) not in data:
-            await ctx.send(embed=error_embed("This member is not a moderator", "Moderator Manager"))
+            await ctx.send(embed=Embed.Error("This member is not a moderator", "Moderator Manager"))
             return
             
         mod_data = data[str(member.id)]
-        embed = info_embed(title=f"Moderator Information - {member.display_name}")
+        embed = Embed.Info(title=f"Moderator Information - {member.display_name}")
         
         current_role = ctx.guild.get_role(mod_data["currentRole"])
         added_by = ctx.guild.get_member(mod_data["by"])

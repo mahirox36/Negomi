@@ -1,12 +1,11 @@
+import logging
 import os
-import secrets
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
-from rich import print as pprint
-
-VERSION = "0.30"
+logger = logging.getLogger("bot")
+VERSION = "0.33"
 
 
 @dataclass
@@ -21,12 +20,9 @@ class GeneralConfig:
     presence: str = "My Master Mahiro"
     send_to_online_owner: bool = True
     owner_id: int = None
+    logger_level: str = "INFO"
     ConfigVersion: str = VERSION
 
-@dataclass
-class LoggerConfig:
-    format: str = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
-    level: str = "Info"
 
 @dataclass
 class ColorConfig:
@@ -55,18 +51,6 @@ class ColorConfig:
         return cls(**processed_data)
 
 @dataclass
-class WelcomeConfig:
-    enabled: bool = True
-    base_image_path: str = "Assets/img/Welcome.png"
-    font: str = "Assets/font/MonsterFriendFore.otf"
-    backup_font: str = "Assets/font/arial.ttf"
-    font_size: int = 30
-    resize_dimensions: tuple[int, int] = (99, 99)
-    avatar_position: tuple[int, int] = (47, 47)
-    text_position: tuple[int, int] = (190, 195)
-    text_color_rgb: tuple[int, int, int] = (70, 243, 243)
-
-@dataclass
 class AISettings:
     enabled: bool = False
     ip: str = "127.0.0.1"
@@ -77,9 +61,7 @@ class AISettings:
 @dataclass
 class Bot_Config:
     General: GeneralConfig = field(default_factory=GeneralConfig)
-    Logger: LoggerConfig = field(default_factory=LoggerConfig)
     General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
-    Welcome_Settings: WelcomeConfig = field(default_factory=WelcomeConfig)
     AI: AISettings = field(default_factory=AISettings)
     Dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234, 43214321])
@@ -90,13 +72,7 @@ class Bot_Config:
             "General": {
                 k: v for k, v in self.General.__dict__.items()
             },
-            "Logger": {
-                k: v for k, v in self.Logger.__dict__.items()
-            },
             "Embeds Colour": self.General_Embeds_Colour.to_dict(),
-            "Welcome": {
-                k: v for k, v in self.Welcome_Settings.__dict__.items()
-            },
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
@@ -111,9 +87,7 @@ class Bot_Config:
         """Create a Bot_Config instance from a dictionary."""
         return cls(
             General=GeneralConfig(**data.get("General", {})),
-            Logger=LoggerConfig(**data.get("Logger", {})),
             General_Embeds_Colour=ColorConfig.from_dict(data.get("Embeds Colour", {})),
-            Welcome_Settings=WelcomeConfig(**data.get("Welcome", {})),
             AI=AISettings(**data.get("AI", {})),
             Dashboard=DashboardConfig(**data.get("Dashboard", {})),
             Testing_guilds_id=data.get("TESTING GUILDS ID", []),
@@ -130,9 +104,7 @@ class ConfigManager:
         self.config = Config(self.config_path)
         self.layout = [
             "General",
-            "Logger",
             "Embeds Colour",
-            "Welcome",
             "AI",
             "Dashboard",
             "TESTING GUILDS ID"
@@ -200,9 +172,9 @@ class ConfigManager:
                     with open(backup_path, 'r') as source:
                         with open(self.config.filepath, 'w') as target:
                             target.write(source.read())
-                    pprint("Config restored from backup due to save failure")
+                    logger.info("Config restored from backup due to save failure")
             except Exception as restore_error:
-                pprint(f"Failed to restore from backup: {str(restore_error)}")
+                logger.error(f"Failed to restore from backup: {str(restore_error)}")
             raise Exception(f"Failed to save updated config: {str(e)}")
 
 def initialize_config() -> ConfigManager:
@@ -218,7 +190,7 @@ def initialize_config() -> ConfigManager:
         
         # Check if config exists and version matches
         if not current_version or current_version != VERSION:
-            pprint(f"Updating config from version {current_version} to {VERSION}")
+            logger.info(f"Updating config from version {current_version} to {VERSION}")
             default_config.General.ConfigVersion = VERSION
             config_manager.update_config(default_config)
             
@@ -245,9 +217,7 @@ prefix = BotConfig.General.prefix
 Presence = BotConfig.General.presence
 send_to_owner_enabled = BotConfig.General.send_to_online_owner
 overwriteOwner = BotConfig.General.owner_id
-
-Format = BotConfig.Logger.format
-Level = BotConfig.Logger.level
+logger_level = BotConfig.General.logger_level
  
 # Colors/Colour
 colors = BotConfig.General_Embeds_Colour
@@ -259,17 +229,6 @@ ip = BotConfig.AI.ip
 allowAllServers = BotConfig.AI.allow_all_servers
 allowAllUsers  = BotConfig.AI.allow_all_users
 Gemini_API  = BotConfig.AI.Gemini_API
-
-# Welcome
-Welcome_enabled = BotConfig.Welcome_Settings.enabled
-baseImagePath = BotConfig.Welcome_Settings.base_image_path
-Font = BotConfig.Welcome_Settings.font
-BackupFont = BotConfig.Welcome_Settings.backup_font
-SizeFont = BotConfig.Welcome_Settings.font_size
-Resize = BotConfig.Welcome_Settings.resize_dimensions
-avatarPosition = BotConfig.Welcome_Settings.avatar_position
-textPosition = BotConfig.Welcome_Settings.text_position
-textColor = BotConfig.Welcome_Settings.text_color_rgb
 
 # Advanced Settings
 TESTING_GUILD_ID = BotConfig.Testing_guilds_id
