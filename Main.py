@@ -21,8 +21,9 @@ class DiscordBot(commands.Bot):
             intents=intents,
             lazy_load_commands=False,
             owner_id=overwriteOwner if overwriteOwner else None,
-            help_command=None
-            
+            help_command=None,
+            logger_level=Level,
+            enable_user_data=True
         )
         
         self.start_time = datetime.now()

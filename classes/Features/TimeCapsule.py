@@ -87,7 +87,8 @@ class timeCapsule(commands.Cog):
                 updated_data.append(capsule)
         
         file.data = updated_data
-        file.save()
+        if file.data:
+            file.save()
     
     
 

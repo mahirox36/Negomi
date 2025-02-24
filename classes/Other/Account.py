@@ -128,6 +128,14 @@ class UserInfoPanel(View):
         view = MainPanel(self.user)
         await interaction.response.edit_message(embed=embed, view=view)
 
+    @button(label="Back", style=ButtonStyle.gray)
+    async def back(self, button: Button, interaction: Interaction):
+        embed = Embed(title="Account Panel", color=colors.Info.value)
+        embed.description = "Select an option below"
+        
+        view = MainPanel(self.user)
+        await interaction.response.edit_message(embed=embed, view=view)
+
 class ConfirmDelete(View):
     def __init__(self, user: Member | User):
         super().__init__(timeout=120)
@@ -161,57 +169,6 @@ class Account(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
         
-    @commands.Cog.listener()
-    async def on_message(self, message:Message):
-        if message.author.id == self.client.user.id:
-            user_manager = UserData(self.client.user)
-            user_manager.record_bot_message()
-            
-        if message.author.bot:
-            return
-        userData = UserData(message.author)
-        await userData.incrementMessageCount(message)
-    
-    @commands.Cog.listener()
-    async def on_application_command_completion(self, ctx: init):
-        user_manager = UserData(self.client.user)
-        user_manager.record_command_processed(ctx.application_command.name)
-
-    @commands.Cog.listener()
-    async def on_application_command_error(self, ctx: init, error: Exception):
-        user_manager = UserData(self.client.user)
-        user_manager.record_error(ctx.application_command.name, str(error))
-    
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction:Reaction, user: Member | User):
-        if user.bot:
-            return
-        userData = UserData(user)
-        userData.user_data.reactions_given += 1
-        userData.save()
-        userData= UserData(reaction.message.author)
-        userData.user_data.reactions_received += 1
-        userData.save()
-    
-    @commands.Cog.listener()
-    async def on_message_delete(self, message:Message):
-        if message.author.bot:
-            return
-        userData = UserData(message.author)
-        userData.user_data.deleted_messages += 1
-        userData.save()
-    
-    @commands.Cog.listener()
-    async def on_message_edit(self, before:Message, after:Message):
-        if after.author.bot:
-            return
-        userData = UserData(after.author)
-        userData.user_data.deleted_messages += 1
-        userData.save()
-    
-    @commands.Cog.listener()
-    async def on_interaction(self, ctx: init):
-        await UserData.commandCount(ctx)
     
     @slash_command(name="account", description="View your account information and statistics")
     async def account(self, interaction: Interaction):

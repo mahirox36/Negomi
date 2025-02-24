@@ -262,7 +262,8 @@ class Welcome(commands.Cog):
             if cache_key in self.font_cache:
                 return self.font_cache[cache_key]
 
-            font = ImageFont.truetype(Font, size)
+            # Use a default system font
+            font = ImageFont.truetype("arial.ttf", size)
             self.font_cache[cache_key] = font
             return font
         except:

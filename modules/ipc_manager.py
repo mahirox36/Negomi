@@ -65,6 +65,10 @@ class IPCManager:
         @self.route("get_commands")
         async def get_commands(_):
             return get_commands_func()
+        
+        @self.route("get_owner_id")
+        async def get_owner_id(_):
+            return self.bot.owner_id
 
         def get_commands_func(_: Optional[Any]):
             if not self.commands:
@@ -289,8 +293,34 @@ class IPCManager:
 
     async def _start_server(self):
         """Internal method to run the IPC server in its own event loop."""
-        self.logger.info("Starting IPC server...")
-        self.server.start()
+        max_retries = 3
+        retry_count = 0
+        retry_delay = 5  # seconds
+
+        while retry_count < max_retries:
+            try:
+                self.logger.info("Starting IPC server...")
+                self.server.start()
+                break
+            except ConnectionError as e:
+                retry_count += 1
+                if retry_count < max_retries:
+                    self.logger.warning(f"Connection error: {e}. Retrying in {retry_delay} seconds... (Attempt {retry_count}/{max_retries})")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    self.logger.error(f"Failed to start IPC server after {max_retries} attempts: {e}")
+                    raise
+            except OSError as e:
+                retry_count += 1
+                if retry_count < max_retries and e.errno in [98, 10048]:  # Address already in use (Linux/Windows)
+                    self.logger.warning(f"Port in use: {e}. Retrying in {retry_delay} seconds... (Attempt {retry_count}/{max_retries})")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    self.logger.error(f"Failed to start IPC server: {e}")
+                    raise
+            except Exception as e:
+                self.logger.error(f"Unexpected error starting IPC server: {e}")
+                raise
 
     def start(self):
         """Start the IPC server in a separate thread."""
