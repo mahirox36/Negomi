@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
+import DiscordLoginButton from "./DiscordLoginButton"
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const [activeSection, setActiveSection] = useState("")
   const [isAtTop, setIsAtTop] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -128,12 +130,26 @@ export default function Navbar() {
     }
   }, [pathname, activeSection]) // Add pathname as dependency
 
+  useEffect(() => {
+    // Check if user is authenticated (you'll need to implement this based on your auth setup)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/status')
+        const data = await response.json()
+        setIsAuthenticated(data.authenticated)
+      } catch (error) {
+        console.error('Error checking auth status:', error)
+      }
+    }
+    
+    checkAuth()
+  }, [])
+
   const navItems = [
     { path: '/', label: 'Home' },
-    { path: '/#features', label: 'Features' },
-    { path: '/#setup', label: 'Quick Start' },
     { path: '/commands', label: 'Commands' },
-    { path: '/statistics', label: 'Statistics' }, // Added statistics route
+    { path: '/statistics', label: 'Statistics' },
+    { path: '/dashboard', label: 'Dashboard', requiresAuth: true }, // Added statistics route
   ]
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -188,33 +204,37 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4 relative">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={(e) => handleNavigation(e, item.path)}
-                  className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${isActive(item.path) 
-                      ? 'text-white' 
-                      : 'text-gray-300 hover:text-white'
-                    }`}
-                >
-                  {item.label}
-                  {isActive(item.path) && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-0 rounded-md bg-white/20 -z-10"
-                      initial={false}
-                      transition={{ 
-                        type: "spring",
-                        bounce: 0.15,
-                        duration: 0.5
-                      }}
-                    />
-                  )}
-                </Link>
-              ))}
+            <div className="ml-10 flex items-center space-x-4 relative">
+              {navItems.map((item) => {
+                if (item.requiresAuth && !isAuthenticated) return null
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={(e) => handleNavigation(e, item.path)}
+                    className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                      ${isActive(item.path) 
+                        ? 'text-white' 
+                        : 'text-gray-300 hover:text-white'
+                      }`}
+                  >
+                    {item.label}
+                    {isActive(item.path) && (
+                      <motion.div
+                        layoutId="navbar-indicator"
+                        className="absolute inset-0 rounded-md bg-white/20 -z-10"
+                        initial={false}
+                        transition={{ 
+                          type: "spring",
+                          bounce: 0.15,
+                          duration: 0.5
+                        }}
+                      />
+                    )}
+                  </Link>
+                )
+              })}
+              {!isAuthenticated && <DiscordLoginButton />}
             </div>
           </div>
 
@@ -248,23 +268,31 @@ export default function Navbar() {
             className="md:hidden overflow-hidden"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={(e) => {
-                    setIsOpen(false)
-                    handleNavigation(e, item.path)
-                  }}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
-                    ${isActive(item.path)
-                      ? 'text-white bg-white/20'
-                      : 'text-gray-300 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                if (item.requiresAuth && !isAuthenticated) return null
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={(e) => {
+                      setIsOpen(false)
+                      handleNavigation(e, item.path)
+                    }}
+                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
+                      ${isActive(item.path)
+                        ? 'text-white bg-white/20'
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                      }`}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
+              {!isAuthenticated && (
+                <div className="px-3 py-2">
+                  <DiscordLoginButton />
+                </div>
+              )}
             </div>
           </motion.div>
         )}

@@ -1,12 +1,18 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 import uvicorn
 from nextcord.ext import ipc
 import asyncio
 from modules.Nexon import logger
+from pydantic import BaseModel
+
+class OwnerVerification(BaseModel):
+    user_id: str
 
 class Dashboard:
     def __init__(self):
         self.app = FastAPI()
+        self.router = APIRouter()
+        self.app.include_router(self.router)
         self.logger = logger
         self.ipc = ipc.Client(
             port=8765
@@ -16,14 +22,19 @@ class Dashboard:
         self.setup_routes()
 
     def setup_routes(self):
-        @self.app.get("/get_all_commands")
+        @self.router.get("/get_all_commands")
         async def get_all_commands(request: Request):
             stats = await self.ipc.request("get_commands")
             return stats
-        @self.app.get("/get_detailed_stats")
-        async def get_all_commands(request: Request):
+        @self.router.get("/get_detailed_stats")
+        async def get_detailed_stats(request: Request):
             stats = await self.ipc.request("get_detailed_stats")
             return stats
+        
+        @self.router.get("/verify_owner")
+        async def verify_owner(data: OwnerVerification):
+            BOT_OWNER_ID = await self.ipc.request("get_owner_id")
+            return {"is_owner": data.user_id == BOT_OWNER_ID}
 
     async def start(self):
         """Start the dashboard"""
