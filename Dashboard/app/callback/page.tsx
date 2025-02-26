@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleDiscordCallback } from "../utils/auth";
 import { useUser } from "../contexts/UserContext";
 import LoadingScreen from "../components/LoadingScreen";
 
-export default function CallbackPage() {
+function CallbackContent() {
+  return (
+    <Suspense fallback={<LoadingScreen message="Loading..." />}>
+      <CallbackHandler />
+    </Suspense>
+  );
+}
+
+function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
@@ -21,7 +29,7 @@ export default function CallbackPage() {
     const processCallback = async () => {
       try {
         const data = await handleDiscordCallback(code);
-        setUser(data.user); // Use context instead of localStorage directly
+        setUser(data.user);
         localStorage.setItem("accessToken", data.accessToken);
         router.push("/dashboard");
       } catch (error) {
@@ -34,4 +42,8 @@ export default function CallbackPage() {
   }, [router, searchParams, setUser]);
 
   return <LoadingScreen message="Authenticating..." />;
+}
+
+export default function CallbackPage() {
+  return <CallbackContent />;
 }
