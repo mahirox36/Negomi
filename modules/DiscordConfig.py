@@ -1,17 +1,16 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Self
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 logger = logging.getLogger("bot")
-VERSION = "0.33"
+VERSION = "0.34"
 
-
-@dataclass
-class DashboardConfig:
-    enabled: bool = True
-    domain: str = ""
+# Class for Badge Config
+# max_badges_per_guild = 5
+# Class for Rarity Colors Config
+# default_rarity_colors
 
 @dataclass
 class GeneralConfig:
@@ -24,13 +23,8 @@ class GeneralConfig:
     ConfigVersion: str = VERSION
 
 
-@dataclass
-class ColorConfig:
-    Debug: color = field(default_factory=lambda: color(0x6a5acd))
-    Info: color = field(default_factory=lambda: color(0xff69b4))
-    Warn: color = field(default_factory=lambda: color(0xFFD700))
-    Error: color = field(default_factory=lambda: color(0xB22222))
-
+@dataclass 
+class Color:
     def to_dict(self) -> Dict[str, str]:
         """Convert color values to hex strings for storage"""
         return {
@@ -38,7 +32,7 @@ class ColorConfig:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ColorConfig':
+    def from_dict(cls, data: Dict[str, Any]) -> Self:
         """Create ColorConfig from dictionary, handling hex strings"""
         processed_data = {}
         for key, value in data.items():
@@ -49,22 +43,36 @@ class ColorConfig:
             else:
                 raise ValueError(f"Invalid color value for {key}: {value}")
         return cls(**processed_data)
+    
+
+@dataclass
+class EmbedColorConfig(Color):
+    Debug: color = field(default_factory=lambda: color(0x6a5acd))
+    Info: color = field(default_factory=lambda: color(0xff69b4))
+    Warn: color = field(default_factory=lambda: color(0xFFD700))
+    Error: color = field(default_factory=lambda: color(0xB22222))
+    
+@dataclass
+class RarityColorConfig(Color):
+    Common: color = field(default_factory=lambda: color(0xFF1493))
+    Uncommon: color = field(default_factory=lambda: color(0x00FFFF))
+    Rare: color = field(default_factory=lambda: color(0xFF4500))
+    Epic: color = field(default_factory=lambda: color(0x32CD32))
+    Legendary: color = field(default_factory=lambda: color(0x9400D3))
 
 @dataclass
 class AISettings:
     enabled: bool = False
     ip: str = "127.0.0.1"
-    allow_all_servers: bool = False
-    allow_all_users: bool = False
     Gemini_API: str = ""
 
 @dataclass
 class Bot_Config:
     General: GeneralConfig = field(default_factory=GeneralConfig)
-    General_Embeds_Colour: ColorConfig = field(default_factory=ColorConfig)
+    EmbedsColour: EmbedColorConfig = field(default_factory=EmbedColorConfig)
+    RarityColor: RarityColorConfig = field(default_factory=RarityColorConfig)
     AI: AISettings = field(default_factory=AISettings)
-    Dashboard: DashboardConfig = field(default_factory=DashboardConfig)
-    Testing_guilds_id: List[int] = field(default_factory=lambda: [12341234, 43214321])
+    TestingGuildsId: List[int] = field(default_factory=lambda: [12341234, 43214321])
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the config to a dictionary format."""
@@ -72,14 +80,12 @@ class Bot_Config:
             "General": {
                 k: v for k, v in self.General.__dict__.items()
             },
-            "Embeds Colour": self.General_Embeds_Colour.to_dict(),
+            "Embeds Colour": self.EmbedsColour.to_dict(),
+            "Rarity Color": self.RarityColor.to_dict(),
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
-            "Dashboard": {
-                k: v for k, v in self.Dashboard.__dict__.items()
-            },
-            "TESTING GUILDS ID": self.Testing_guilds_id,
+            "TESTING GUILDS ID": self.TestingGuildsId,
         }
     
     @classmethod
@@ -87,10 +93,10 @@ class Bot_Config:
         """Create a Bot_Config instance from a dictionary."""
         return cls(
             General=GeneralConfig(**data.get("General", {})),
-            General_Embeds_Colour=ColorConfig.from_dict(data.get("Embeds Colour", {})),
+            EmbedsColour=EmbedColorConfig.from_dict(data.get("Embeds Colour", {})),
+            RarityColor=RarityColorConfig.from_dict(data.get("Rarity Color", {})),
             AI=AISettings(**data.get("AI", {})),
-            Dashboard=DashboardConfig(**data.get("Dashboard", {})),
-            Testing_guilds_id=data.get("TESTING GUILDS ID", []),
+            TestingGuildsId=data.get("TESTING GUILDS ID", []),
         )
 
 @dataclass
@@ -106,7 +112,6 @@ class ConfigManager:
             "General",
             "Embeds Colour",
             "AI",
-            "Dashboard",
             "TESTING GUILDS ID"
         ]
         self.config.set_layout(self.layout)
@@ -212,28 +217,23 @@ config = config_manager.config
 BotConfig = config_manager.BotConfig
 
 # Export configuration values
-token = BotConfig.General.token
-prefix = BotConfig.General.prefix
-Presence = BotConfig.General.presence
-send_to_owner_enabled = BotConfig.General.send_to_online_owner
-overwriteOwner = BotConfig.General.owner_id
-logger_level = BotConfig.General.logger_level
+token = BotConfig.General.token # type: ignore
+prefix = BotConfig.General.prefix # type: ignore
+Presence = BotConfig.General.presence # type: ignore
+send_to_owner_enabled = BotConfig.General.send_to_online_owner # type: ignore
+overwriteOwner = BotConfig.General.owner_id # type: ignore
+logger_level = BotConfig.General.logger_level # type: ignore
  
 # Colors/Colour
-colors = BotConfig.General_Embeds_Colour
-colours = BotConfig.General_Embeds_Colour
+colors = BotConfig.EmbedsColour # type: ignore
+colours = BotConfig.EmbedsColour # type: ignore
+# Rarity
+rarity = BotConfig.RarityColor # type: ignore
 
 #AI
-enableAI = BotConfig.AI.enabled
-ip = BotConfig.AI.ip
-allowAllServers = BotConfig.AI.allow_all_servers
-allowAllUsers  = BotConfig.AI.allow_all_users
-Gemini_API  = BotConfig.AI.Gemini_API
+enableAI = BotConfig.AI.enabled # type: ignore
+ip = BotConfig.AI.ip # type: ignore
+Gemini_API  = BotConfig.AI.Gemini_API # type: ignore
 
 # Advanced Settings
-TESTING_GUILD_ID = BotConfig.Testing_guilds_id
-
-
-# Dashboard
-dashboard_enabled = BotConfig.Dashboard.enabled
-dashboard_domain = BotConfig.Dashboard.domain
+TESTING_GUILD_ID = BotConfig.TestingGuildsId # type: ignore

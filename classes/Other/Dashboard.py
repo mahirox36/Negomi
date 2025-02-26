@@ -9,7 +9,7 @@ import asyncio
 import psutil
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from modules.Nexon import logger, dashboard_enabled
+from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from modules.Nexon import overwriteOwner
@@ -361,8 +361,7 @@ class DashboardCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if dashboard_enabled:
-            asyncio.create_task(self.start_dashboard())
+        asyncio.create_task(self.start_dashboard())
 
     def cog_unload(self):
         if self.npm_process and self.npm_process.returncode is None:

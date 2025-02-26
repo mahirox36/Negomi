@@ -129,8 +129,7 @@ class DiscordBot(commands.Bot):
                     "Working on Progress" in str(ext_path),
                     "Arc" in str(ext_path),
                     "." in ext_path.stem,
-                    not enableAI and ext_path.stem == "AI",
-                    not dashboard_enabled and ext_path.stem == "Dashboard"
+                    not enableAI and ext_path.stem == "AI"
                 ]
 
                 # Skip if any condition is met
