@@ -64,5 +64,6 @@
     "**/.sync": true,
     "**/builds": true,
     "**/logs": true
-  }
+  },
+  "python.analysis.typeCheckingMode": "basic"
 }

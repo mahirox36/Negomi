@@ -24,6 +24,10 @@ To add the bot to your server, click the link below:
 ### Version 0.9
 
 - Overall Progress: ░░░░░░░░░░░░░░░░░░░░ 0% (0/35)
+- Currently Working On:
+  - Nextcord Forked Library called [Nexon](https://github.com/mahirox36/Nexon)
+  - Currently Working On: Dashboard
+  - Currently Working On: Customizable Badges
 
 #### Advanced User Profile System
 
