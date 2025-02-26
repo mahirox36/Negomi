@@ -25,7 +25,7 @@ async def check(ctx: init, data: Dict | List) -> bool:
     return True
 
 def UserSettings(member: User | Member):
-    user = DataManager("TempVoice", file=f"{member.id}")
+    user = DataManager("TempVoice", file_name=f"{member.id}")
     Default = {
         "Name": member.display + "'s Chat",
         "Hide": True,
@@ -217,7 +217,7 @@ class ControlPanel(View):
         except Exception:
             await ctx.send(embed=Embed.Warning("You haven't Created a Channel"),ephemeral=True)
             return
-        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file_name="TempVoices")
         num = 0
         for i in file.data:
             i = dict(i)
@@ -256,7 +256,7 @@ class TempVoice(commands.Cog):
         elif user.bot:
             await ctx.send(embed=Embed.Error("You can't Invite Bot"))
             return
-        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file_name="TempVoices")
         await check(ctx,file.data)
         channel = get_channel(file.data,ctx)
         name = ctx.user.display_name
@@ -305,7 +305,7 @@ class TempVoice(commands.Cog):
             return False, None, None
 
         # Check if user is the channel owner
-        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file_name="TempVoices")
         channel_data = None
         for data in file.data:
             if list(data.values())[0] == channel.id:
@@ -486,9 +486,8 @@ class TempVoice(commands.Cog):
         pass
     @voice.subcommand(name="panel",
         description="Bring the Control Panel for the TempVoice chat")
-    @feature()
     async def control_panel(self,ctx:init):
-        file = DataManager("TempVoice", ctx.guild.id, file="TempVoices")
+        file = DataManager("TempVoice", ctx.guild.id, file_name="TempVoices")
         checks = check(ctx,file.data)
         if await checks == False: return
         
@@ -497,7 +496,6 @@ class TempVoice(commands.Cog):
                 ephemeral=True)
 
     @voice.subcommand(name="ban",description="Ban a user from your temporary voice channel")
-    @feature()
     async def ban_slash(
         self,
         ctx: init,
@@ -519,7 +517,6 @@ class TempVoice(commands.Cog):
         await self._ban_member(ctx, target, channel, channel_data, reason)
 
     @voice.subcommand(name="kick",description="Kick a user from your temporary voice channel")
-    @feature()
     async def kick_slash(self, ctx: init, target: Member = SlashOption(
             description="The user to kick", required=True), reason: str = SlashOption(description="Reason for the kick",
             required=False, default="No reason provided")
@@ -532,7 +529,6 @@ class TempVoice(commands.Cog):
         await self._kick_member(ctx, target, channel, channel_data, reason)
 
     # @user_command(name="Voice: Ban", contexts=[InteractionContextType.guild])
-    # @feature()
     # async def ban_user(self, ctx: init, target: Member):
     #     """Ban a user from your temporary voice channel (User Command)"""
     #     await ctx.response.defer(ephemeral=True)
@@ -542,7 +538,6 @@ class TempVoice(commands.Cog):
     #     await self._ban_member(ctx, target, channel, channel_data)
 
     # @user_command(name="Voice: Kick", contexts=[InteractionContextType.guild])
-    # @feature()
     # async def kick_user(self, ctx: init, target: Member):
     #     """Kick a user from your temporary voice channel (User Command)"""
     #     await ctx.response.defer(ephemeral=True)
@@ -552,17 +547,14 @@ class TempVoice(commands.Cog):
     #     await self._kick_member(ctx, target, channel, channel_data)
      
     @voice.subcommand("invite",description="Invite a member to Voice chat")
-    @feature()
     async def invite_slash(self,ctx:init,user:Member):
         return await self.invite_function(ctx,user,self.client)
     
     # @user_command("Voice: Invite", contexts=[InteractionContextType.guild])
-    # @feature()
     # async def invite(self,ctx:init, user:Member):
     #     return await self.invite_function(ctx,user,self.client)
         
     @slash_command("voice-setup", "Setup temp voice",default_member_permissions=Permissions(administrator=True))
-    @feature()
     async def setup(self, ctx:init, category:CategoryChannel):
         file = DataManager("TempVoice", ctx.guild.id)
         overwrites = {ctx.guild.default_role: PermissionOverwrite(speak=False)}
@@ -643,7 +635,7 @@ class TempVoice(commands.Cog):
                 return
                 
             file = DataManager("TempVoice", guild.id)
-            file2 = DataManager("TempVoice", guild.id, file="TempVoices")
+            file2 = DataManager("TempVoice", guild.id, file_name="TempVoices")
             
             if not file.exists():
                 return
@@ -652,7 +644,7 @@ class TempVoice(commands.Cog):
                 return
             
             # Get channel settings
-            user = DataManager("TempVoice", file=f"{member.id}")
+            user = DataManager("TempVoice", file_name=f"{member.id}")
             channel_settings = self._get_channel_settings(member, user)
             
             if file.data is None:
@@ -698,7 +690,7 @@ class TempVoice(commands.Cog):
                 return
             if not await self._update_voice_state(member, before, after):
                 return
-            file = DataManager("TempVoice", guild.id, file="TempVoices")
+            file = DataManager("TempVoice", guild.id, file_name="TempVoices")
             if not file.data:
                 file.data = []
                 file.save()
@@ -838,11 +830,6 @@ class TempVoice(commands.Cog):
                    (before and before.channel and before.channel.guild)
             
             if not guild:
-                return
-
-            try:
-                await check_feature_inside(guild.id, self)
-            except AttributeError:
                 return
 
             # Handle channel creation

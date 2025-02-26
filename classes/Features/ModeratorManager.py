@@ -14,7 +14,7 @@ class ModeratorManager(commands.Cog):
             try:
                 # Get all guild data
                 for guild in self.client.guilds:
-                    file = DataManager("Moderator Manager", guild.id, "users", default={})
+                    file = DataManager("Moderator Manager", guild.id, file_name="users", default={})
                     data = file.load()
                     
                     if not data:
@@ -54,14 +54,14 @@ class ModeratorManager(commands.Cog):
 
     def get_mod_data(self, guild_id: int):
         """Get moderator data file"""
-        return DataManager("Moderator Manager", guild_id, "users", default={})
+        return DataManager("Moderator Manager", guild_id, file_name="users", default={})
 
     async def create_backup_data(self, guild_id: int, user_id: str):
         """Create backup of moderator data"""
         file = self.get_mod_data(guild_id)
         data = file.load()
         if user_id in data:
-            backup_file = DataManager("Moderator Manager", guild_id, "backups", default={})
+            backup_file = DataManager("Moderator Manager", guild_id, file_name="backups", default={})
             backup_data = backup_file.load()
             backup_data[user_id] = data[user_id].copy()
             backup_file.save()
@@ -74,7 +74,6 @@ class ModeratorManager(commands.Cog):
         pass
     
     @manager.subcommand("setup", "Setup the Moderator Manager")
-    @feature()
     async def setup(self, ctx:init,
                     staffRole:Role  = SlashOption("staff"   , "Role for staff members"   ,required=False),
                     trailRole:Role  = SlashOption("trail"   , "Role for trail mod"   ,required=False),
@@ -83,6 +82,9 @@ class ModeratorManager(commands.Cog):
                     adminRole:Role  = SlashOption("admin"   , "Role for Admin"   ,required=False)):
         await ctx.response.defer(ephemeral=True)
         guild = ctx.guild
+        if not guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
         if adminRole == None:
             adminRole= await guild.create_role(name="Admin",
                                                permissions=Permissions(administrator=True),
@@ -118,10 +120,12 @@ class ModeratorManager(commands.Cog):
         file.save()
         await ctx.send(embed=Embed.Info("Moderator Manager setup successfully", "Moderator Manager"))
     @manager.subcommand("add", "Add a Moderator")
-    @feature()
     async def add(self, ctx: init, member: Member, role: Role):
         await ctx.response.defer()
-        file = self.get_mod_data(ctx.guild_id)
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = self.get_mod_data(ctx.guild.id)
         mods = file.load()
         data = DataManager("Moderator Manager", ctx.guild.id).data
         
@@ -138,6 +142,8 @@ class ModeratorManager(commands.Cog):
             return
         try:
             staffRole = ctx.guild.get_role(data["staff"])
+            if not staffRole:
+                staffRole = await ctx.guild.fetch_role(data["staff"])
             await member.add_roles(role)
             await member.add_roles(staffRole)
         except:
@@ -164,10 +170,12 @@ class ModeratorManager(commands.Cog):
         except:
             await ctx.send(embed=Embed.Warning(f"{member.mention} is now a {role.mention}, but I couldn't DM them the token", "Moderator Manager"))
     @manager.subcommand("promote", "Promote a moderator to a higher role")
-    @feature()
     async def promote(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = DataManager("Moderator Manager", ctx.guild.id, file_name="users", default={})
         data = file.load()
         roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
@@ -201,10 +209,9 @@ class ModeratorManager(commands.Cog):
             await ctx.send(embed=Embed.Error("Error in role hierarchy", "Moderator Manager"))
 
     @manager.subcommand("demote", "Demote a moderator to a lower role")
-    @feature()
     async def demote(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
+        file = DataManager("Moderator Manager", ctx.guild.id, file_name="users", default={})
         data = file.load()
         roles_data = DataManager("Moderator Manager", ctx.guild.id).load()
         
@@ -238,10 +245,12 @@ class ModeratorManager(commands.Cog):
             await ctx.send(embed=Embed.Error("Error in role hierarchy", "Moderator Manager"))
 
     @manager.subcommand("remove", "Remove a moderator")
-    @feature()
     async def remove(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = DataManager("Moderator Manager", ctx.guild.id, file_name="users", default={})
         data = file.load()
         
         if str(member.id) not in data:
@@ -259,7 +268,6 @@ class ModeratorManager(commands.Cog):
         await ctx.send(embed=Embed.Info(f"{member.mention} has been removed from the moderator team", "Moderator Manager"))
 
     @manager.subcommand("hacked", "Handle hacked moderator account")
-    @feature()
     async def hacked(self, ctx: init, compromised_member: Member, backup_token: str, new_member: Member = None):
         """
         Handle a hacked moderator account
@@ -268,8 +276,10 @@ class ModeratorManager(commands.Cog):
         new_member: Optional - New account of the moderator if they created one
         """
         await ctx.response.defer(ephemeral=True)
-        
-        file = self.get_mod_data(ctx.guild_id)
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = self.get_mod_data(ctx.guild.id)
         data = file.load()
         
         if str(compromised_member.id) not in data:
@@ -284,7 +294,7 @@ class ModeratorManager(commands.Cog):
             return
             
         # Create backup of mod data before any changes
-        await self.create_backup_data(ctx.guild_id, str(compromised_member.id))
+        await self.create_backup_data(ctx.guild.id, str(compromised_member.id))
         
         try:
             # 1. Ban the hacked account
@@ -342,10 +352,12 @@ class ModeratorManager(commands.Cog):
             await ctx.send(embed=Embed.Error(f"An error occurred while handling the hacked account: {str(e)}", "Moderator Manager"))
 
     @manager.subcommand("list", "List all moderators")
-    @feature()
     async def list(self, ctx: init):
         await ctx.response.defer()
-        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = DataManager("Moderator Manager", ctx.guild.id, file_name="users", default={})
         data = file.load()
         
         if not data:
@@ -367,10 +379,12 @@ class ModeratorManager(commands.Cog):
         await ctx.send(embed=embed)
 
     @manager.subcommand("info", "Get information about a moderator")
-    @feature()
     async def info(self, ctx: init, member: Member):
         await ctx.response.defer()
-        file = DataManager("Moderator Manager", ctx.guild.id, "users", default={})
+        if not ctx.guild:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server", "Moderator Manager"))
+            return
+        file = DataManager("Moderator Manager", ctx.guild.id, file_name="users", default={})
         data = file.load()
         
         if str(member.id) not in data:

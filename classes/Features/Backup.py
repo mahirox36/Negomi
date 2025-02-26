@@ -44,7 +44,6 @@ class Backup(commands.Cog):
     
     
     @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
-    @feature()
     @cooldown(15)
     async def export(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
@@ -204,7 +203,6 @@ class Backup(commands.Cog):
 
     @backup.subcommand(name="import",
                   description="Import server configuration from a backup file")
-    @feature()
     async def imported(self, ctx: init, file: Attachment):
         if ctx.guild.owner_id != ctx.user.id:
             await ctx.send(embed=Embed.Error("Only the owner of the guild can import.", "Import Error"))

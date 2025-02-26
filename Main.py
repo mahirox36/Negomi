@@ -1,4 +1,6 @@
 from rich.traceback import install
+
+from nexon.badge import BadgeManager
 install()
 
 import traceback
@@ -10,8 +12,6 @@ import nexon
 from nexon.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
 import ollama
 from modules.Nexon import *
-import multiprocessing
-from Dashboard.dashboard import run_dashboard
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -33,12 +33,51 @@ class DiscordBot(commands.Bot):
         # Setup logging
         self.logger = logger
         
-        # Initialize IPC
-        if dashboard_enabled:
-            self.ipc_manager: Optional[IPCManager] = IPCManager(self)
+        BadgeManager().set_badge_earned_callback(self.onBadgeEarned)
         
         self.setup_hook()
-
+    
+    async def onBadgeEarned(self, user: nexon.User, badge: nexon.Badge):
+        embed = Embed.Info(
+            title=f"🏆 New Badge Earned: {badge.name}!",
+            description=badge.description
+        )
+        
+        if badge.icon_url:
+            embed.set_thumbnail(url=badge.icon_url)
+            
+        embed.add_field(
+            name="Unlocked",
+            value=f"<t:{int(datetime.now().timestamp())}:R>",
+            inline=False
+        )
+        
+        # Try to DM the user
+        try:
+            await user.send(embed=embed)
+        except: pass
+    
+    async def on_interaction(self, interaction: Interaction) -> None:
+        if interaction.type == InteractionType.application_command and interaction.data is not None:
+            command_id = interaction.data.get("id")
+            if command_id is not None:
+                command = self.get_application_command(int(command_id))
+                if command is None:
+                    return await super().on_interaction(interaction)
+        else:
+            return await super().on_interaction(interaction)
+        if not interaction.guild:
+            return await super().on_interaction(interaction)
+        cog_name = command.parent_cog.__class__.__name__ 
+        if cog_name and FeatureManager(interaction.guild.id, cog_name).is_disabled():
+            await interaction.response.send_message(
+                embed=Embed.Error("This Feature is disabled", "Feature Disabled"),ephemeral=True
+            )
+            return
+            
+        await super().on_interaction(interaction)
+            
+    
     async def cleanup(self):
         """Cleanup bot resources including IPC"""
         if self._cleanup_done.is_set():
@@ -58,9 +97,8 @@ class DiscordBot(commands.Bot):
 
     def setup_hook(self) -> None:
         """Setup hook with IPC initialization"""
-        data = [i for i in self._load_extensions(get=True)]
-        if dashboard_enabled:
-            self.ipc_manager.start()
+        extensions = self._load_extensions(get=True)
+        data = [i for i in extensions] if extensions is not None else []
     
     def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
         """Load all extension modules with executable-aware path handling."""
@@ -85,13 +123,18 @@ class DiscordBot(commands.Bot):
 
             loaded_extensions = []
             for ext_path in extensions_path.rglob("*.py"):
-                # Skip files based on existing conditions
-                if (ext_path.stem == "__init__" or
-                    "pycache" in str(ext_path) or 
-                    "Working on Progress" in str(ext_path) or
-                    "Arc" in str(ext_path) or
-                    "." in ext_path.stem or
-                    (not enableAI and ext_path.stem == "AI")):
+                skip_conditions = [
+                    ext_path.stem == "__init__",
+                    "pycache" in str(ext_path),
+                    "Working on Progress" in str(ext_path),
+                    "Arc" in str(ext_path),
+                    "." in ext_path.stem,
+                    not enableAI and ext_path.stem == "AI",
+                    not dashboard_enabled and ext_path.stem == "Dashboard"
+                ]
+
+                # Skip if any condition is met
+                if any(skip_conditions):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
                 
@@ -141,7 +184,7 @@ class DiscordBot(commands.Bot):
             
             await self.sync_application_commands()
             
-            self.logger.info(f"{self.user.display_name} is online!")
+            self.logger.info(f"{self.user.display_name if self.user else 'Bot'} is online!")
             
             if send_to_owner_enabled:
                 await self._send_startup_message()
@@ -150,15 +193,16 @@ class DiscordBot(commands.Bot):
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
         try:
-            owner = self.get_user(self.owner_id)
+            owner = self.get_user(self.owner_id) # type: ignore
             if owner is None:
-                owner= await self.fetch_user(self.owner_id)
+                owner= await self.fetch_user(self.owner_id) # type: ignore
             channel = await owner.create_dm()
+            author = [self.user.display_name if self.user else 'Bot', self.user.avatar.url if self.user and self.user.avatar else None]
             message: Message = await channel.send(
                 embed=nexon.Embed.Info(
                     title="Status Update",
                     description="Bot has successfully started",
-                    author=[self.user.display_name, self.user.avatar.url]
+                    author=author,
                 )
             )
             self.logger.info(f"Sent to {owner.display_name} ({owner.id}) with the message ID {message.id}")
@@ -168,9 +212,9 @@ class DiscordBot(commands.Bot):
     
     #ERROR HANDLERS
     async def on_application_command_error(self, ctx: Interaction, error: Exception):
-        try:
-            err = error.original
-        except AttributeError:
+        if hasattr(error, 'original'):
+            err = error.original # type: ignore
+        else:
             err = error
         if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
@@ -205,7 +249,7 @@ class DiscordBot(commands.Bot):
             return
         elif isinstance(error, FeatureDisabled):
             if error.send_error: await ctx.response.send_message(
-                embed=Embed.Error(error.message,"Feature Disabled",))
+                embed=Embed.Error("This Feature is disabled","Feature Disabled",), ephemeral=True)
             return 
         if not ctx.response.is_done():
             await ctx.response.send_message(embed=Embed.Error(str(error), title="An unexpected error occurred"))
@@ -221,7 +265,10 @@ class DiscordBot(commands.Bot):
         buffer.write(error_details.encode('utf-8'))
         buffer.seek(0)
             
-        channel = await self.owner.create_dm()
+        owner = self.get_user(self.owner_id)  # type: ignore
+        if owner is None:
+            owner = await self.fetch_user(self.owner_id)  # type: ignore
+        channel = await owner.create_dm()
 
         await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
     
@@ -270,8 +317,11 @@ class DiscordBot(commands.Bot):
         buffer = io.BytesIO()
         buffer.write(error_details.encode('utf-8'))
         buffer.seek(0)
-            
-        channel = await self.owner.create_dm()
+        
+        owner = self.get_user(self.owner_id)  # type: ignore
+        if owner is None:
+            owner = await self.fetch_user(self.owner_id)  # type: ignore
+        channel = await owner.create_dm()
 
         await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
@@ -281,11 +331,6 @@ class DiscordBot(commands.Bot):
 
 async def main():
     bot = DiscordBot()
-    
-    # Start dashboard in separate process
-    if dashboard_enabled:
-        dashboard_process = multiprocessing.Process(target=run_dashboard)
-        dashboard_process.start()
     
     try:
         await bot.start(token)
@@ -299,7 +344,6 @@ async def main():
     except Exception as e:
         bot.logger.exception("An error occurred while running the bot")
     finally:
-        dashboard_process.terminate()
         await bot.cleanup()
         input()
     

@@ -225,7 +225,7 @@ def generate(prompt, model: str="Negomi") -> str:
         response = client.generate(model, prompt)
         return response["response"]
     except Exception:
-        return offline
+        return "Error: Unable to generate response - service offline"
 
 if __name__ == '__main__':
     os.system("cls")

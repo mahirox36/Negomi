@@ -344,7 +344,6 @@ class Welcome(commands.Cog):
         pass
 
     @welcome.subcommand("how", "Learn how to configure welcome messages")
-    @feature()
     async def how(self, ctx: init):
         embed = Embed.Info(
             title="Welcome Message Configuration Guide",
@@ -360,7 +359,6 @@ class Welcome(commands.Cog):
         await ctx.send(embed=embed, ephemeral=True)
 
     @welcome.subcommand("setup", "Configure the welcome message system")
-    @feature()
     @guild_only()
     @cooldown(10)
     async def setupWelcome(self, ctx: init, 
@@ -398,7 +396,7 @@ class Welcome(commands.Cog):
             self.welcome_cache[ctx.guild.id] = settings
 
             # Save current members
-            member_file = DataManager("Welcome", ctx.guild_id, file="Members")
+            member_file = DataManager("Welcome", ctx.guild_id, file_name="Members")
             member_file.data = [m.id for m in ctx.guild.members]
             member_file.save()
 
@@ -428,7 +426,6 @@ class Welcome(commands.Cog):
             )
 
     @welcome.subcommand("preview", "Preview your welcome message")
-    @feature()
     @guild_only()
     async def preview(self, ctx: init):
         await ctx.response.defer(ephemeral=True)
@@ -441,7 +438,6 @@ class Welcome(commands.Cog):
         await self.send_welcome_message(ctx.user, channel, config, ctx=ctx)
     
     @welcome.subcommand("customize", "Customize your welcome message appearance")
-    @feature()
     @guild_only()
     async def customize(self, ctx: init):
         config = await self.get_welcome_config(ctx.guild.id)
@@ -466,7 +462,6 @@ class Welcome(commands.Cog):
         await ctx.send(embed=embed, view=WelcomeCustomizer(config), ephemeral=True)
 
     @welcome.subcommand("style", "Change welcome message style")
-    @feature()
     async def style(self, ctx: init, style: str = SlashOption(
         name="style",
         choices={"Image with Text": "image", "Text Only": "text", "Embed": "embed"}
@@ -488,7 +483,6 @@ class Welcome(commands.Cog):
 
         try:
             # Check feature and get cached config
-            await check_feature_inside(member.guild.id, cog=self)
             config = await self.get_welcome_config(member.guild.id)
             if not config or not config.get("channel_id"):
                 return
@@ -504,7 +498,7 @@ class Welcome(commands.Cog):
                 await self.send_welcome_message(member, channel, config)
 
             # Update member cache
-            member_file = DataManager("Welcome", member.guild.id, file="Members")
+            member_file = DataManager("Welcome", member.guild.id, file_name="Members")
             member_file.data = list(set(member_file.data + [member.id]))
             member_file.save()
 
@@ -515,7 +509,7 @@ class Welcome(commands.Cog):
     async def on_member_remove(self, member: Member):
         """Track member leaves with optimized caching."""
         try:
-            member_file = DataManager("Welcome", member.guild.id, file="Members")
+            member_file = DataManager("Welcome", member.guild.id, file_name="Members")
             if member.id in member_file.data:
                 member_file.data.remove(member.id)
                 member_file.save()
@@ -528,7 +522,7 @@ class Welcome(commands.Cog):
         """Process missed welcomes with smart batching and rate limiting."""
         try:
             # Get active welcome guilds
-            global_file = DataManager("Welcome", file="Guilds", default=[])
+            global_file = DataManager("Welcome", file_name="Guilds", default=[])
             active_guilds = set(global_file.data)
             if not active_guilds:
                 return
@@ -547,7 +541,7 @@ class Welcome(commands.Cog):
                         continue
 
                     # Process new members in batches
-                    members_file = DataManager("Welcome", guild_id, file="Members")
+                    members_file = DataManager("Welcome", guild_id, file_name="Members")
                     old_members = set(members_file.data or [])
                     current_members = {m.id for m in guild.members}
                     

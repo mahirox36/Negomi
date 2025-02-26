@@ -19,7 +19,7 @@ class GeneralConfig:
     token: str = "Your Bot Token"
     presence: str = "My Master Mahiro"
     send_to_online_owner: bool = True
-    owner_id: int = None
+    owner_id: Optional[int] = None
     logger_level: str = "INFO"
     ConfigVersion: str = VERSION
 

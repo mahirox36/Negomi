@@ -2,8 +2,8 @@ from typing import Union
 import emoji
 import random
 from string import hexdigits
-from typing import Any, Dict, List, Union
-from .DataManager import DataManager
+from typing import Any, Dict, List, Union, Optional
+from nexon import DataManager
 
 def get_by_percent(percent: Union[int, float] ,text: str, min_words: int = 5, returns: str = "") -> str:
     """Get a specified percentage of words from a sentence.
@@ -38,7 +38,7 @@ def remove_numbers(text: str) -> str:
 class IDManager:
     def __init__(self,file: str = "codes",max:int = 7):
         self.max = max
-        self.file = DataManager("IDManager", default=[], file=file)
+        self.file = DataManager("IDManager", default=[], file_name=file)
     def create_random_id(self) -> str:
         code = ''.join(random.choice(hexdigits) for _ in range(self.max))
         for i in self.file.data:
@@ -58,7 +58,7 @@ class IDManager:
         else:
             return True
 
-    def __getitem__(self, key: str) -> Union[Dict[str, Any], List[Any]]:
+    def __getitem__(self, key: str) -> Optional[Union[Dict[str, Any], List[Any]]]:
         if key in self.file.data:
             try:
                 return self.file.data[key]

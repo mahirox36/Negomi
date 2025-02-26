@@ -7,10 +7,11 @@ import nest_asyncio
 nest_asyncio.apply()
 
 
-from .DataManager import DataManager
+from nexon import DataManager, UserManager as UserData
 from .DiscordConfig import *
 from .utils import extract_emojis, get_by_percent, remove_numbers, emoji, IDManager
-from .feature import get_feature_state, feature, check_feature_inside, FeatureDisabled
+from .settings import FeatureManager, FeatureDisabled
+
 
 import logging
 
@@ -25,8 +26,6 @@ else: Level = logging.INFO
 logger = logging.getLogger("bot")
 
 from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline
-from .Users import UserManager as UserData
-from .ipc_manager import IPCManager
 
 #Important things
 from typing import Any, Callable, Dict, List, Set, Optional, Union
@@ -53,7 +52,7 @@ from nexon import (
 )
 # Other Stuff Like UI, application_checks, commands
 from nexon.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
-from nexon.ext.application_checks import *
+from nexon.ext.application_checks import * # type: ignore
 from nexon.ext import commands
 from nexon.ext.commands import Bot
 from nexon import utils

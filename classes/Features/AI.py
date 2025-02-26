@@ -20,7 +20,7 @@ class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.conversation_manager = ConversationManager()
-        self.settings = DataManager("AI", file="settings", default={
+        self.settings = DataManager("AI", file_name="settings", default={
             "public_channels": {},  # guild_id: channel_id
             "active_threads": {}    # user_id: thread_id
         })
