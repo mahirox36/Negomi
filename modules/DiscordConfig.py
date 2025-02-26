@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Self
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 logger = logging.getLogger("bot")
-VERSION = "0.34"
+VERSION = "0.35"
 
 # Class for Badge Config
 # max_badges_per_guild = 5
@@ -24,7 +24,7 @@ class GeneralConfig:
 
 
 @dataclass 
-class Color:
+class Colour:
     def to_dict(self) -> Dict[str, str]:
         """Convert color values to hex strings for storage"""
         return {
@@ -46,14 +46,14 @@ class Color:
     
 
 @dataclass
-class EmbedColorConfig(Color):
+class EmbedColourConfig(Colour):
     Debug: color = field(default_factory=lambda: color(0x6a5acd))
     Info: color = field(default_factory=lambda: color(0xff69b4))
     Warn: color = field(default_factory=lambda: color(0xFFD700))
     Error: color = field(default_factory=lambda: color(0xB22222))
     
 @dataclass
-class RarityColorConfig(Color):
+class RarityColourConfig(Colour):
     Common: color = field(default_factory=lambda: color(0xFF1493))
     Uncommon: color = field(default_factory=lambda: color(0x00FFFF))
     Rare: color = field(default_factory=lambda: color(0xFF4500))
@@ -69,8 +69,8 @@ class AISettings:
 @dataclass
 class Bot_Config:
     General: GeneralConfig = field(default_factory=GeneralConfig)
-    EmbedsColour: EmbedColorConfig = field(default_factory=EmbedColorConfig)
-    RarityColor: RarityColorConfig = field(default_factory=RarityColorConfig)
+    EmbedsColour: EmbedColourConfig = field(default_factory=EmbedColourConfig)
+    RarityColour: RarityColourConfig = field(default_factory=RarityColourConfig)
     AI: AISettings = field(default_factory=AISettings)
     TestingGuildsId: List[int] = field(default_factory=lambda: [12341234, 43214321])
     
@@ -81,7 +81,7 @@ class Bot_Config:
                 k: v for k, v in self.General.__dict__.items()
             },
             "Embeds Colour": self.EmbedsColour.to_dict(),
-            "Rarity Color": self.RarityColor.to_dict(),
+            "Rarity Colour": self.RarityColour.to_dict(),
             "AI": {
                 k: v for k, v in self.AI.__dict__.items()
             },
@@ -93,8 +93,8 @@ class Bot_Config:
         """Create a Bot_Config instance from a dictionary."""
         return cls(
             General=GeneralConfig(**data.get("General", {})),
-            EmbedsColour=EmbedColorConfig.from_dict(data.get("Embeds Colour", {})),
-            RarityColor=RarityColorConfig.from_dict(data.get("Rarity Color", {})),
+            EmbedsColour=EmbedColourConfig.from_dict(data.get("Embeds Colour", {})),
+            RarityColour=RarityColourConfig.from_dict(data.get("Rarity Colour", {})),
             AI=AISettings(**data.get("AI", {})),
             TestingGuildsId=data.get("TESTING GUILDS ID", []),
         )
@@ -111,6 +111,7 @@ class ConfigManager:
         self.layout = [
             "General",
             "Embeds Colour",
+            "Rarity Colour",
             "AI",
             "TESTING GUILDS ID"
         ]
@@ -228,7 +229,7 @@ logger_level = BotConfig.General.logger_level # type: ignore
 colors = BotConfig.EmbedsColour # type: ignore
 colours = BotConfig.EmbedsColour # type: ignore
 # Rarity
-rarity = BotConfig.RarityColor # type: ignore
+rarity = BotConfig.RarityColour # type: ignore
 
 #AI
 enableAI = BotConfig.AI.enabled # type: ignore
