@@ -12,12 +12,14 @@ interface User {
 interface UserContextType {
   user: User | undefined
   setUser: (user: User | undefined) => void
+  isLoading: boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Check localStorage for user data on mount
@@ -30,6 +32,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('user')
       }
     }
+    setIsLoading(false)
   }, [])
 
   const handleSetUser = (newUser: User | undefined) => {
@@ -42,7 +45,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <UserContext.Provider value={{ user, setUser: handleSetUser }}>
+    <UserContext.Provider value={{ user, setUser: handleSetUser, isLoading }}>
       {children}
     </UserContext.Provider>
   )

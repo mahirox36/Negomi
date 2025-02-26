@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import CommandCard from "../components/CommandCard"
 import { Command } from "../types/commands"
+import PageWrapper from '../components/PageWrapper';
 
 export type FilterType = 'all' | 'admin' | 'user' | 'guild'
 
@@ -14,6 +15,7 @@ export default function CommandsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all')
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCommands()
@@ -33,6 +35,8 @@ export default function CommandsPage() {
     } catch (error) {
       console.error("Error fetching commands:", error)
       setCommands([])
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -67,8 +71,7 @@ export default function CommandsPage() {
   const filterButtons: FilterType[] = ['all', 'admin', 'user', 'guild']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <Navbar />
+    <PageWrapper loading={loading} loadingMessage="Loading commands...">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
@@ -170,6 +173,6 @@ export default function CommandsPage() {
         </AnimatePresence>
       </main>
       <Footer />
-    </div>
+    </PageWrapper>
   )
 }

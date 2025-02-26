@@ -13,6 +13,7 @@ import {
 } from "react-icons/bi";
 import { FiCpu, FiHardDrive, FiClock, FiActivity } from "react-icons/fi";
 import Link from "next/link";
+import PageWrapper from '../components/PageWrapper';
 
 // Update the type to match the API response structure
 type DetailedStats = {
@@ -167,26 +168,10 @@ export default function StatisticsPage() {
     return Math.round(bytes / Math.pow(1024, i)) + " " + sizes[i];
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full"
-          />
-        </div>
-      </div>
-    );
-  }
-
   if (error || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
+      <PageWrapper loading={false}>
+        <div className="flex items-center justify-center min-h-screen">
           <div className="text-white text-xl text-center">
             <p>Error loading statistics</p>
             <p className="text-sm text-red-300 mt-2">{error}</p>
@@ -233,14 +218,12 @@ export default function StatisticsPage() {
             </motion.div>
           </div>
         </div>
-        <Footer />
-      </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <Navbar />
+    <PageWrapper loading={loading} loadingMessage="Loading statistics...">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
@@ -394,8 +377,7 @@ export default function StatisticsPage() {
           </div>
         </motion.div>
       </main>
-      <Footer />
-    </div>
+    </PageWrapper>
   );
 }
 

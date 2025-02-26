@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import DashboardLayout from '../../../components/DashboardLayout';
-import ServerSidebar from '../../../components/ServerSidebar';
 import LoadingScreen from '../../../components/LoadingScreen';
 import { User, Guild } from '../../../types/discord';
 import { fetchUserGuilds } from '../../../utils/auth';
 import ServerLayout from '../../../components/ServerLayout';
+import PageWrapper from '../../../components/PageWrapper';
 
 export default function ServerManagement() {
   const params = useParams();
@@ -26,7 +25,7 @@ export default function ServerManagement() {
     }
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <LoadingScreen message='Loading Server'/>;
 
   const currentGuild = guilds.find(g => g.id === params.id);
 
