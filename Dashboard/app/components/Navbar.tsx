@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { getDiscordLoginUrl } from "../utils/auth";
 import { useUser } from "../contexts/UserContext";
+import { API_BASE_URL } from "../config";
 
 interface User {
   id: string;
@@ -168,17 +169,20 @@ export default function Navbar() {
     const checkOwnerStatus = async () => {
       if (user) {
         try {
-          const response = await fetch('http://localhost:25400/api/admin/is_owner', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: user.id }),
-            credentials: 'include'
-          });
+          const response = await fetch(
+            `${API_BASE_URL}/admin/is_owner`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: user.id }),
+              credentials: "include",
+            }
+          );
           const data = await response.json();
-          console.log('Owner status:', data.is_owner);
+          console.log("Owner status:", data.is_owner);
           setIsOwner(data.is_owner);
         } catch (error) {
-          console.error('Error checking owner status:', error);
+          console.error("Error checking owner status:", error);
           setIsOwner(false);
         }
       }
@@ -194,7 +198,7 @@ export default function Navbar() {
     { path: "/statistics", label: "Statistics" },
   ];
 
-  const navItems = isOwner 
+  const navItems = isOwner
     ? [...baseNavItems, { path: "/admin", label: "Admin" }]
     : baseNavItems;
 

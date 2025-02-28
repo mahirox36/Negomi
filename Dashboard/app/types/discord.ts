@@ -1,14 +1,4 @@
-export interface User {
-  id: string;
-  username: string;
-  avatar: string;
-  global_name?: string;
-}
+import type DiscordOAuth2 from 'discord-oauth2';
 
-export interface Guild {
-  id: string;
-  name: string;
-  icon: string | null;
-  owner: boolean;
-  permissions: string;
-}
+export type User = DiscordOAuth2.User;
+export type Guild = DiscordOAuth2.PartialGuild;

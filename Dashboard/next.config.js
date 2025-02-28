@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  assetPrefix:
-    process.env.NODE_ENV === "production"
-      ? "https://negomi.mahirou.online"
-      : "",
+  assetPrefix: "",
   staticPageGenerationTimeout: 1000,
   async headers() {
     return [

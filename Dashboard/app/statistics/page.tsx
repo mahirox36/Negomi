@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import { motion } from "framer-motion";
 import {
   BiServer,
   BiUser,
@@ -13,7 +11,8 @@ import {
 } from "react-icons/bi";
 import { FiCpu, FiHardDrive, FiClock, FiActivity } from "react-icons/fi";
 import Link from "next/link";
-import PageWrapper from '../components/PageWrapper';
+import PageWrapper from "../components/PageWrapper";
+import { API_BASE_URL } from "../config";
 
 // Update the type to match the API response structure
 type DetailedStats = {
@@ -77,20 +76,16 @@ type Guild = {
 
 export default function StatisticsPage() {
   const [stats, setStats] = useState<DetailedStats | null>(null);
-  const [guilds, setGuilds] = useState<Guild[]>([]); // the api for that is /api/guilds
+  const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = process.env.NODE_ENV === 'production' 
-          ? "https://negomi.mahirou.online/api/stats"
-          : "http://127.0.0.1:25400/api/stats";
+        const apiUrl = `${API_BASE_URL}/stats`;
 
-        const response = await fetch(apiUrl, {
-          credentials: "include",
-        });
+        const response = await fetch(apiUrl);
         const data = await response.json();
 
         const processedData = {
@@ -134,13 +129,9 @@ export default function StatisticsPage() {
 
     const fetchGuilds = async () => {
       try {
-        const apiUrl = process.env.NODE_ENV === 'production'
-          ? "https://negomi.mahirou.online/api/guilds"
-          : "http://127.0.0.1:25400/api/guilds";
+        const apiUrl = `${API_BASE_URL}/guilds`;
 
-        const response = await fetch(apiUrl, {
-          credentials: "include",
-        });
+        const response = await fetch(apiUrl);
         const data = await response.json();
         setGuilds(data.guilds);
       } catch (error) {
@@ -191,10 +182,7 @@ export default function StatisticsPage() {
               }}
               className="mt-8"
             >
-              <Link
-                href="/"
-                className="group relative inline-block"
-              >
+              <Link href="/" className="group relative inline-block">
                 <motion.div
                   className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 opacity-75 blur-sm"
                   animate={{

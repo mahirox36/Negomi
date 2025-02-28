@@ -6,14 +6,8 @@ export function middleware(request: NextRequest) {
 
   // Check if the request is coming from localhost
   if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1')) {
-    // Redirect to 404 or return error response
-    return new NextResponse('Access Denied', {
-      status: 403,
-      statusText: 'Forbidden',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    })
+    // Redirect to a custom error page
+    return NextResponse.redirect(new URL('/error', request.url))
   }
 
   return NextResponse.next()
