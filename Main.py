@@ -17,7 +17,7 @@ class DiscordBot(commands.Bot):
     def __init__(self):
         intents = nexon.Intents.all()
         super().__init__(
-            command_prefix=prefix,
+            command_prefix="u.",
             intents=intents,
             lazy_load_commands=False,
             owner_id=overwriteOwner if overwriteOwner else None,

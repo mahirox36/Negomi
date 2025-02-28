@@ -5,21 +5,19 @@ from typing import Any, Dict, List, Optional, Self
 from dataclasses import dataclass, field
 from modules.config import Config, Color as color
 logger = logging.getLogger("bot")
-VERSION = "0.35"
+VERSION = "0.37"
 
 # Class for Badge Config
 # max_badges_per_guild = 5
-# Class for Rarity Colors Config
-# default_rarity_colors
 
 @dataclass
 class GeneralConfig:
-    prefix: str = "u."
     token: str = "Your Bot Token"
     presence: str = "My Master Mahiro"
-    send_to_online_owner: bool = True
     owner_id: Optional[int] = None
+    send_to_online_owner: bool = True
     logger_level: str = "INFO"
+    debug: bool = False
     ConfigVersion: str = VERSION
 
 
@@ -219,11 +217,11 @@ BotConfig = config_manager.BotConfig
 
 # Export configuration values
 token = BotConfig.General.token # type: ignore
-prefix = BotConfig.General.prefix # type: ignore
 Presence = BotConfig.General.presence # type: ignore
-send_to_owner_enabled = BotConfig.General.send_to_online_owner # type: ignore
 overwriteOwner = BotConfig.General.owner_id # type: ignore
+send_to_owner_enabled = BotConfig.General.send_to_online_owner # type: ignore
 logger_level = BotConfig.General.logger_level # type: ignore
+debug = BotConfig.General.debug # type: ignore
  
 # Colors/Colour
 colors = BotConfig.EmbedsColour # type: ignore

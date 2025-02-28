@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from modules.Nexon import overwriteOwner
+from modules.Nexon import overwriteOwner, debug
 from modules.settings import FeatureManager
 
 class OwnerCheckRequest(BaseModel):
@@ -52,8 +52,7 @@ class DashboardCog(commands.Cog):
             allow_methods=["*"],
             allow_headers=["*"],
         )
-        self.debug = True
-        self.npm_command = "npm run dev" if self.debug else "npm run start"
+        self.npm_command = "npm run dev" if debug else "npm run start"
         
         self.setup_routes()
     
@@ -341,7 +340,7 @@ class DashboardCog(commands.Cog):
         # Start FastAPI server
         config = uvicorn.Config(
             app=self.app,
-            host="127.0.0.1",
+            host="0.0.0.0",
             port=25400,
             log_config=None
         )
