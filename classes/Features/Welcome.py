@@ -3,7 +3,8 @@ import PIL
 import aiohttp
 import requests
 from modules.Nexon import *
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
+from PIL.ImageFont import ImageFont, truetype, load_default, FreeTypeFont
 import gc
 
 class WelcomeStyle(Enum):
@@ -23,7 +24,7 @@ class Welcome(commands.Cog):
         self.session = aiohttp.ClientSession()
         self._cache_version = 0  # Add version tracking for cache invalidation
 
-    def invalidate_caches(self, guild_id: int = None):
+    def invalidate_caches(self, guild_id: Optional[int] = None):
         """Invalidate all relevant caches for a guild"""
         if guild_id:
             if guild_id in self.welcome_cache:
@@ -44,7 +45,7 @@ class Welcome(commands.Cog):
         self.invalidate_caches(guild_id)  # Clear caches when config changes
         self.welcome_cache[guild_id] = config  # Update with new config
 
-    async def fetch_avatar(self, url: str) -> Image:
+    async def fetch_avatar(self, url: str) -> Image.Image:
         """Fetch avatar with caching and error handling."""
         try:
             if url in self.avatar_cache:
@@ -63,7 +64,7 @@ class Welcome(commands.Cog):
             logger.error(f"Avatar fetch error: {e}")
             return Image.new('RGBA', (128, 128), '#36393F')
 
-    async def create_circular_avatar(self, image: Image, border_color: str = None, border_width: int = 0) -> Image:
+    async def create_circular_avatar(self, image: Image.Image, border_color: Optional[str] = None, border_width: int = 0) -> Image.Image:
         """Create circular avatar with circular border."""
         try:
             size = min(image.size)
@@ -89,7 +90,7 @@ class Welcome(commands.Cog):
                 
                 # Resize and center the avatar
                 avatar_square = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-                avatar_square.paste(image.resize((size, size), Image.LANCZOS), (0, 0))
+                avatar_square.paste(image.resize((size, size), Image.Resampling.LANCZOS), (0, 0))
                 
                 # Apply circular mask to avatar
                 output = Image.new('RGBA', (border_size, border_size), (0, 0, 0, 0))
@@ -105,7 +106,7 @@ class Welcome(commands.Cog):
             
             # Apply the mask to the image
             output = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-            output.paste(image.resize((size, size), Image.LANCZOS), (0, 0))
+            output.paste(image.resize((size, size), Image.Resampling.LANCZOS), (0, 0))
             output.putalpha(mask)
             
             return output
@@ -125,7 +126,7 @@ class Welcome(commands.Cog):
             background = await self._get_background(settings["background_url"])
             if not background:
                 background = Image.new('RGBA', (800, 400), '#36393F')
-            background = background.resize((800, 400), Image.LANCZOS)
+            background = background.resize((800, 400), Image.Resampling.LANCZOS)
     
             # Apply enhancements if needed
             if settings.get("blur_background"):
@@ -145,7 +146,7 @@ class Welcome(commands.Cog):
                 
                 # Ensure avatar_size is a tuple
                 avatar_size = tuple(settings.get("avatar_size", (128, 128)))
-                avatar = avatar.resize(avatar_size, Image.LANCZOS)
+                avatar = avatar.resize(avatar_size, Image.Resampling.LANCZOS)
     
                 # Calculate position with border offset
                 x, y = settings.get("avatar_position", (100, 100))
@@ -195,7 +196,7 @@ class Welcome(commands.Cog):
                 buffer.close()
             gc.collect()
 
-    async def _get_background(self, url: str) -> Image:
+    async def _get_background(self, url: str) -> Image.Image:
         """Get background image with caching."""
         try:
             # First check if URL is None or empty
@@ -214,7 +215,7 @@ class Welcome(commands.Cog):
                 logger.error(f"Invalid URL format: {url}")
                 return Image.new('RGBA', (800, 400), '#36393F')
 
-            async with self.session.get(url, timeout=30) as response:
+            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 if response.status != 200:
                     logger.error(f"Failed to fetch background. Status: {response.status}, URL: {url}")
                     raise ValueError(f"Failed to fetch background: {response.status}")
@@ -255,7 +256,7 @@ class Welcome(commands.Cog):
             logger.error(f"Unexpected error while fetching background: {str(e)}")
             return Image.new('RGBA', (800, 400), '#36393F')
 
-    async def _get_font(self, size: int) -> ImageFont:
+    async def _get_font(self, size: int) -> FreeTypeFont:
         """Get font with caching."""
         try:
             cache_key = f"font_{size}"
@@ -263,11 +264,11 @@ class Welcome(commands.Cog):
                 return self.font_cache[cache_key]
 
             # Use a default system font
-            font = ImageFont.truetype("arial.ttf", size)
+            font = truetype("arial.ttf", size)
             self.font_cache[cache_key] = font
             return font
         except:
-            return ImageFont.load_default()
+            return truetype("arial.ttf", size)  # Fallback to arial with specified size
 
     def _adjust_color(self, color: str, amount: int) -> str:
         """Adjust color brightness."""
@@ -282,7 +283,7 @@ class Welcome(commands.Cog):
         """Create simple fallback image."""
         img = Image.new('RGBA', (800, 400), '#36393F')
         draw = ImageDraw.Draw(img)
-        font = ImageFont.load_default()
+        font = load_default()
         draw.text((400, 200), f"Welcome {member_name}!", font=font, fill='white', anchor='mm')
         buffer = io.BytesIO()
         img.save(buffer, format='PNG')
@@ -368,6 +369,13 @@ class Welcome(commands.Cog):
             await ctx.response.defer()
             # Validate channel permissions
             required_perms = ['send_messages', 'embed_links', 'attach_files']
+            if not ctx.guild:
+                await ctx.send("This command can only be used in a server.", ephemeral=True)
+                return
+            if not ctx.user:
+                await ctx.send("This command can only be used by users.", ephemeral=True)
+                return
+                
             missing_perms = [perm for perm in required_perms 
                            if not getattr(channel.permissions_for(ctx.guild.me), perm)]
             
@@ -429,18 +437,24 @@ class Welcome(commands.Cog):
     @guild_only()
     async def preview(self, ctx: init):
         await ctx.response.defer(ephemeral=True)
-        config = await self.get_welcome_config(ctx.guild_id)
+        if not ctx.guild or isinstance(ctx.user, User):
+            await ctx.send("This command can only be used in a server.", ephemeral=True)
+            return
+        if not ctx.user:
+            await ctx.send("This command can only be used by users.", ephemeral=True)
+            return
+        config = await self.get_welcome_config(ctx.guild.id)
         if not config:
             await ctx.send("Please set up welcome message first using /welcome setup", ephemeral=True)
             return
             
         channel = ctx.channel
-        await self.send_welcome_message(ctx.user, channel, config, ctx=ctx)
+        await self.send_welcome_message(ctx.user, channel, config, ctx=ctx) # type: ignore
     
     @welcome.subcommand("customize", "Customize your welcome message appearance")
     @guild_only()
     async def customize(self, ctx: init):
-        config = await self.get_welcome_config(ctx.guild.id)
+        config = await self.get_welcome_config(ctx.guild.id) # type: ignore
         if not config:
             await ctx.send("Please set up welcome message first using /welcome setup", ephemeral=True)
             return
@@ -488,13 +502,18 @@ class Welcome(commands.Cog):
                 return
 
             # Get channel with validation
-            channel = member.guild.get_channel(config.get("channel_id"))
+            channel_id = config.get("channel_id")
+            if not isinstance(channel_id, int):
+                return
+            channel = member.guild.get_channel(channel_id)
             if not channel:
                 logger.warning(f"Welcome channel {config.get("channel_id")} not found in {member.guild.id}")
                 return
 
             # Send welcome message with proper rate limiting
-            async with channel.typing():
+            if isinstance(channel, TextChannel):
+                async with channel.typing():
+                    await self.send_welcome_message(member, channel, config)
                 await self.send_welcome_message(member, channel, config)
 
             # Update member cache
@@ -536,8 +555,11 @@ class Welcome(commands.Cog):
                         continue
 
                     # Validate channel
-                    channel = guild.get_channel(config.get("channel_id"))
-                    if not channel:
+                    channel_id = config.get("channel_id")
+                    if not isinstance(channel_id, int):
+                        continue
+                    channel = guild.get_channel(channel_id)
+                    if not channel or not isinstance(channel, TextChannel):
                         continue
 
                     # Process new members in batches
@@ -568,7 +590,7 @@ class Welcome(commands.Cog):
         except Exception as e:
             logger.error(f"Welcome ready error: {e}")
 
-    async def send_welcome_message(self, member: Member, channel: TextChannel, config: dict, ctx: init = None):
+    async def send_welcome_message(self, member: Member, channel: TextChannel, config: dict, ctx: Optional[Interaction] = None):
         """Send welcome message with improved cache handling"""
         try:
             message = await self.format_welcome_message(member, config["message"])
@@ -621,7 +643,7 @@ class Welcome(commands.Cog):
                     embed = Embed(
                         title=f"Welcome to {member.guild.name}!",
                         description=message,
-                        color=config["embed_color"] or colors.Info.value
+                        color=config["embed_color"] or int(colors.Info.value)
                     )
                     if member.avatar:
                         embed.set_thumbnail(url=member.avatar.url)
@@ -733,23 +755,39 @@ class SizeAdjuster(ui.View):
         self.adjust_type = adjust_type
         self.parent = parent
         self.current_size = parent.config["image_settings"].get(adjust_type, 48 if adjust_type == "font_size" else [128, 128])
+        # Ensure current_size is a list for avatar_size
+        if adjust_type == "avatar_size" and not isinstance(self.current_size, list):
+            self.current_size = [128, 128]
 
     @button(label="+", style=ButtonStyle.grey)
     async def increase(self, button: Button, interaction: Interaction):
         if self.adjust_type == "font_size":
-            self.current_size += 2
+            if isinstance(self.current_size, int):
+                self.current_size += 2
+            else:
+                self.current_size = 48
         else:
-            self.current_size[0] += 10
-            self.current_size[1] += 10
+            if isinstance(self.current_size, list):
+                self.current_size[0] += 10
+                self.current_size[1] += 10
+            else:
+                self.current_size = [128, 128]
         await self.update_size(interaction)
 
     @button(label="-", style=ButtonStyle.grey)
     async def decrease(self, button: Button, interaction: Interaction):
         if self.adjust_type == "font_size":
-            self.current_size = max(8, self.current_size - 2)
+            if isinstance(self.current_size, int):
+                self.current_size = max(8, self.current_size - 2)
+            else:
+                self.current_size = 48
         else:
-            self.current_size[0] = max(32, self.current_size[0] - 10)
-            self.current_size[1] = max(32, self.current_size[1] - 10)
+            # Ensure current_size is a list before indexing
+            if isinstance(self.current_size, list):
+                self.current_size[0] = max(32, self.current_size[0] - 10)
+                self.current_size[1] = max(32, self.current_size[1] - 10)
+            else:
+                self.current_size = [128, 128]  # Set default if not a list
         await self.update_size(interaction)
 
     async def update_size(self, interaction: Interaction):
@@ -832,8 +870,9 @@ class ColorPicker(ui.View):
         ))
 
     async def interaction_check(self, interaction: Interaction) -> bool:
-        if interaction.data["custom_id"] == "color_select":
-            await self.parent.update_config(interaction, "image_settings.font_color", interaction.data["values"][0])
+        if interaction.data and isinstance(interaction.data, dict):
+            if interaction.data.get("custom_id") == "color_select" and "values" in interaction.data:
+                await self.parent.update_config(interaction, "image_settings.font_color", interaction.data["values"][0])
         return True
 
 def setup(client):
