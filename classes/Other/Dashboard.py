@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 import platform
 from typing import Dict, List, Optional, Union
 from nexon import IntegrationType, SlashApplicationCommand, UserApplicationCommand, MessageApplicationCommand
@@ -14,6 +15,90 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from modules.Nexon import overwriteOwner, debug
 from modules.settings import FeatureManager
+
+#types string enum
+class Types(StrEnum):
+    header = "header"
+    cards = "cards"
+    panel = "panel"
+
+
+pages: Dict[str, List] = {
+    "Overview": [
+        {
+            "type": Types.header,
+            "text": "Overview",
+            "subtext": "General information about the server",
+            "icon": "fa-solid fa-gauge"
+        },
+        {
+            "type": Types.cards,
+            "interaction": "link_button",
+            "buttons": [
+                {
+                    "text": "AI",
+                    "subtext": "Configure AI settings",
+                    "icon": "fa-solid fa-robot",
+                    "link": "/ai",
+                    "buttonText": "Configure AI"
+                },
+                {
+                    "text": "Auto Role",
+                    "subtext": "Configure auto role settings",
+                    "icon": "fa-solid fa-user-plus" ,
+                    "link": "/auto_role",
+                    "buttonText": "Configure Auto Role"
+                },
+                {
+                    "text": "Welcome",
+                    "subtext": "Configure welcome settings",
+                    "icon": "fa-solid fa-gift",
+                    "link": "/welcome",
+                    "buttonText": "Configure Welcome"
+                },
+                {
+                    "text": "Badges",
+                    "subtext": "Configure badge settings",
+                    "icon": "fa-solid fa-medal",
+                    "link": "/badges",
+                    "buttonText": "Configure Badges"
+                }
+            ]
+        }
+    ],
+    "Basic Settings": [
+        {
+            "type": Types.header,
+            "text": "Basic Settings",
+            "subtext": "Basic settings for the server",
+            "icon": "fa-solid fa-cog"
+        },
+        {
+            "type": Types.panel,
+            "text": "Embed Colour Configuration",
+            "icon": "fa-solid fa-palette",
+            "subtext": "Configure the embed colour for the server",
+            "settings": [
+                {
+                    "name": "Info Embed Colour",
+                    "type": "colour",
+                    "value": "#ff69b4"
+                },
+                {
+                    "name": "Warning Embed Colour",
+                    "type": "colour",
+                    "value": "#ffd700"
+                },
+                {
+                    "name": "Error Embed Colour",
+                    "type": "colour",
+                    "value": "#b22222"
+                }
+            ]
+        }
+        
+    ]
+}
 
 class OwnerCheckRequest(BaseModel):
     user_id: str
@@ -235,7 +320,7 @@ class DashboardCog(commands.Cog):
             }
 
         @self.app.get("/api/guilds/{guild_id}")
-        async def get_guild_details(guild_id: int):
+        async def get_guild(guild_id: int):
             """Get detailed information about a specific guild"""
             guild = await self.get_guild(guild_id)
             
@@ -254,7 +339,12 @@ class DashboardCog(commands.Cog):
                 "verification_level": str(guild.verification_level),
                 "owner_id": guild.owner_id
             }
-
+        @self.app.get("/api/guilds/{guild_id}/channels_names")
+        async def get_guild_channels_names(guild_id: int):
+            """Get channel names for a specific guild"""
+            guild = await self.get_guild(guild_id)
+            
+            return [channel.name for channel in guild.channels]
         @self.app.get("/api/guilds/{guild_id}/channels")
         async def get_guild_channels(guild_id: int):
             """Get channels for a specific guild"""
@@ -270,6 +360,100 @@ class DashboardCog(commands.Cog):
                     } for channel in guild.channels
                 ]
             }
+        
+        @self.app.get("/api/guilds/{guild_id}/joined")
+        async def get_joined_guilds(guild_id: int) -> bool:
+            """Check if the bot is in a specific guild"""
+            return guild_id in [g.id for g in self.bot.guilds]
+        
+
+        @self.app.post("/api/guilds/filter_joined")
+        async def filter_joined_guilds(guilds: List[str]) -> List[str]:
+            """Return list of guild IDs that the bot is a member of"""
+            return [guild for guild in guilds if int(guild) in [g.id for g in self.bot.guilds]]
+            
+        # [GET] /api/layout/settings/sidebar
+        # [GET] /api/layout/settings/{page}
+        # [GET] /api/layout/settings/server/{page}
+        
+        @self.app.get("/api/layout/settings/sidebar")
+        async def get_sidebar():
+            """Get sidebar settings"""
+            return {
+                    "General": [
+                        {
+                            "name": "Overview",
+                            "icon": "fa-solid fa-gauge",
+                        },
+                        {
+                            "name": "Basic Settings",
+                            "icon": "fa-solid fa-cog",
+                        },
+                        {
+                            "name": "Badges",
+                            "icon": "fa-solid fa"
+                        }
+                    ]
+                    # React Adds another Section of Servers
+            }
+        
+        @self.app.get("/api/layout/settings/server/sidebar")
+        async def get_server_sidebar():
+            """Get server sidebar settings"""
+            return {
+                    "General": [
+                        {
+                            "name": "Overview",
+                            "icon": "fa-solid fa-gauge",
+                        },
+                        {
+                            "name": "Basic Settings",
+                            "icon": "fa-solid fa-cog",
+                        }
+                    ],
+                    "Features": [
+                        {
+                            "name": "AI",
+                            "icon": "fa-solid fa-robot"
+                        },
+                        {
+                            "name": "Auto Role",
+                            "icon": "fa-solid fa-user-plus"
+                        },
+                        {
+                            "name": "Backup",
+                            "icon": "fa-solid fa-hdd"
+                        },
+                        {
+                            "name": "Custom Roles",
+                            "icon": "fa-solid fa-user-tag"
+                        },
+                        {
+                            "name": "Temporary Voice",
+                            "icon": "fa-solid fa-headset"
+                        },
+                        {
+                            "name": "Welcome",
+                            "icon": "fa-solid fa-gift"
+                        },
+                        {
+                            "name": "Leveling",
+                            "icon": "fa-solid fa-trophy"
+                        },
+                        {
+                            "name": "Badges",
+                            "icon": "fa-solid fa-medal"
+                        }
+                    ]
+                }
+        @self.app.get("/api/layout/settings/server/{page}")
+        async def get_server_settings_page(page: str):
+            """Get server settings page"""
+            return pages[page]
+            
+        
+        
+        # [GET] /api/guild/{guild_id}/features
         # [POST] /api/guild/{guild_id}/features/{class_name}/set (feature_name, value)
         # [GET] /api/guild/{guild_id}/features/{class_name}/get (feature_name)
         # [POST] /api/guild/{guild_id}/features/{class_name}/reset (feature_name)
@@ -301,8 +485,6 @@ class DashboardCog(commands.Cog):
         @self.app.post("/api/admin/is_owner")
         async def is_owner(request: OwnerCheckRequest):
             """Check if a user is the bot owner"""
-            self.logger.info(f"Checking if {int(request.user_id)} is the bot owner")
-            self.logger.info(f"Real Owner is {overwriteOwner or self.bot.owner_id}")
             return {"is_owner": int(request.user_id) == overwriteOwner or self.bot.owner_id}
         
         @self.app.post("/api/admin/create_badge")
