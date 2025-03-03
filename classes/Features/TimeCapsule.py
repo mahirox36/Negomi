@@ -5,7 +5,15 @@ class timeCapsule(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
     #commands: add, delete, 
-    @slash_command("time")
+    @slash_command("time", integration_types=[
+        IntegrationType.user_install,
+        IntegrationType.guild_install
+    ],
+    contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel
+    ])
     async def timeCommand(self, ctx: init):
         pass
     @timeCommand.subcommand("capsule")
@@ -15,6 +23,8 @@ class timeCapsule(commands.Cog):
     @capsule.subcommand("create", "Create a new Time Capsule, when the time comes it will be sent in your DM")
     async def create(self, ctx: init, message:str, year: int, month: int, day: int):
         await ctx.response.defer(ephemeral=True)
+        if not ctx.user:
+            return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", message)
         if links:
             await ctx.send(embed=Embed.Error("You cannot send Links"))
@@ -37,6 +47,8 @@ class timeCapsule(commands.Cog):
     @capsule.subcommand("list", "List of your time Capsules")
     async def listTime(self, ctx: init):
         await ctx.response.defer(ephemeral=True)
+        if not ctx.user:
+            return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
         file = DataManager("TimeCapsule", default=[])
         data = []
         for time in file.data:
@@ -74,7 +86,7 @@ class timeCapsule(commands.Cog):
             if target_date <= now:
                 user = self.client.get_user(capsule["ID"])
                 if not user:
-                    self.client.fetch_user(capsule["ID"])
+                    await self.client.fetch_user(capsule["ID"])
                 if user:
                     try:
                         await user.send(f"{user.mention}",embed=Embed.Info(
