@@ -17,7 +17,7 @@ interface User {
 
 export default function Navbar() {
   const { user } = useUser();
-  const [isOwner, setIsOwner] = useState(false);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -162,12 +162,16 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("isOwner"); // Clear the cached owner status
     window.location.reload();
   };
 
   useEffect(() => {
     const checkOwnerStatus = async () => {
-      if (user) {
+      // Check if we already have the owner status in localStorage
+      const cachedOwnerStatus = localStorage.getItem('isOwner');
+      
+      if (user && cachedOwnerStatus === null) {
         try {
           const response = await fetch(
             `${API_BASE_URL}/admin/is_owner`,
@@ -181,10 +185,15 @@ export default function Navbar() {
           const data = await response.json();
           console.log("Owner status:", data.is_owner);
           setIsOwner(data.is_owner);
+          // Cache the result
+          localStorage.setItem('isOwner', data.is_owner.toString());
         } catch (error) {
           console.error("Error checking owner status:", error);
           setIsOwner(false);
+          localStorage.setItem('isOwner', 'false');
         }
+      } else if (cachedOwnerStatus !== null) {
+        setIsOwner(cachedOwnerStatus === 'true');
       }
     };
 

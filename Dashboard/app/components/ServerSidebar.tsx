@@ -1,66 +1,69 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { 
-  RiDashboardFill, 
-  RiSettings4Fill, 
-  RiShieldFill,
-  RiUserAddFill,
-  RiSpamFill,
-  RiFileListFill
-} from 'react-icons/ri';
+import { useLayout } from '@/providers/LayoutProvider';
+import * as Icons from 'react-icons/ri';
 
 interface ServerSidebarProps {
   serverId: string;
 }
 
+const iconMap: Record<string, string> = {
+  'fa-solid fa-gauge': 'RiDashboardFill',
+  'fa-solid fa-cog': 'RiSettings4Fill',
+  'fa-solid fa-robot': 'RiRobotFill',
+  'fa-solid fa-user-plus': 'RiUserAddFill',
+  'fa-solid fa-hdd': 'RiHardDriveFill',
+  'fa-solid fa-user-tag': 'RiUserSettingsFill',
+  'fa-solid fa-headset': 'RiHeadphoneFill',
+  'fa-solid fa-gift': 'RiGiftFill',
+  'fa-solid fa-trophy': 'RiTrophyFill',
+  'fa-solid fa-medal': 'RiMedalFill'
+};
+
 export default function ServerSidebar({ serverId }: ServerSidebarProps) {
   const pathname = usePathname();
+  const { serverSidebar, fetchServerSidebar } = useLayout();
 
-  const menuItems = [
-    {
-      section: 'General Settings',
-      items: [
-        { name: 'Overview', href: `/dashboard/server/${serverId}`, icon: RiDashboardFill },
-        { name: 'Basic Settings', href: `/dashboard/server/${serverId}/settings`, icon: RiSettings4Fill },
-        { name: 'Permissions', href: `/dashboard/server/${serverId}/permissions`, icon: RiShieldFill },
-      ]
-    },
-    {
-      section: 'Features',
-      items: [
-        { name: 'Welcome Messages', href: `/dashboard/server/${serverId}/welcome`, icon: RiUserAddFill },
-        { name: 'Auto Moderation', href: `/dashboard/server/${serverId}/automod`, icon: RiSpamFill },
-        { name: 'Logging', href: `/dashboard/server/${serverId}/logging`, icon: RiFileListFill },
-      ]
-    }
-  ];
+  useEffect(() => {
+    fetchServerSidebar();
+  }, [fetchServerSidebar]);
+
+  if (!serverSidebar) return null;
 
   return (
     <motion.div 
       initial={{ x: -50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      className="w-64 bg-white/5 backdrop-blur-lg min-h-[calc(100vh-4rem)] sticky top-16 px-4 py-6" // Updated positioning
+      className="w-64 bg-white/5 backdrop-blur-lg min-h-[calc(100vh-4rem)] sticky top-16 px-4 py-6"
     >
       <div className="space-y-8">
-        {menuItems.map((section) => (
+        {Object.entries(serverSidebar).map(([section, items]) => (
           <motion.div 
-            key={section.section}
+            key={section}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="mb-8"
           >
             <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">
-              {section.section}
+              {section}
             </h3>
             <div className="space-y-1">
-              {section.items.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
+              {items.map((item) => {
+                const pagePath = item.name.toLowerCase().replace(/\s+/g, '-');
+                const isActive = pathname === `/dashboard/server/${serverId}/${pagePath}`;
+                const iconName = iconMap[item.icon] || 'RiSettings4Fill';
+                const Icon = Icons[iconName as keyof typeof Icons] || Icons.RiSettings4Fill;
                 
                 return (
-                  <Link key={item.href} href={item.href}>
+                  <Link 
+                    key={item.name} 
+                    href={`/dashboard/server/${serverId}/${pagePath}`}
+                  >
                     <motion.div
                       className={`flex items-center px-2 py-2 rounded-lg transition-colors relative ${
                         isActive

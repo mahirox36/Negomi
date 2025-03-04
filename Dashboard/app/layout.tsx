@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import type { ReactNode } from "react"
 import ClientProvider from './providers'
 import { metadata } from './metadata'
+import { LayoutProvider } from '@/providers/LayoutProvider';
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientProvider>{children}</ClientProvider>
+        <LayoutProvider>
+          <ClientProvider>{children}</ClientProvider>
+        </LayoutProvider>
       </body>
     </html>
   )
