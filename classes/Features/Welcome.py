@@ -268,11 +268,11 @@ class Welcome(commands.Cog):
                 return self.font_cache[cache_key]
 
             # Use a default system font
-            font = truetype("arial.ttf", size)
+            font = truetype("Assets/font/arial.ttf", size)
             self.font_cache[cache_key] = font
             return font
         except:
-            return truetype("arial.ttf", size)  # Fallback to arial with specified size
+            return truetype("Assets/font/arial.ttf", size)  # Fallback to arial with specified size
 
     def _adjust_color(self, color: str, amount: int) -> str:
         """Adjust color brightness."""
