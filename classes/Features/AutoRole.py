@@ -1,3 +1,4 @@
+from typing import cast
 from modules.Nexon import *
 
 class AutoRole(commands.Cog):
@@ -13,8 +14,7 @@ class AutoRole(commands.Cog):
 
     @role.subcommand(name="setup",
                    description="Setup auto role for members and bots")
-    @feature()
-    async def setup_auto_role(self,ctx:init,member_role:Role,bot_role:Role = None):
+    async def setup_auto_role(self,ctx:init,member_role:Role,bot_role: Optional[Role] = None):
         file= DataManager("Auto role", ctx.guild_id)
         file.data = {
             "member_role":member_role.id,
@@ -22,23 +22,21 @@ class AutoRole(commands.Cog):
         }
         file.save()
         
-        await ctx.send(embed=info_embed("Auto role setup successfully"))
+        await ctx.send(embed=Embed.Info("Auto role setup successfully"))
         
             
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        try:await check_feature_inside(member.guild.id, self)
-        except: return
         guild = member.guild
         try:
-            if DataManager("Auto role", member.guild_id).exists():
-                data = DataManager("Auto role", member.guild_id).load()
+            if DataManager("Auto role", guild.id).exists():
+                data = cast(Dict[str, Union[int, None]], DataManager("Auto role", guild.id).load())
                 if data == None:
                     return
-                if (member.bot) and (data["bot_role"] != None):
-                    await member.add_roles(guild.get_role(data["bot_role"]))
+                if (member.bot) and (data.get('bot_role') != None):
+                    await member.add_roles(guild.get_role(data["bot_role"])) # type: ignore
                 if member.bot == False:
-                    await member.add_roles(guild.get_role(data["member_role"]))
+                    await member.add_roles(guild.get_role(data["member_role"])) # type: ignore
         except:
             return
 

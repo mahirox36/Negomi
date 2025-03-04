@@ -5,7 +5,15 @@ class timeCapsule(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
     #commands: add, delete, 
-    @slash_command("time")
+    @slash_command("time", integration_types=[
+        IntegrationType.user_install,
+        IntegrationType.guild_install
+    ],
+    contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel
+    ])
     async def timeCommand(self, ctx: init):
         pass
     @timeCommand.subcommand("capsule")
@@ -15,16 +23,18 @@ class timeCapsule(commands.Cog):
     @capsule.subcommand("create", "Create a new Time Capsule, when the time comes it will be sent in your DM")
     async def create(self, ctx: init, message:str, year: int, month: int, day: int):
         await ctx.response.defer(ephemeral=True)
+        if not ctx.user:
+            return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", message)
         if links:
-            await ctx.send(embed=error_embed("You cannot send Links"))
+            await ctx.send(embed=Embed.Error("You cannot send Links"))
         now = datetime.now()
         try:
             target_date = datetime(year, month, day)
         except ValueError:
-            return await ctx.send(embed=error_embed("Invalid date! Please enter a valid year, month, and day."))
+            return await ctx.send(embed=Embed.Error("Invalid date! Please enter a valid year, month, and day."))
         if target_date <= now:
-            return await ctx.send(embed=error_embed("The date must be in the future!"))
+            return await ctx.send(embed=Embed.Error("The date must be in the future!"))
         file = DataManager("TimeCapsule", default=[])
         file.append({
             "ID":ctx.user.id,
@@ -32,25 +42,27 @@ class timeCapsule(commands.Cog):
             "time": target_date.isoformat()
         })
         file.save()
-        await ctx.send(embed=info_embed(title="Saved",description="Your Time Capsule saved"))
+        await ctx.send(embed=Embed.Info(title="Saved",description="Your Time Capsule saved"))
     
     @capsule.subcommand("list", "List of your time Capsules")
     async def listTime(self, ctx: init):
         await ctx.response.defer(ephemeral=True)
+        if not ctx.user:
+            return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
         file = DataManager("TimeCapsule", default=[])
         data = []
         for time in file.data:
             if time["ID"] == ctx.user.id:
                 data.append(time)
         if data:
-            await ctx.send(embed=info_embed(
+            await ctx.send(embed=Embed.Info(
                          title="List of time Capsules",
                          description=
                          "\n".join(f"{count}. <t:{int(datetime.fromisoformat(item["time"]).timestamp())}:R> {f"||{get_by_percent(20,item["message"],returns="*No Spoilers*")}...||" }" for count, item in enumerate(data, start=1))
                          )
                      )
         else:
-            await ctx.send(embed=info_embed(
+            await ctx.send(embed=Embed.Info(
                          title="List of time Capsules",
                          description="You don't have any time Capsules")
                      )
@@ -74,10 +86,10 @@ class timeCapsule(commands.Cog):
             if target_date <= now:
                 user = self.client.get_user(capsule["ID"])
                 if not user:
-                    self.client.fetch_user(capsule["ID"])
+                    await self.client.fetch_user(capsule["ID"])
                 if user:
                     try:
-                        await user.send(f"{user.mention}",embed=info_embed(
+                        await user.send(f"{user.mention}",embed=Embed.Info(
                             title="Time Capsule",
                             description=f"`Here's your message from the past:`\n{capsule['message']}"
                         ))
@@ -87,7 +99,8 @@ class timeCapsule(commands.Cog):
                 updated_data.append(capsule)
         
         file.data = updated_data
-        file.save()
+        if file.data:
+            file.save()
     
     
 

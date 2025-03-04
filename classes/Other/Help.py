@@ -6,7 +6,7 @@ class descriptionNone:
     def __str__(self):
         return "No description Provided"
 
-home_embed = info_embed(
+home_embed = Embed.Info(
     "**⚠️WARNING⚠️**\n\
     This Command is Outdated please visit the website by using command`/website` for realtime commands,\n\n\
     Hello, I am Negomi Made By my master/papa Mahiro\n\
@@ -14,7 +14,7 @@ home_embed = info_embed(
     To get started Check Select List Below!", 
     title="🏠 Home"
 )
-homeAdmin_embed = info_embed(
+homeAdmin_embed = Embed.Info(
     "**⚠️WARNING⚠️**\n\
     This Command is Outdated please visit the website by using command`/website` for realtime commands,\n\n\
     Welcome Admin! Here's' stuff that only shows for admins.\n\n\
@@ -23,7 +23,7 @@ homeAdmin_embed = info_embed(
 )
 
 def embed_builder_static(title: str, description: str, commands: dict):
-    embed = info_embed(description=description, title=title)
+    embed = Embed.Info(description=description, title=title)
     for name, description in commands.items():
         embed.add_field(name=f"`{name}`", value=f"{description}")
     return embed

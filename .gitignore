@@ -19,3 +19,5 @@ Assets/Badges/*.jpeg
 Assets/Badges/*.png
 .venv
 Roadmap/
+DataOLD/
+notes.*

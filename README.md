@@ -1,4 +1,4 @@
-# Negomi Discord Bot 0.8
+# Negomi Discord Bot 0.8.3
 
 ## 🤖 Add Bot
 
@@ -23,7 +23,12 @@ To add the bot to your server, click the link below:
 
 ### Version 0.9
 
-- Overall Progress: ░░░░░░░░░░░░░░░░░░░░ 0% (0/35)
+- Overall Progress: █░░░░░░░░░░░░░░░░░░░ 3% (1/31)
+- Currently Working On:
+  - Nextcord Forked Library called [Nexon](https://github.com/mahirox36/Nexon)
+  - Currently Working On: Custom Database called [Hyper-Database](https://github.com/mahirox36/Hyper-Database)
+  - Currently Working On: Dashboard
+  - Currently Working On: Customizable Badges
 
 #### Advanced User Profile System
 
@@ -57,8 +62,8 @@ To add the bot to your server, click the link below:
 #### Advanced Leveling System
 
 - Dynamic Level Progression: [░░░░░░░░░░] 0% (0/8)
-  - [ ] Custom Level Configuration:
-    - `/level add [Name] [Color] [XP Required] [Optional Role] [Level Icon]`
+  - [ ] Dashboard Level Configuration:
+    - Create, edit and delete levels with customizable names, colors, XP thresholds, roles, and icons
   - [ ] Interactive Level Management Dashboard
   - [ ] Flexible XP Modifiers:
     - Voice Activity: `[Time in Voice] × [Channel Multiplier] = XP`
@@ -73,26 +78,15 @@ To add the bot to your server, click the link below:
 
 #### Custom Achievement Framework
 
-- Guild Achievement System: [░░░░░░░░░░] 0% (0/8)
-  - [ ] Achievement Creation Command:
-    `/badges create [Title] [Description] [Image] [Points]`
-  - [ ] Interactive Achievement Builder:
-    - [ ] Requirement Management Panel
-    - [ ] Progress Tracking System
-    - [ ] Reward Configuration
-  - [ ] Achievement Categories:
-    - [ ] Server Activity
-    - [ ] Community Engagement
-    - [ ] Special Events
-    - [ ] Custom Milestones
-  - [ ] Achievement Management Commands:
-    - [ ] `/badges edit` - Modify existing achievements
-    - [ ] `/badges list` - View all achievements
-    - [ ] `/badges delete` - Remove achievements
-    - [ ] `/badges preview` - Preview achievement appearance
-  - [ ] Progress Tracking Dashboard
-  - [ ] Achievement Notification System
-  - [ ] Leaderboard Integration
+- Guild Achievement System: [███░░░░░░░] 25% (1/4)
+  - [ ] Dashboard Achievement Creation Interface:
+    - Achievement editor with fields for title, description, image, and points
+  - [ ] Achievement Management Dashboard:
+    - [ ] Edit panel - Modify existing achievements
+    - [ ] List view - Browse all achievements
+    - [ ] Delete functionality - Remove achievements
+    - [ ] Preview mode - Test achievement appearance
+  - [x] Achievement Notification System
   - [ ] Achievement Statistics and Analytics
 
 ### Version 0.10
@@ -107,7 +101,7 @@ To add the bot to your server, click the link below:
 ## 📚 Custom Libraries for This Bot
 
 - [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
-- [Nexon](https://github.com/mahirox36/Negomi/blob/main/modules/Nexon/): Core Library with Functions, Classes, Bot Config, Embeds, AI System, Users Info collecting System, IPC Server, Logger, Data System, Badge System and Nextcord Shortcuts
+- [Nexon](https://github.com/mahirox36/Nexon): A Python wrapper for the Discord API forked from nextcord with additional stuff
 
 ## 💡 Got Ideas or Issues?
 

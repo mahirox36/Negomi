@@ -44,8 +44,7 @@ class Backup(commands.Cog):
     
     
     @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
-    @feature()
-    @cooldown(10)
+    @cooldown(15)
     async def export(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
         await self.exportFunction(ctx, encrypt, include_assets, creator_only)
@@ -112,7 +111,7 @@ class Backup(commands.Cog):
         # Export bot names
         for member in ctx.guild.members:
             if member.bot:
-                data["bot_name"].append(f"<@{member.id}> - {get_name(member)}")
+                data["bot_name"].append(f"<@{member.id}> - {member.display_name}")
 
         # Create and send the file
         file_data = io.StringIO()
@@ -204,14 +203,13 @@ class Backup(commands.Cog):
 
     @backup.subcommand(name="import",
                   description="Import server configuration from a backup file")
-    @feature()
     async def imported(self, ctx: init, file: Attachment):
         if ctx.guild.owner_id != ctx.user.id:
-            await ctx.send(embed=error_embed("Only the owner of the guild can import.", "Import Error"))
+            await ctx.send(embed=Embed.Error("Only the owner of the guild can import.", "Import Error"))
             return
 
         if not (file.filename.endswith(".json") or file.filename.endswith(".negomi")):
-            await ctx.send(embed=error_embed("Invalid file type. Please upload a .json or .negomi file.", "Error"))
+            await ctx.send(embed=Embed.Error("Invalid file type. Please upload a .json or .negomi file.", "Error"))
             return
 
         file_content = await file.read()
@@ -226,20 +224,20 @@ class Backup(commands.Cog):
                 # If decryption fails, try parsing as plain JSON
                 data = json.loads(content_str)
         except Exception as e:
-            await ctx.send(embed=error_embed(f"Failed to parse backup file: {str(e)}", "Parse Error"))
+            await ctx.send(embed=Embed.Error(f"Failed to parse backup file: {str(e)}", "Parse Error"))
             return
 
         # Check creator restriction
         if data["Info"].get("creator_id") and data["Info"]["creator_id"] != ctx.user.id:
-            await ctx.send(embed=error_embed("This backup can only be imported by its creator.", "Permission Error"))
+            await ctx.send(embed=Embed.Error("This backup can only be imported by its creator.", "Permission Error"))
             return
 
         created_roles = {}
         if data["Info"].get("version") not in __VersionsSupported__:
-            await ctx.send(embed=error_embed("Unsupported backup version.", "Version Error"))
+            await ctx.send(embed=Embed.Error("Unsupported backup version.", "Version Error"))
             return
 
-        await ctx.send(embed=info_embed("Starting import process...", "Import Started"))
+        await ctx.send(embed=Embed.Info("Starting import process...", "Import Started"))
 
         # Create roles first
         for role_data in data["roles"]:
@@ -274,12 +272,12 @@ class Backup(commands.Cog):
                     await self.create_channel(ctx.guild, channel_data, parent, "COMMUNITY" in ctx.guild.features)
                 except ChannelTypeError as e:
                     if e.support: await ctx.channel.send(
-                        embed=warn_embed(f"Channel with the name `{e.channel}` cannot be imported due the channel type, you have to turn Community in your server"))
+                        embed=Embed.Warning(f"Channel with the name `{e.channel}` cannot be imported due the channel type, you have to turn Community in your server"))
                     else: await ctx.channel.send(
-                        embed=warn_embed(f"Channel with the name `{e.channel}` isn't supported yet"))
+                        embed=Embed.Warning(f"Channel with the name `{e.channel}` isn't supported yet"))
                 except ChannelCreationError as e:
                     await ctx.channel.send(
-                        embed=error_embed(e.message))
+                        embed=Embed.Error(e.message))
         
         # Import server assets if included
         if "Assets" in data and data["Assets"]:
@@ -294,11 +292,11 @@ class Backup(commands.Cog):
                     splash_data = await self.download_asset(data["Assets"]["splash_url"])
                     await ctx.guild.edit(splash=splash_data)
             except Exception as e:
-                await ctx.send(embed=warn_embed(f"Failed to import some server assets: {str(e)}"))
+                await ctx.send(embed=Embed.Warning(f"Failed to import some server assets: {str(e)}"))
 
         bot_names = "Bots Names:\n" + "\n".join(data["bot_name"])
         await ctx.channel.send(bot_names)
-        await ctx.send(embed=info_embed("Import completed successfully!", "Import Complete"))
+        await ctx.send(embed=Embed.Info("Import completed successfully!", "Import Complete"))
 
     async def create_channel(self, guild: Guild, channel_data: dict, category, community: bool):
         channel_type = channel_data.get("type", None)
