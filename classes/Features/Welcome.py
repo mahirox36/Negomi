@@ -1,4 +1,5 @@
 from enum import Enum
+import traceback
 import PIL
 import aiohttp
 import requests
@@ -182,7 +183,10 @@ class Welcome(commands.Cog):
             return final_buffer
     
         except Exception as e:
-            logger.error(f"Welcome image creation error: {str(e)}")
+            error_message = f"Error creating welcome image: {str(e)}"
+            print(f"\nWELCOME IMAGE ERROR: {error_message}")
+            print(f"Error details: {traceback.format_exc()}")
+            logger.error(error_message, exc_info=True)
             # Create a simple fallback image if the main one fails
             return self._create_fallback_image(member_name)
             
