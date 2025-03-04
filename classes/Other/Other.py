@@ -15,7 +15,7 @@ class Other(commands.Cog):
             "Very doubtful.","You are Gay","This question is Gay",
             #JOKE!!!!!!!!
             "No","Hell Nah", "I don't care about your question, I am The Best",
-            "Nuh Uh","Yea Uh","Bling-bang-bang, bling-bang-bang-born","Ni-",
+            "Nuh Uh","Yea Uh","Bling-bang-bang, bling-bang-bang-born",
             "UwU","OwO",":3"
         ]
     @slash_command("uwu",description="What Does this thing do?")
@@ -37,14 +37,14 @@ class Other(commands.Cog):
         title = meme_data['title']
         image_url = meme_data['url']
 
-        embed = Embed(title=title, colour=colors.Info.value)
+        embed = Embed(title=title, colour=int(colors.Info.value))
         embed.set_image(url=image_url)
 
         await ctx.send(embed=embed)
     
     @slash_command(name="roll",description="Roll a Dice")
     async def roll(self,ctx:init, max_num:int=6,min_num:int=1):
-        await ctx.send(random.randint(min_num,max_num))
+        await ctx.send(str(random.randint(min_num,max_num)))
     
     @slash_command(name="8ball", description="Ask the magic 8-ball a question")
     async def eight_ball(self,ctx: init, question: str):
@@ -55,6 +55,8 @@ class Other(commands.Cog):
         
     @slash_command(name="server-info",description="Gives This server Information")
     async def server_info(self,interaction:init):
+        if not interaction.guild:
+            return await interaction.send("This command can only be used in a server.",ephemeral=True)
         name = interaction.guild.name
         description = interaction.guild.description
         idd = str(interaction.guild.id)
@@ -68,28 +70,21 @@ class Other(commands.Cog):
         )
         embed.set_thumbnail(url=icon)
         embed.add_field(name= "🆔 ID", value=idd)
-        embed.add_field(name= "👑 Owner", value=f"{interaction.guild.owner.mention}")
+        embed.add_field(name= "💎 Boost Tier", value=str(interaction.guild.premium_tier))
+        if interaction.guild.banner:
+            embed.set_image(url=interaction.guild.banner.url)
+        if interaction.guild.owner:
+            embed.add_field(name= "👑 Owner", value=f"{interaction.guild.owner.mention}")
         embed.add_field(name= "👥 Members", value=memberCount)
         embed.add_field(name=f"💬 Channels ({len(interaction.guild.channels)})",value=f"**{len(interaction.guild.text_channels)}** Text|**{len(interaction.guild.voice_channels)}** Voice")
         embed.add_field(name= "🌍 Region", value=region)
-        embed.add_field(name= "🔐 Roles",value=len(interaction.guild.roles))
+        embed.add_field(name= "🔐 Roles",value=str(len(interaction.guild.roles)))
         await interaction.send(embed=embed,ephemeral=True)
         
     @slash_command(name="ping",description="Ping the Bot")
     async def ping(self,ctx:init):
         latency = round(self.client.latency * 1000)
         await ctx.response.send_message(f"Pong! Latency is `{latency}ms`.",ephemeral=True)
-    @slash_command(name="website", description="The Bot's Website.")
-    async def website(self, ctx: init):
-        link = f"http://{get("https://api64.ipify.org?format=text").text}:25400" if dashboard_domain == "" else dashboard_domain
-        button = Button(label="Go to Website", url=link, style=ButtonStyle.primary)
-
-        # Create a view and add the button
-        view = View()
-        view.add_item(button)
-
-        # Send the button in response to the command
-        await ctx.response.send_message(embed=Embed.Info("Click the button below to visit the website:","Negomi Website"), view=view,ephemeral=True)
     
     
 
