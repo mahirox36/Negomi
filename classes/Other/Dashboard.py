@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from modules.Nexon import overwriteOwner, debug
+from modules.Nexon import overwriteOwner, debug, colours
 from modules.settings import FeatureManager
 
 #types string enum
@@ -82,17 +82,17 @@ pages: Dict[str, List] = {
                 {
                     "name": "Info Embed Colour",
                     "type": "colour",
-                    "value": "#ff69b4"
+                    "value": colours.Info.value
                 },
                 {
                     "name": "Warning Embed Colour",
                     "type": "colour",
-                    "value": "#ffd700"
+                    "value": colours.Warn.value
                 },
                 {
                     "name": "Error Embed Colour",
                     "type": "colour",
-                    "value": "#b22222"
+                    "value": colours.Error.value
                 }
             ]
         }
@@ -116,6 +116,9 @@ class CreateBadgeRequest(BaseModel):
     rarity: int = Field(ge=1, le=5)
     requirements: List[Dict[str, Union[str, int]]]
     hidden: bool = False
+
+class GuildsRequest(BaseModel):
+    guilds: List[str]
 
 class DashboardCog(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -368,9 +371,9 @@ class DashboardCog(commands.Cog):
         
 
         @self.app.post("/api/guilds/filter_joined")
-        async def filter_joined_guilds(guilds: List[str]) -> List[str]:
+        async def filter_joined_guilds(request: GuildsRequest) -> List[str]:
             """Return list of guild IDs that the bot is a member of"""
-            return [guild for guild in guilds if int(guild) in [g.id for g in self.bot.guilds]]
+            return [guild for guild in request.guilds if int(guild) in [g.id for g in self.bot.guilds]]
             
         # [GET] /api/layout/settings/sidebar
         # [GET] /api/layout/settings/{page}
@@ -408,7 +411,7 @@ class DashboardCog(commands.Cog):
                         },
                         {
                             "name": "Basic Settings",
-                            "icon": "fa-solid fa-cog",
+                            "icon": "fa-solid fa-cog"
                         }
                     ],
                     "Features": [
@@ -485,7 +488,12 @@ class DashboardCog(commands.Cog):
         @self.app.post("/api/admin/is_owner")
         async def is_owner(request: OwnerCheckRequest):
             """Check if a user is the bot owner"""
-            return {"is_owner": int(request.user_id) == overwriteOwner or self.bot.owner_id}
+            try:
+                user_id = int(request.user_id)
+                is_owner = user_id == overwriteOwner or user_id == self.bot.owner_id
+                return {"is_owner": is_owner}
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid user ID")
         
         @self.app.post("/api/admin/create_badge")
         async def create_badge(request: CreateBadgeRequest):
