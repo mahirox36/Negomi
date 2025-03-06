@@ -1,6 +1,9 @@
 from modules.Nexon import *
 from requests import get
 import random
+import ast
+import math
+import operator
 from better_profanity import profanity
 
 class Other(commands.Cog):
@@ -23,7 +26,7 @@ class Other(commands.Cog):
     @slash_command("fun",description="Fun Commands")
     async def fun(self,ctx:init):
         pass
-    @slash_command("utils",description="Fun Commands")
+    @slash_command("utils",description="Utils Commands")
     async def utils(self,ctx:init):
         pass
     
@@ -32,7 +35,7 @@ class Other(commands.Cog):
         await ctx.send("UwU")
     @fun.subcommand(name="joke",description="Get a Random Joke")
     async def joke(self,ctx:init):
-        joke= get("https://official-joke-api.appspot.com/random_joke").json()
+        joke= get("https://official-joke-api.appspo t.com/random_joke").json()
         phrase      = joke["setup"]
         punchline   = joke["punchline"]
         ID          = joke["id"]
@@ -57,17 +60,21 @@ class Other(commands.Cog):
     
     @fun.subcommand(name="8ball", description="Ask the magic 8-ball a question")
     async def eight_ball(self,ctx: init, question: str):
+        if await self.check_profane_message(ctx, question):
+            return
         response = random.choice(self.eight_ball_responses)
         await ctx.send(embed=Embed.Info(title=f"🎱 **Question:** {question}",
                            description=f"**Answer:** {response}"))
         
-    @fun.subcommand(name="coinflip", description="Flip a coin")
+    @fun.subcommand(name="coin-flip", description="Flip a coin")
     async def coinflip(self, ctx: init):
         result = random.choice(["Heads", "Tails"])
         await ctx.send(embed=Embed.Info(title="Coin Flip", description=f"🪙 The coin landed on **{result}**!"))
 
-    @fun.subcommand(name="choose", description="Choose between multiple options")
+    @fun.subcommand(name="choose", description="Choose between multiple options split by commas")
     async def choose(self, ctx: init, options: str):
+        if await self.check_profane_message(ctx, options):
+            return
         choices = [x.strip() for x in options.split(",")]
         if len(choices) < 2:
             return await ctx.send("Please provide at least 2 options separated by commas!", ephemeral=True)
@@ -76,10 +83,17 @@ class Other(commands.Cog):
 
     @fun.subcommand(name="reverse", description="Reverse some text")
     async def reverse(self, ctx: init, text: str):
+        if await self.check_profane_message(ctx, text):
+            return
         await ctx.send(embed=Embed.Info(title="Reversed Text", description=text[::-1]))
 
     @fun.subcommand(name="say", description="Make the bot say something")
     async def say(self, ctx: init, message: str):
+        if await self.check_profane_message(ctx, message):
+            return
+        await ctx.send(message)
+
+    async def check_profane_message(self, ctx: Interaction, message: str):
         if profanity.contains_profanity(message):
             await ctx.send("Profanity is not allowed! i am going to report to my dad!", ephemeral=True)
             if self.client.owner_id is not None:
@@ -87,8 +101,8 @@ class Other(commands.Cog):
                 if user:
                     channel = await user.create_dm()
                     await channel.send(f"Profanity detected in {ctx.guild.id if ctx.guild else "DM"} in channel {ctx.channel.id if ctx.channel else "Unknown"} by {ctx.user.display_name if ctx.user else "Unknown"}: {message}")
-
-        await ctx.send(message)
+            return True
+        return False
         
     @utils.subcommand(name="server-info",description="Gives This server Information")
     async def server_info(self,interaction:init):
@@ -134,7 +148,7 @@ class Other(commands.Cog):
         embed.set_image(url=user.avatar.url)
         await ctx.send(embed=embed)
 
-    @utils.subcommand(name="userinfo", description="Get information about a user")
+    @utils.subcommand(name="user-info", description="Get information about a user")
     async def userinfo(self, ctx: init, target_user: Optional[Member] = None):
         user: Union[User, Member, None] = target_user or ctx.user
         if not user or isinstance(user, User):
@@ -151,12 +165,34 @@ class Other(commands.Cog):
         await ctx.send(embed=embed)
 
     @utils.subcommand(name="calculate", description="Calculate a math expression")
-    async def calculate(self, ctx: init, expression: str):
+    async def calculate(self, ctx: Interaction, expression: str):
         try:
-            result = eval(expression)
+            operators = {
+                ast.Add: operator.add,
+                ast.Sub: operator.sub,
+                ast.Mult: operator.mul,
+                ast.Div: operator.truediv,
+                ast.Pow: operator.pow,
+                ast.BitXor: operator.xor,
+                ast.USub: operator.neg
+            }
+            def eval_node(node):
+                if isinstance(node, ast.Constant):
+                    return node.n
+                elif isinstance(node, ast.BinOp):
+                    return operators[type(node.op)](eval_node(node.left), eval_node(node.right))
+                elif isinstance(node, ast.UnaryOp):
+                    return operators[type(node.op)](eval_node(node.operand))
+                elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in dir(math):
+                    # Allow only specific math functions
+                    return getattr(math, node.func.id)(*[eval_node(arg) for arg in node.args])
+                else:
+                    raise TypeError(f"Unsupported operation: {type(node).__name__}")
+
+            result = eval_node(ast.parse(expression, mode='eval').body)
             await ctx.send(embed=Embed.Info(title="Calculator", description=f"{expression} = {result}"))
-        except:
-            await ctx.send("Invalid expression!", ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"Invalid expression: {str(e)}", ephemeral=True)
     
 
 def setup(client):
