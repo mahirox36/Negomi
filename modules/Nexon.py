@@ -42,8 +42,9 @@ from nexon import (
     Button, ButtonStyle, CategoryChannel, ChannelType, DMChannel, Embed, Emoji,
     File, Guild, Message, TextChannel, VoiceChannel, ForumChannel, GroupChannel, StageChannel, Colour,
     ui, SelectOption, Interaction, SlashOption, user_command, VoiceState, message_command,
-    User, PermissionOverwrite, __version__ as nextcord_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
-    IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage, ForumTag, SortOrderType, ForumLayoutType, VoiceRegion, VideoQualityMode
+    User, PermissionOverwrite, __version__ as nexon_version, InteractionType, InteractionContextType, FFmpegPCMAudio, VoiceClient,
+    IntegrationType, Reaction, Thread, WebhookMessage, PartialInteractionMessage, InteractionMessage, ForumTag, SortOrderType,
+    ForumLayoutType, VoiceRegion, VideoQualityMode, PartialMessageable
 )
 from nexon.ext import tasks
 #Type Errors

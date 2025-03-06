@@ -120,6 +120,10 @@ class CreateBadgeRequest(BaseModel):
 class GuildsRequest(BaseModel):
     guilds: List[str]
 
+class FeatureSetRequest(BaseModel):
+    feature_name: str
+    value: Union[str, bool, int, float]
+
 class DashboardCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.bot = client
@@ -453,13 +457,28 @@ class DashboardCog(commands.Cog):
         async def get_server_settings_page(page: str):
             """Get server settings page"""
             return pages[page]
-            
+
+        # Features
         
-        
-        # [GET] /api/guild/{guild_id}/features
-        # [POST] /api/guild/{guild_id}/features/{class_name}/set (feature_name, value)
-        # [GET] /api/guild/{guild_id}/features/{class_name}/get (feature_name)
-        # [POST] /api/guild/{guild_id}/features/{class_name}/reset (feature_name)
+        @self.app.post("/api/guild/{guild_id}/features/{class_name}/set")
+        async def set_feature(guild_id: int, class_name: str, request: FeatureSetRequest):
+            """Set a feature for a specific guild"""
+            featureManager = FeatureManager(guild_id, class_name)
+            featureManager.set_setting(request.feature_name, request.value)
+            return {"success": True}
+        @self.app.get("/api/guild/{guild_id}/features/{class_name}/get")
+        async def get_feature(guild_id: int, class_name: str, feature_name: str):
+            """Get a feature for a specific guild"""
+            featureManager = FeatureManager(guild_id, class_name)
+            return {feature_name: featureManager.get_setting(feature_name)}
+        @self.app.post("/api/guild/{guild_id}/features/{class_name}/reset")
+        async def reset_feature(guild_id: int, class_name: str, feature_name: str):
+            """Reset a feature for a specific guild"""
+            featureManager = FeatureManager(guild_id, class_name)
+            if featureManager.delete_setting(feature_name):
+                return {"success": True}
+            else:
+                raise HTTPException(status_code=404, detail="Feature not found")
         
         @self.app.post("/api/guild/{guild_id}/features/{class_name}/enable")
         async def enable_feature(guild_id: int, class_name: str):
