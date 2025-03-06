@@ -119,15 +119,14 @@ class AI(commands.Cog):
             if self.client.user:
                 content = content.replace(f"<@{self.client.user.id}>", "Negomi")
 
-            # Build guild context if available but don't include member lists
             guild_info = None
             if isinstance(message.channel, (TextChannel, Thread)) and message.guild:
                 guild_info = {
                     'name': message.guild.name,
-                    'channel': message.channel.name,
-                    'member_count': message.guild.member_count
+                    'channel': message.channel.name
                 }
 
+            # Get AI response
             response = self.conversation_manager.get_response(
                 str(message.channel.id), 
                 name, 
@@ -135,6 +134,11 @@ class AI(commands.Cog):
                 type,
                 guild_info
             )
+
+            if response is not offline:
+                # Remove member count patterns
+                response = re.sub(r'\(\d+/\d+ members? online\)', '', str(response))
+                response = re.sub(r'\s+', ' ', response).strip()  # Clean up extra spaces
 
             # Add action detection
             action_pattern = r"\*([^*]+)\*"

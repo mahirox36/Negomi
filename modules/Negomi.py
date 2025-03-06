@@ -217,12 +217,9 @@ Previous conversation:
         current_hour = datetime.datetime.now().hour
         context_message = f"Current time: {current_hour:02d}:00."
         
+        
         if guild_info:
-            context_message += f"\nServer: {guild_info['name']}"
-            if 'channel' in guild_info:
-                context_message += f"\nChannel: #{guild_info['channel']}"
-            if 'member_count' in guild_info:
-                context_message += f"\nCommunity size: {guild_info['member_count']} members"
+            context_message += f"\nCurrent channel: #{guild_info['channel']}"
 
         personality_context = {
             'role': 'system',
