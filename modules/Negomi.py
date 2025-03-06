@@ -1,5 +1,6 @@
 import datetime
 import os
+from typing import Optional
 import httpx
 import ollama
 from rich import print
@@ -60,9 +61,20 @@ class ConversationManager:
     def __init__(self, model: str = "Negomi"):
         self.conversation_histories = {}
         self.history_file = Path("Data/Features/AI/history.json")
-        self.summary_threshold = 20
-        self.keep_recent = 8
+        self.summary_threshold = 30  # Increased for better context
+        self.keep_recent = 12  # Keep more recent messages
         self.model = model
+        self.personality_traits = {
+            'mood': 1.0,  # 0.0 = sad, 1.0 = happy
+            'energy': 1.0,  # 0.0 = tired, 1.0 = energetic
+            'affection': 0.8,  # Base affection level
+        }
+        self.time_moods = {
+            'morning': (5, 11, 1.0),    # 5 AM - 11 AM: Energetic
+            'afternoon': (12, 16, 0.8),  # 12 PM - 4 PM: Neutral-positive
+            'evening': (17, 20, 0.7),    # 5 PM - 8 PM: Relaxed
+            'night': (21, 4, 0.5)        # 9 PM - 4 AM: Tired/sleepy
+        }
         self.load_histories()
 
     def load_histories(self):
@@ -165,10 +177,63 @@ Previous conversation:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public"):
+    def get_time_mood_modifier(self):
+        """Get mood modifier based on current time."""
+        current_hour = datetime.datetime.now().hour
+        
+        for period, (start, end, modifier) in self.time_moods.items():
+            if start <= end:
+                if start <= current_hour <= end:
+                    return modifier
+            else:  # Handle night period crossing midnight
+                if current_hour >= start or current_hour <= end:
+                    return modifier
+        return 0.8  # Default modifier
+
+    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", guild_info: Optional[dict] = None):
         """Process user message and get AI response with improved context handling."""
-        if user == "HackedMahiro Hachiro":
-            user = "Mahiro"
+        if user == "Mahiro":
+            # Adjust traits based on interaction with creator
+            self.personality_traits['affection'] = min(1.0, self.personality_traits['affection'] + 0.1)
+            temperature = 0.95  # More creative with creator
+        else:
+            temperature = 0.85  # Slightly more consistent with others
+
+        # Apply time-based mood adjustment
+        time_modifier = self.get_time_mood_modifier()
+        self.personality_traits['energy'] = time_modifier
+
+        # Adjust mood based on both time and message sentiment
+        base_mood = self.personality_traits['mood']
+        if any(word in user_message.lower() for word in ['happy', 'good', 'great', 'love']):
+            self.personality_traits['mood'] = min(1.0, base_mood * time_modifier + 0.1)
+        elif any(word in user_message.lower() for word in ['sad', 'bad', 'angry', 'hate']):
+            self.personality_traits['mood'] = max(0.0, base_mood * time_modifier - 0.1)
+        else:
+            # Gradually adjust mood towards time-appropriate level
+            self.personality_traits['mood'] = (base_mood + time_modifier) / 2
+
+        # Add personality context to system message without exposing raw numbers
+        current_hour = datetime.datetime.now().hour
+        context_message = f"Current time: {current_hour:02d}:00."
+        
+        if guild_info:
+            context_message += f"\nServer: {guild_info['name']}"
+            if 'channel' in guild_info:
+                context_message += f"\nChannel: #{guild_info['channel']}"
+            if 'member_count' in guild_info:
+                context_message += f"\nCommunity size: {guild_info['member_count']} members"
+
+        personality_context = {
+            'role': 'system',
+            'content': context_message
+        }
+
+        if channel_id not in self.conversation_histories:
+            self.conversation_histories[channel_id] = [personality_context]
+
+        conversation_history = self.conversation_histories[channel_id]
+
         if channel_id not in self.conversation_histories:
             self.conversation_histories[channel_id] = []
 
@@ -199,10 +264,11 @@ Previous conversation:
                 model=self.model,
                 messages=conversation_history,
                 options={
-                    'temperature': 0.9,  # High creativity but still somewhat controlled
-                    'top_p': 0.85,       # Keeps responses coherent while allowing some diversity
-                    'frequency_penalty': 0.4,  # Reduces word/phrase repetition
-                    'presence_penalty': 0.6  # Encourages the bot to introduce new ideas
+                    'temperature': temperature,
+                    'top_p': 0.85,
+                    'frequency_penalty': 0.7,  # Increased for more varied responses
+                    'presence_penalty': 0.7,
+                    'max_tokens': 150  # Limit response length for more natural conversation
                 }
             )
             text = response.get('message', {}).get('content', "Error: No response generated.")
