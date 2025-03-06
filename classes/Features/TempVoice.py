@@ -703,6 +703,11 @@ class TempVoice(commands.Cog):
                 file.data.pop(channel_index)
                 file.save()
                 return
+            
+            # Check if the channel is a voice channel
+            if not isinstance(channel, VoiceChannel):
+                return
+                
             member_count = len(channel.members)
             guild_id = guild.id
             channel_id = channel.id
@@ -710,7 +715,7 @@ class TempVoice(commands.Cog):
             if channel_states.get('mod_action'):
                 return
             if member_count == 0:
-                await self._cleanup_channel(channel, file, channel_index) 
+                await self._cleanup_channel(channel, file, channel_index)
                 if guild_id in self.voice_states and channel_id in self.voice_states[guild_id]:
                     del self.voice_states[guild_id][channel_id]
 
