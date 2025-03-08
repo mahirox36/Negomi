@@ -677,6 +677,9 @@ class TempVoice(commands.Cog):
             await self._safe_move_member(member, new_channel, after)
             
             # Update database
+            if file2.data is None:
+                file2.data = []
+            logger.info(f"data: {file2.data}")
             file2.data.append({str(member.id): new_channel.id})
             file2.save()
             
