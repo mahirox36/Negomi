@@ -48,17 +48,6 @@
       }
     ]
   },
-  "material-icon-theme.folders.associations": {
-			"Features": "plugin",
-			"OllamaSetup": "download",
-			"Dashboard": "serverless",
-			"Working on Progress": "Ci",
-			"Nexon": "Quasar",
-    		"Ollama": "Custom",
-			"Roadmap": "Husky",
-			"callback": "Pipe",
-			"statistics": "Docs",
-		},
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
