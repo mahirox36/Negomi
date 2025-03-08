@@ -630,57 +630,90 @@ class TempVoice(commands.Cog):
                                     before: VoiceState, after: VoiceState):
         """Handle creation of temporary voice channels with state tracking"""
         async with self.lock:
-            # Check if this is a valid state change
-            if not await self._update_voice_state(member, before, after):
-                return
+            try:
+                # Validate basic conditions
+                if not after or not after.channel:
+                    return
+                    
+                # Check if this is a valid state change
+                if not await self._update_voice_state(member, before, after):
+                    return
+                    
+                file = DataManager("TempVoice", guild.id)
+                if not file.exists() or not file.data:
+                    return
+                    
+                create_channel_id = file.data.get("CreateChannel")
+                category_id = file.data.get("categoryChannel")
+                if not create_channel_id or not category_id:
+                    return
+                    
+                # Skip if not joining the create channel
+                create_channel = guild.get_channel(create_channel_id)
+                if not create_channel or after.channel.id != create_channel_id:
+                    return
+                    
+                # Initialize or get existing temp voices data
+                file2 = DataManager("TempVoice", guild.id, file_name="TempVoices")
+                if file2.data is None:
+                    file2.data = []
+                    
+                # Check if user already has a temp channel
+                for channel_data in file2.data:
+                    if str(member.id) in channel_data:
+                        existing_channel = guild.get_channel(channel_data[str(member.id)])
+                        if isinstance(existing_channel, VoiceChannel):
+                            # Move to existing channel instead of creating new one
+                            await member.move_to(existing_channel)
+                            return
+                        else:
+                            # Remove stale channel data
+                            file2.data.remove(channel_data)
+                            file2.save()
+                            break
+                            
+                # Get user settings
+                user = DataManager("TempVoice", file_name=f"{member.id}")
+                channel_settings = self._get_channel_settings(member, user)
                 
-            file = DataManager("TempVoice", guild.id)
-            file2 = DataManager("TempVoice", guild.id, file_name="TempVoices")
-            
-            if not file.exists():
-                return
-
-            if get_before(file2.data, before, member) is not None or get_before(file2.data, after, member) is not None:
-                return
-            
-            # Get channel settings
-            user = DataManager("TempVoice", file_name=f"{member.id}")
-            channel_settings = self._get_channel_settings(member, user)
-            
-            if file.data is None:
-                file.data = []
+                # Create new temp channel
+                new_channel = await self._create_temp_channel(
+                    member, guild, channel_settings, category_id
+                )
                 
-            create_channel = guild.get_channel(file["CreateChannel"])
-            if not create_channel or create_channel.id != after.channel.id:
-                return
-
-            # Create new temp channel
-            new_channel = await self._create_temp_channel(
-                member, guild, channel_settings, file["categoryChannel"]
-            )
-            
-            # Initialize state tracking for new channel
-            guild_id = guild.id
-            if guild_id not in self.voice_states:
-                self.voice_states[guild_id] = {}
-            self.voice_states[guild_id][new_channel.id] = {
-                member.id: {
-                    'self_mute': after.self_mute,
-                    'self_deaf': after.self_deaf,
-                    'self_stream': after.self_stream,
-                    'self_video': after.self_video,
-                    'timestamp': datetime.now().timestamp()
+                if not new_channel:
+                    return
+                    
+                # Initialize state tracking
+                guild_id = guild.id
+                if guild_id not in self.voice_states:
+                    self.voice_states[guild_id] = {}
+                    
+                self.voice_states[guild_id][new_channel.id] = {
+                    member.id: {
+                        'self_mute': after.self_mute,
+                        'self_deaf': after.self_deaf,
+                        'self_stream': after.self_stream,
+                        'self_video': after.self_video,
+                        'timestamp': datetime.now().timestamp()
+                    }
                 }
-            }
-            
-            # Move member with state preservation
-            await self._safe_move_member(member, new_channel, after)
-            
-            # Update database
-            file2.data.append({str(member.id): new_channel.id})
-            file2.save()
-            
-            await self._send_channel_info(new_channel, member)
+                
+                # Move member and update database
+                await self._safe_move_member(member, new_channel, after)
+                file2.data.append({str(member.id): new_channel.id})
+                file2.save()
+                
+                # Send channel info
+                await self._send_channel_info(new_channel, member)
+                
+            except Exception as e:
+                logger.error(f"Error in channel creation: {str(e)}")
+                if 'new_channel' in locals():
+                    try:
+                        await new_channel.delete()
+                    except:
+                        pass
 
     async def handle_channel_cleanup(self, member: Member, guild: Guild,
                            before: VoiceState, after: VoiceState):
