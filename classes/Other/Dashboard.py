@@ -146,6 +146,9 @@ class DashboardCog(commands.Cog):
         )
         self.npm_command = "npm run dev" if debug else "npm run start"
         
+        self.terms_and_services: Optional[str] = None
+        self.privacy_policy: Optional[str] = None
+        
         self.setup_routes()
     
     def get_commands_func(self):
@@ -533,6 +536,27 @@ class DashboardCog(commands.Cog):
             except Exception as e:
                 self.logger.error(f"Error creating badge: {str(e)}")
                 raise HTTPException(status_code=400, detail=str(e))
+        
+        
+        #Other
+        @self.app.get("/api/terms_and_services")
+        async def get_terms_and_services():
+            """Get terms and services"""
+            if not self.terms_and_services:
+                return self.terms_and_services
+            else:
+                with open("Terms of Service.md", "r") as file:
+                    self.terms_and_services = file.read()
+                return self.terms_and_services
+        @self.app.get("/api/privacy_policy")
+        async def get_privacy_policy():
+            """Get privacy policy"""
+            if not self.privacy_policy:
+                return self.privacy_policy
+            else:
+                with open("Privacy Policy.md", "r") as file:
+                    self.privacy_policy = file.read()
+                return self.privacy_policy
             
         
     async def start_dashboard(self):
