@@ -9,12 +9,14 @@ from nexon.enums import RequirementType, Rarity, ComparisonType
 import asyncio
 import psutil
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from modules.Nexon import overwriteOwner, debug, colours
 from modules.settings import FeatureManager
+import requests
+from fastapi.responses import JSONResponse
 
 #types string enum
 class Types(StrEnum):
@@ -123,6 +125,9 @@ class GuildsRequest(BaseModel):
 class FeatureSetRequest(BaseModel):
     feature_name: str
     value: Union[str, bool, int, float]
+
+class DiscordCallbackRequest(BaseModel):
+    code: str
 
 class DashboardCog(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -349,6 +354,20 @@ class DashboardCog(commands.Cog):
                 "verification_level": str(guild.verification_level),
                 "owner_id": guild.owner_id
             }
+        @self.app.get("/api/guilds/{guild_id}/is_admin")
+        async def is_admin(guild_id: int, request: Request):
+            """Check if the user is an admin in the guild"""
+            user_id = request.cookies.get("user_id")
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Not authenticated")
+
+            guild = await self.get_guild(guild_id)
+            member = guild.get_member(int(user_id))
+            if not member:
+                raise HTTPException(status_code=404, detail="Member not found in guild")
+
+            is_admin = any(role.permissions.administrator for role in member.roles)
+            return {"isAdmin": is_admin}
         @self.app.get("/api/guilds/{guild_id}/channels_names")
         async def get_guild_channels_names(guild_id: int):
             """Get channel names for a specific guild"""
@@ -505,18 +524,16 @@ class DashboardCog(commands.Cog):
         async def get_feature_status(guild_id: int, class_name: str):
             return {"enabled": FeatureManager(guild_id, class_name).is_enabled()}
         
-        
-        # Admin
-        @self.app.post("/api/admin/is_owner")
-        async def is_owner(request: OwnerCheckRequest):
-            """Check if a user is the bot owner"""
-            try:
-                user_id = int(request.user_id)
-                is_owner = user_id == overwriteOwner or user_id == self.bot.owner_id
-                return {"is_owner": is_owner}
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid user ID")
-        
+        @self.app.get("/api/admin/is_owner")
+        async def is_owner(request: Request):
+            """Check if the user is the bot owner"""
+            user_id = request.cookies.get("user_id")
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Not authenticated")
+
+            is_owner = int(user_id) == overwriteOwner or int(user_id) == self.bot.owner_id
+            return {"is_owner": is_owner}
+
         @self.app.post("/api/admin/create_badge")
         async def create_badge(request: CreateBadgeRequest):
             """Create a new badge"""
@@ -557,7 +574,81 @@ class DashboardCog(commands.Cog):
                 with open("Privacy Policy.md", "r") as file:
                     self.privacy_policy = file.read()
                 return self.privacy_policy
+
+        @self.app.post("/api/auth/discord/callback")
+        async def discord_callback(request: DiscordCallbackRequest):
+            code = request.code
+            data = {
+                "client_id": "YOUR_CLIENT_ID",
+                "client_secret": "YOUR_CLIENT_SECRET",
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": "YOUR_REDIRECT_URI",
+            }
+            headers = {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            response = requests.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail="Failed to authenticate with Discord")
+
+            tokens = response.json()
+            access_token = tokens["access_token"]
+            user_response = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"})
+            if user_response.status_code != 200:
+                raise HTTPException(status_code=user_response.status_code, detail="Failed to fetch user information")
+
+            user = user_response.json()
+            return {"user": user, "accessToken": access_token}
+
+        @self.app.get("/api/auth/user")
+        async def get_user(request: Request):
+            access_token = request.cookies.get("accessToken")
+            if not access_token:
+                return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+            user_response = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"})
+            if user_response.status_code != 200:
+                return JSONResponse(status_code=user_response.status_code, content={"detail": "Failed to fetch user information"})
+
+            user = user_response.json()
+            return {"user": user}
             
+        @self.app.get("/api/auth/user/guilds")
+        async def get_user_guilds(request: Request):
+            access_token = request.cookies.get("accessToken")
+            if not access_token:
+                return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+            guilds_response = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {access_token}"})
+            if guilds_response.status_code != 200:
+                return JSONResponse(status_code=guilds_response.status_code, content={"detail": "Failed to fetch guild information"})
+
+            guilds = guilds_response.json()
+            return {"guilds": guilds}
+        
+        @self.app.get("/api/auth/discord/login")
+        async def get_discord_login(guild_id: Optional[str] = None):
+            """Get Discord OAuth2 login URL"""
+            CLIENT_ID = "YOUR_CLIENT_ID"
+            REDIRECT_URI = "YOUR_REDIRECT_URI"
+            SCOPES = ["identify", "email", "guilds"]
+            
+            base_url = "https://discord.com/api/oauth2/authorize"
+            params = {
+                "client_id": CLIENT_ID,
+                "redirect_uri": REDIRECT_URI,
+                "response_type": "code",
+                "scope": " ".join(SCOPES)
+            }
+            
+            if guild_id:
+                params["guild_id"] = guild_id
+            
+            auth_url = f"{base_url}?{'&'.join(f'{k}={v}' for k,v in params.items())}"
+            return {"url": auth_url}
+        
+        
         
     async def start_dashboard(self):
         """Start the dashboard"""
