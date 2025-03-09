@@ -12,7 +12,6 @@ import {
 import { FiCpu, FiHardDrive, FiClock, FiActivity } from "react-icons/fi";
 import Link from "next/link";
 import PageWrapper from "../components/PageWrapper";
-import { API_BASE_URL } from "../config";
 
 // Update the type to match the API response structure
 type DetailedStats = {
@@ -83,7 +82,7 @@ export default function StatisticsPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = `${API_BASE_URL}/stats`;
+        const apiUrl = "/api/stats";
 
         const response = await fetch(apiUrl);
         const data = await response.json();
@@ -129,7 +128,7 @@ export default function StatisticsPage() {
 
     const fetchGuilds = async () => {
       try {
-        const apiUrl = `${API_BASE_URL}/guilds`;
+        const apiUrl = "/api/guilds";
 
         const response = await fetch(apiUrl);
         const data = await response.json();

@@ -4,7 +4,6 @@ import { User, Guild } from '../types/discord';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { API_BASE_URL } from '../config';
 
 interface SidebarProps {
   user?: User;
@@ -22,7 +21,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
       if (adminGuilds.length > 0) {
         setIsLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/guilds/filter_joined`, {
+          const res = await fetch("/api/guilds/filter_joined", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -41,7 +40,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
         setIsLoading(false);
       }
     };
-    
+
     fetchJoinedGuilds();
   }, [guilds]); // Depend on the original guilds prop instead
 
@@ -87,12 +86,31 @@ export default function Sidebar({ guilds }: SidebarProps) {
   };
 
   // Generate Discord OAuth URL for bot addition
-  const getBotInviteUrl = (guildId: string) => {
-    const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-    const permissions = process.env.NEXT_PUBLIC_BOT_PERMISSIONS || '8';
-    const scopes = 'bot%20applications.commands';
-    return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${permissions}&scope=${scopes}&guild_id=${guildId}&disable_guild_select=true&response_type=code&redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/callback')}`;
+  const getBotInviteUrl = async (guildId: string) => {
+    try {
+      const res = await fetch(`/api/auth/discord/login?guild_id=${guildId}`);
+      const data = await res.json();
+      return data.url;
+    } catch (error) {
+      console.error("Failed to get bot invite URL:", error);
+      return "#";
+    }
   };
+
+  // State for invite URLs
+  const [inviteUrls, setInviteUrls] = useState<{ [key: string]: string }>({});
+
+  // Load invite URLs for not joined guilds
+  useEffect(() => {
+    const loadInviteUrls = async () => {
+      const urls: { [key: string]: string } = {};
+      for (const guild of adminGuilds.filter(g => !joinedGuilds.includes(g.id))) {
+        urls[guild.id] = await getBotInviteUrl(guild.id);
+      }
+      setInviteUrls(urls);
+    };
+    loadInviteUrls();
+  }, [joinedGuilds, adminGuilds]);
 
   // Separate guilds into joined and not joined
   const joinedGuildsList = adminGuilds.filter(guild => joinedGuilds.includes(guild.id));
@@ -132,7 +150,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
                   <h4 className="text-white/70 text-xs font-medium mb-2">Available Servers</h4>
                   {notJoinedGuildsList.map(guild => (
                     <a
-                      href={getBotInviteUrl(guild.id)}
+                      href={inviteUrls[guild.id] || '#'}
                       key={guild.id}
                       className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/60 hover:text-white"
                     >

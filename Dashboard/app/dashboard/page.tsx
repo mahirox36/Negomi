@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDiscordLoginUrl, fetchUserGuilds } from "../utils/auth";
 import DashboardLayout from "../components/DashboardLayout";
 import { User, Guild } from "../types/discord";
 import LoadingScreen from "../components/LoadingScreen";
@@ -12,23 +11,41 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      window.location.href = getDiscordLoginUrl();
-      return;
-    }
+    const fetchUserData = async () => {
+      try {
+        const userResponse = await fetch("/api/auth/user", {
+          credentials: "include",
+        });
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData.user);
+        } else {
+          window.location.href = "/api/auth/discord/login";
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        window.location.href = "/api/auth/discord/login";
+      }
+    };
 
-    try {
-      setUser(JSON.parse(storedUser));
-      fetchUserGuilds()
-        .then((guilds) => setGuilds(guilds))
-        .catch((error) => console.error("Error fetching guilds:", error))
-        .finally(() => setLoading(false));
-    } catch (error) {
-      console.error("Error parsing stored user data:", error);
-      localStorage.removeItem("user");
-      window.location.href = getDiscordLoginUrl();
-    }
+    const fetchGuildData = async () => {
+      try {
+        const guildResponse = await fetch("/api/auth/user/guilds", {
+          credentials: "include",
+        });
+        if (guildResponse.ok) {
+          const guildData = await guildResponse.json();
+          setGuilds(guildData.guilds);
+        }
+      } catch (error) {
+        console.error("Error fetching guild data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+    fetchGuildData();
   }, []);
 
   const getGuildIcon = (guild: Guild) => {

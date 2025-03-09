@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Command } from "../types/commands";
-import { API_BASE_URL } from '../config';
 import CommandCard from "../components/CommandCard";
 import PageWrapper from "../components/PageWrapper";
 
@@ -22,7 +21,7 @@ export default function CommandsPage() {
 
   const fetchCommands = async () => {
     try {
-      const apiUrl = `${API_BASE_URL}/commands`;
+      const apiUrl = "/api/commands";
 
       const response = await fetch(apiUrl);
       const data = await response.json();

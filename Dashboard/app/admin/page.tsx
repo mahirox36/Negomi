@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import PageWrapper from "../components/PageWrapper";
-import { API_BASE_URL } from "../config";
 
 const requirementTypes = [
   "message_count",
@@ -95,7 +94,7 @@ export default function AdminPage() {
       };
 
       const response = await fetch(
-        `${API_BASE_URL}/admin/create_badge`,
+        "/api/admin/create_badge",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

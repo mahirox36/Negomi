@@ -1,21 +1,46 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import LoadingScreen from "@/app/components/LoadingScreen";
 import ServerLayout from "@/app/components/ServerLayout";
 import { useLayout } from "@/providers/LayoutProvider";
 import { LayoutItem } from "@/types/layout";
 import Link from "next/link";
+import axios from "axios";
 
 export default function ServerPage() {
   const params = useParams();
   const { pageLayout, fetchPageLayout } = useLayout();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetchPageLayout(params.page as string);
-  }, [fetchPageLayout, params.page]);
+    const checkAdminStatus = async () => {
+      try {
+        const response = await axios.get(`/api/guilds/${params.id}/is_admin`);
+        setIsAdmin(response.data.isAdmin);
+      } catch (error) {
+        setIsAdmin(false);
+      }
+    };
 
+    const checkOwnerStatus = async () => {
+      try {
+        const response = await axios.get(`/api/admin/is_owner`);
+        setIsOwner(response.data.is_owner);
+      } catch (error) {
+        setIsOwner(false);
+      }
+    };
+
+    checkAdminStatus();
+    checkOwnerStatus();
+    fetchPageLayout(params.page as string);
+  }, [fetchPageLayout, params.id, params.page]);
+
+  if (isAdmin === null || isOwner === null) return <LoadingScreen message="Checking Permissions" />;
+  if (!isAdmin || !isOwner) return <div>You do not have permission to view this page.</div>;
   if (!pageLayout) return <LoadingScreen message="Loading Page" />;
 
   const renderLayoutItem = (item: LayoutItem, index: number) => {

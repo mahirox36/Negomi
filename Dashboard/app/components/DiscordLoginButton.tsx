@@ -1,10 +1,14 @@
 import { motion } from "framer-motion";
 
 export default function DiscordLoginButton() {
-    const handleLogin = () => {
-      const DISCORD_CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-      const authUrl = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&response_type=code&redirect_uri=https%3A%2F%2Fnegomi.mahirou.online%2Fdashboard&scope=guilds+email`;
-      window.location.href = authUrl;
+    const handleLogin = async () => {
+      try {
+        const res = await fetch("/api/auth/discord/login");
+        const data = await res.json();
+        window.location.href = data.url;
+      } catch (error) {
+        console.error("Failed to get login URL:", error);
+      }
     };
   
     return (
