@@ -50,6 +50,9 @@ class Backup(commands.Cog):
         await self.exportFunction(ctx, encrypt, include_assets, creator_only)
 
     async def exportFunction(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
+        if not ctx.guild or not ctx.user:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server.", "Invalid Command"))
+            return
         data = {
             "Info": {
                 "version": __version__,
@@ -127,7 +130,7 @@ class Backup(commands.Cog):
             
             file_data.seek(0)
             filename = f"backup-v{__version__}-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}{ext}"
-            discord_file = File(file_data, filename=filename)
+            discord_file = File(fp=io.BytesIO(file_data.getvalue().encode()), filename=filename)
             await ctx.send(file=discord_file)
         finally:
             file_data.close()
@@ -204,6 +207,12 @@ class Backup(commands.Cog):
     @backup.subcommand(name="import",
                   description="Import server configuration from a backup file")
     async def imported(self, ctx: init, file: Attachment):
+        if not ctx.guild or not ctx.user or not ctx.channel:
+            await ctx.send(embed=Embed.Error("This command can only be used in a server.", "Invalid Command"))
+            return
+        if isinstance(ctx.channel, (CategoryChannel, ForumChannel)):
+            await ctx.send(embed=Embed.Error("This command cannot be used in a this channel.", "Invalid Command"))
+            return
         if ctx.guild.owner_id != ctx.user.id:
             await ctx.send(embed=Embed.Error("Only the owner of the guild can import.", "Import Error"))
             return
@@ -312,7 +321,7 @@ class Backup(commands.Cog):
         try:
             # Check community-required channels first
             if not community and channel_type in ["forum", "stage"]:
-                raise ChannelTypeError(channel_data.get("Name"), True)
+                raise ChannelTypeError(channel_data.get("Name", "Unknown"), True)
 
             if channel_type == "text":
                 return await guild.create_text_channel(
@@ -358,7 +367,7 @@ class Backup(commands.Cog):
                     nsfw=channel_data.get("nsfw", False)
                 )
             else:
-                raise ChannelTypeError(channel_data.get("Name"), False)
+                raise ChannelTypeError(channel_data.get("Name", "Unknown"), False)
 
         except Exception as e:
             raise ChannelCreationError(channel_data["Name"], str(e))
