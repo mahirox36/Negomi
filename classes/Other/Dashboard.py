@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from modules.Nexon import overwriteOwner, debug, colours
+from modules.Nexon import overwriteOwner, debug, colours, config
 from modules.settings import FeatureManager
 import requests
 from fastapi.responses import JSONResponse
@@ -579,11 +579,11 @@ class DashboardCog(commands.Cog):
         async def discord_callback(request: DiscordCallbackRequest):
             code = request.code
             data = {
-                "client_id": "YOUR_CLIENT_ID",
-                "client_secret": "YOUR_CLIENT_SECRET",
+                "client_id": config.oauth.client_id,
+                "client_secret": config.oauth.client_secret,
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": "YOUR_REDIRECT_URI",
+                "redirect_uri": config.oauth.redirect_url,
             }
             headers = {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -630,14 +630,12 @@ class DashboardCog(commands.Cog):
         @self.app.get("/api/auth/discord/login")
         async def get_discord_login(guild_id: Optional[str] = None):
             """Get Discord OAuth2 login URL"""
-            CLIENT_ID = "YOUR_CLIENT_ID"
-            REDIRECT_URI = "YOUR_REDIRECT_URI"
             SCOPES = ["identify", "email", "guilds"]
             
             base_url = "https://discord.com/api/oauth2/authorize"
             params = {
-                "client_id": CLIENT_ID,
-                "redirect_uri": REDIRECT_URI,
+                "client_id": config.oauth.client_id,
+                "redirect_uri": config.oauth.redirect_url,
                 "response_type": "code",
                 "scope": " ".join(SCOPES)
             }
