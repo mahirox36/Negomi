@@ -4,13 +4,12 @@ from nexon.badge import BadgeManager
 install()
 
 import traceback
-from typing import Generator, Optional
+from typing import Generator
 from pathlib import Path
 import asyncio
 from datetime import datetime
 import nexon
-from nexon.ext.commands import MissingPermissions, NotOwner, NoPrivateMessage, PrivateMessageOnly
-import ollama
+from nexon.ext.commands import MissingPermissions
 from modules.Nexon import *
 
 class DiscordBot(commands.Bot):
@@ -211,10 +210,11 @@ class DiscordBot(commands.Bot):
     
     #ERROR HANDLERS
     async def on_application_command_error(self, ctx: Interaction, error: Exception):
-        if hasattr(error, 'original'):
-            err = error.original # type: ignore
+        if isinstance(error, ApplicationInvokeError):
+            err = error.original
         else:
             err = error
+        logger.info(str(type(err)))
         if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
@@ -235,7 +235,7 @@ class DiscordBot(commands.Bot):
         #     await ctx.response.send_message(
         #         embed=Embed.Error(f"You are not the owner of the Server {err.guild}", "Not Owner of Server"),
         #         ephemeral=True)
-            return
+        #     return
         elif isinstance(err, ApplicationNoPrivateMessage):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You can't Use this command in DM", "DM not Allowed"),
@@ -246,12 +246,28 @@ class DiscordBot(commands.Bot):
                 embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
             return
-        elif isinstance(error, FeatureDisabled):
-            if error.send_error: await ctx.response.send_message(
+        elif isinstance(err, FeatureDisabled):
+            if err.send_error: await ctx.response.send_message(
                 embed=Embed.Error("This Feature is disabled","Feature Disabled",), ephemeral=True)
-            return 
+            return
+        elif isinstance(err, MissingPermissions):
+            missing = ", ".join(err.missing_permissions)
+            await ctx.response.send_message(
+                embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"),
+                ephemeral=True
+            )
+            return
+        
+        elif isinstance(err, Forbidden):
+            await ctx.response.send_message(
+                embed=Embed.Error("I don't have permission to do this", "Missing Permissions"),
+                ephemeral=True
+            )
+            return
         if not ctx.response.is_done():
-            await ctx.response.send_message(embed=Embed.Error(str(error), title="An unexpected error occurred"))
+            await ctx.response.send_message(embed=Embed.Error(str(err), title="An unexpected error occurred"))
+        else:
+            await ctx.followup.send(embed=Embed.Error(str(err), title="An unexpected error occurred"))
         logger.error(error)
     
         # Send detailed traceback to the bot owner
@@ -264,59 +280,6 @@ class DiscordBot(commands.Bot):
         buffer.write(error_details.encode('utf-8'))
         buffer.seek(0)
             
-        owner = self.get_user(self.owner_id)  # type: ignore
-        if owner is None:
-            owner = await self.fetch_user(self.owner_id)  # type: ignore
-        channel = await owner.create_dm()
-
-        await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
-    
-    async def on_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, commands.CommandOnCooldown):
-            await ctx.reply(f"You're on cooldown! Try again in {error.retry_after:.2f} seconds.")
-            return
-        elif isinstance(error, MissingPermissions):
-            missing = ", ".join(error.missing_permissions)
-            await ctx.reply(
-                embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"))
-            return
-        elif isinstance(error, NotOwner):
-            await ctx.reply(
-                embed=Embed.Error(f"You are not the owner of the bot", "Not Owner"))
-            return
-        elif isinstance(error, FeatureDisabled):
-            if error.send_error: await ctx.reply(
-                embed=Embed.Error(f"This Feature is disabled",
-                                  "Feature Disabled"))
-            return 
-        # elif isinstance(error, NotOwnerGuild):
-        #     await ctx.reply(
-        #         embed=Embed.Error(f"You are not the owner of the Server {error.guild}", "Not Owner of Server"),
-        #         ephemeral=True)
-        #     return
-        elif isinstance(error, NoPrivateMessage):
-            await ctx.reply(
-                embed=Embed.Error(f"You can't Use this command in DM", "DM not Allowed"),
-                ephemeral=True)
-            return
-        elif isinstance(error, PrivateMessageOnly):
-            await ctx.reply(
-                embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
-                ephemeral=True)
-            return
-        elif isinstance(error,commands.errors.CommandNotFound):
-            return
-        await ctx.reply(embed=Embed.Error(str(error), title="An unexpected error occurred"))
-        logger.error(error)
-    
-        # Send detailed traceback to the bot owner
-        tb_str = traceback.format_exception(type(error), error, error.__traceback__)
-        error_details = "".join(tb_str)
-        
-        buffer = io.BytesIO()
-        buffer.write(error_details.encode('utf-8'))
-        buffer.seek(0)
-        
         owner = self.get_user(self.owner_id)  # type: ignore
         if owner is None:
             owner = await self.fetch_user(self.owner_id)  # type: ignore

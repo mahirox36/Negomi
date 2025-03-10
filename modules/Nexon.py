@@ -49,7 +49,7 @@ from nexon import (
 from nexon.ext import tasks
 #Type Errors
 from nexon import (
-    HTTPException, Forbidden
+    HTTPException, Forbidden, ApplicationInvokeError
 )
 # Other Stuff Like UI, application_checks, commands
 from nexon.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
