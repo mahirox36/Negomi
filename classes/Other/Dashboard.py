@@ -30,7 +30,7 @@ class Types(StrEnum):
 
 
 pages: Dict[str, List] = {
-    "Overview": [
+    "overview": [
         {
             "type": Types.header,
             "text": "Overview",
@@ -86,7 +86,7 @@ pages: Dict[str, List] = {
             ]
         }
     ],
-    "Basic Settings": [
+    "basic-settings": [
         {
             "type": Types.header,
             "text": "Basic Settings",
@@ -576,44 +576,54 @@ class DashboardCog(commands.Cog):
                     "General": [
                         {
                             "name": "Overview",
+                            "link": "overview",
                             "icon": "fa-solid fa-gauge",
                         },
                         {
                             "name": "Basic Settings",
+                            "link": "basic-settings",
                             "icon": "fa-solid fa-cog"
                         }
                     ],
                     "Features": [
                         {
                             "name": "AI",
+                            "link": "ai",
                             "icon": "fa-solid fa-robot"
                         },
                         {
                             "name": "Auto Role",
+                            "link": "auto-role",
                             "icon": "fa-solid fa-user-plus"
                         },
                         {
                             "name": "Backup",
+                            "link": "backup",
                             "icon": "fa-solid fa-hdd"
                         },
                         {
                             "name": "Custom Roles",
+                            "link": "custom-roles",
                             "icon": "fa-solid fa-user-tag"
                         },
                         {
                             "name": "Temporary Voice",
+                            "link": "temp-voice",
                             "icon": "fa-solid fa-headset"
                         },
                         {
                             "name": "Welcome",
+                            "link": "welcome",
                             "icon": "fa-solid fa-gift"
                         },
                         {
                             "name": "Leveling",
+                            "link": "leveling",
                             "icon": "fa-solid fa-trophy"
                         },
                         {
                             "name": "Badges",
+                            "link": "badges",
                             "icon": "fa-solid fa-medal"
                         }
                     ]
@@ -622,6 +632,45 @@ class DashboardCog(commands.Cog):
         async def get_server_settings_page(page: str):
             """Get server settings page"""
             return pages[page]
+
+        @self.app.get("/api/guilds/{guild_id}/settings/{page}")
+        async def get_settings(guild_id: int, page: str):
+            """Get saved settings for a specific page"""
+            try:
+                featureManager = FeatureManager(guild_id, page.replace("%20", " "))
+                settings = {}
+                
+                # Get the page layout
+                normalized_page = page.replace("%20", " ")
+                if normalized_page in pages:
+                    for item in pages[normalized_page]:
+                        if item["type"] == "panel":
+                            for setting in item.get("settings", []):
+                                saved_value = featureManager.get_setting(setting["name"])
+                                # If no saved value, use the default value from pages
+                                settings[setting["name"]] = saved_value if saved_value is not None else setting["value"]
+                                self.logger.info(f"Loading setting {setting['name']}: {settings[setting['name']]} (saved: {saved_value}, default: {setting['value']})")
+                
+                return {"settings": settings}
+            except Exception as e:
+                self.logger.error(f"Error getting settings: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+
+        @self.app.post("/api/guilds/{guild_id}/settings/{page}")
+        async def save_settings(guild_id: int, page: str, request: Request):
+            """Save all settings for a specific page"""
+            try:
+                data = await request.json()
+                settings = data.get("settings", {})
+                featureManager = FeatureManager(guild_id, page)
+                
+                for setting_name, value in settings.items():
+                    featureManager.set_setting(setting_name, value)
+                
+                return {"success": True}
+            except Exception as e:
+                self.logger.error(f"Error saving settings: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
 
         # Features
         
