@@ -35,7 +35,7 @@ pages: Dict[str, List] = {
             "type": Types.header,
             "text": "Overview",
             "subtext": "General information about the server",
-            "icon": "fa-solid fa-gauge"
+            "icon": "fa-solid fa-gauge" 
         },
         {
             "type": Types.cards,
@@ -43,31 +43,45 @@ pages: Dict[str, List] = {
             "buttons": [
                 {
                     "text": "AI",
-                    "subtext": "Configure AI settings",
+                    "subtext": "Configure AI settings and responses",
                     "icon": "fa-solid fa-robot",
                     "link": "/ai",
                     "buttonText": "Configure AI"
                 },
                 {
                     "text": "Auto Role",
-                    "subtext": "Configure auto role settings",
-                    "icon": "fa-solid fa-user-plus" ,
+                    "subtext": "Manage automatic role assignment",
+                    "icon": "fa-solid fa-user-plus",
                     "link": "/auto_role",
                     "buttonText": "Configure Auto Role"
                 },
                 {
                     "text": "Welcome",
-                    "subtext": "Configure welcome settings",
+                    "subtext": "Customize welcome messages and images",
                     "icon": "fa-solid fa-gift",
-                    "link": "/welcome",
+                    "link": "/welcome", 
                     "buttonText": "Configure Welcome"
                 },
                 {
                     "text": "Badges",
-                    "subtext": "Configure badge settings",
+                    "subtext": "Manage achievement badges",
                     "icon": "fa-solid fa-medal",
                     "link": "/badges",
                     "buttonText": "Configure Badges"
+                },
+                {
+                    "text": "Leveling",
+                    "subtext": "Configure XP and level settings",
+                    "icon": "fa-solid fa-trophy",
+                    "link": "/leveling",
+                    "buttonText": "Configure Leveling"
+                },
+                {
+                    "text": "Temp Channels",
+                    "subtext": "Manage temporary voice channels",
+                    "icon": "fa-solid fa-headset",
+                    "link": "/temp-voice",
+                    "buttonText": "Configure Temp Channels"
                 }
             ]
         }
@@ -76,34 +90,74 @@ pages: Dict[str, List] = {
         {
             "type": Types.header,
             "text": "Basic Settings",
-            "subtext": "Basic settings for the server",
+            "subtext": "Core server configuration",
             "icon": "fa-solid fa-cog"
         },
         {
             "type": Types.panel,
-            "text": "Embed Colour Configuration",
+            "text": "Embed Appearance",
             "icon": "fa-solid fa-palette",
-            "subtext": "Configure the embed colour for the server",
+            "subtext": "Customize bot message appearances",
             "settings": [
                 {
-                    "name": "Info Embed Colour",
-                    "type": "colour",
-                    "value": colours.Info.value
+                    "name": "Info Embed Color",
+                    "type": "color",
+                    "value": colours.Info.hex,
+                    "description": "Color for informational messages"
                 },
                 {
-                    "name": "Warning Embed Colour",
-                    "type": "colour",
-                    "value": colours.Warn.value
+                    "name": "Warning Embed Color",
+                    "type": "color", 
+                    "value": colours.Warn.hex,
+                    "description": "Color for warning messages"
                 },
                 {
-                    "name": "Error Embed Colour",
-                    "type": "colour",
-                    "value": colours.Error.value
+                    "name": "Error Embed Color",
+                    "type": "color",
+                    "value": colours.Error.hex,
+                    "description": "Color for error messages"
+                }
+            ]
+        },
+        {
+            "type": Types.panel,
+            "text": "Badge Appearance",
+            "icon": "fa-solid fa-medal",
+            "subtext": "Customize badge appearances",
+            "settings": [
+                {
+                    "name": "Badge Common Color",
+                    "type": "color",
+                    "value": colours.Common.hex,
+                    "description": "Color for success messages"
+                },
+                {
+                    "name": "Badge Uncommon Color",
+                    "type": "color",
+                    "value": colours.Uncommon.hex,
+                    "description": "Color for uncommon badges"
+                },
+                {
+                    "name": "Badge Rare Color",
+                    "type": "color",
+                    "value": colours.Rare.hex,
+                    "description": "Color for rare badges"
+                },
+                {
+                    "name": "Badge Epic Color",
+                    "type": "color",
+                    "value": colours.Epic.hex,
+                    "description": "Color for epic badges"
+                },
+                {
+                    "name": "Badge Legendary Color",
+                    "type": "color",
+                    "value": colours.Legendary.hex,
+                    "description": "Color for legendary badges"
                 }
             ]
         }
-        
-    ]
+    ],
 }
 
 class OwnerCheckRequest(BaseModel):
@@ -611,37 +665,178 @@ class DashboardCog(commands.Cog):
                 raise HTTPException(status_code=400, detail="Feature already disabled")
         @self.app.get("/api/guild/{guild_id}/features/{class_name}/status")
         async def get_feature_status(guild_id: int, class_name: str):
-            return {"enabled": FeatureManager(guild_id, class_name).is_enabled()}
+            return {"enabled": FeatureManager(guild_id, class_name).is_enabled()}       
         
         @self.app.get("/api/admin/is_owner")
         async def is_owner(request: Request):
-            """Check if the user is the bot owner"""
-            user_id = request.cookies.get("user_id")
-            if not user_id:
-                raise HTTPException(status_code=401, detail="Not authenticated")
+            """Check if the authenticated user is the bot owner"""
+            try:
+                # Verify authentication and get access token
+                access_token = await self.verify_auth(request)
+                
+                # Get user from cache or Discord API
+                if access_token in self.user_cache:
+                    user = self.user_cache[access_token]
+                else:
+                    user = await self.rate_limited_request(
+                        "/users/@me",
+                        headers={"Authorization": f"Bearer {access_token}"}
+                    )
+                    self.user_cache[access_token] = user
+                
+                # Check if user is owner
+                user_id = int(user["id"])
+                is_owner = user_id == overwriteOwner or user_id == self.bot.owner_id
+                
+                return JSONResponse({
+                    "is_owner": is_owner,
+                    "user_id": user_id
+                })
+                
+            except HTTPException as e:
+                return JSONResponse(
+                    status_code=e.status_code,
+                    content={"detail": str(e.detail)}
+                )
+            except Exception as e:
+                self.logger.error(f"Error checking owner status: {str(e)}")
+                return JSONResponse(
+                    status_code=500,
+                    content={"detail": "Internal server error"}
+                )
+            
+        @self.app.post("/api/admin/stats")
+        async def get_admin_stats():
+            """Get detailed bot statistics for admin"""
+            try:
+                # Get total badges
+                badge_manager = BadgeManager()
+                badges = await badge_manager.get_all_badges()
+                total_badges = len(badges)
 
-            is_owner = int(user_id) == overwriteOwner or int(user_id) == self.bot.owner_id
-            return {"is_owner": is_owner}
+                # Get total servers
+                total_servers = len(self.bot.guilds)
 
-        @self.app.post("/api/admin/create_badge")
-        async def create_badge(request: CreateBadgeRequest):
+                # Calculate active users (unique users across all guilds)
+                active_users = set()
+                for guild in self.bot.guilds:
+                    for member in guild.members:
+                        active_users.add(member.id)
+
+                return {
+                    "total_badges": total_badges,
+                    "total_servers": total_servers,
+                    "active_users": len(active_users)
+                }
+
+            except Exception as e:
+                self.logger.error(f"Error getting admin stats: {str(e)}")
+                raise HTTPException(status_code=500, detail=str(e))
+
+        async def check_owner(request: Request):
+            access_token = await self.verify_auth(request)
+            if access_token in self.user_cache:
+                user = self.user_cache[access_token]
+            else:
+                user = await self.rate_limited_request(
+                    "/users/@me",
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                self.user_cache[access_token] = user
+            user_id = int(user["id"])
+            if user_id != overwriteOwner and user_id != self.bot.owner_id:
+                raise HTTPException(status_code=403, detail="Not authorized")
+
+        @self.app.post("/api/admin/badges/create")
+        async def create_badge(request: Request, badge_request: CreateBadgeRequest):
             """Create a new badge"""
             try:
                 # Convert dictionary requirements to BadgeRequirement objects
+                await check_owner(request)
                 
+                requirements = [
+                    {
+                        "type": req["type"],
+                        "value": req["value"], 
+                        "comparison": str(ComparisonType(req["comparison"])),
+                        "specific_value": req.get("specific_value", "")
+                    } for req in badge_request.requirements
+                ]
                 payload = Badge(
-                    name=request.name,
-                    description=request.description,
-                    icon_url=request.icon_url,
-                    rarity=Rarity(request.rarity),
-                    requirements=request.requirements,
-                    hidden=request.hidden
+                    name=badge_request.name,
+                    description=badge_request.description,
+                    icon_url=badge_request.icon_url,
+                    rarity=Rarity(badge_request.rarity),
+                    requirements=badge_request.requirements,
+                    hidden=badge_request.hidden
                 )
                 await BadgeManager().add_badge(payload)
                 return {"success": True}
             except Exception as e:
                 self.logger.error(f"Error creating badge: {str(e)}")
                 raise HTTPException(status_code=400, detail=str(e))
+        
+        @self.app.get("/api/admin/badges")
+        async def get_badges():
+            """Get all badges"""
+            try:
+                badges = await BadgeManager().get_all_badges()
+                return {"badges": [badge.to_dict() for badge in badges]}
+            except Exception as e:
+                self.logger.error(f"Error fetching badges: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+        
+        @self.app.post("/api/admin/badges/{badge_id}/edit")
+        async def edit_badge(badge_id: int,request: Request, request_badge: CreateBadgeRequest):
+            """Edit an existing badge"""
+            try:
+                await check_owner(request)
+                # Convert dictionary requirements to BadgeRequirement objects
+                requirements = [
+                    {
+                        "type": req["type"],
+                        "value": req["value"],
+                        "comparison": str(ComparisonType(req["comparison"])),
+                        "specific_value": req.get("specific_value", "")
+                    } for req in request_badge.requirements
+                ]
+                
+                badge = Badge(
+                    name=request_badge.name,
+                    description=request_badge.description,
+                    icon_url=request_badge.icon_url,
+                    rarity=Rarity(request_badge.rarity),
+                    requirements=requirements,
+                    hidden=request_badge.hidden
+                )
+                
+                await BadgeManager().update_badge(badge_id, badge)
+                return {"success": True}
+            except Exception as e:
+                self.logger.error(f"Error editing badge: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+        @self.app.post("/api/admin/badges/{badge_id}/delete")
+        async def delete_badge(badge_id: int, request: Request):
+            """Delete a badge"""
+            try:
+                await check_owner(request)
+                await BadgeManager().remove_badge(badge_id)
+                return {"success": True}
+            except Exception as e:
+                self.logger.error(f"Error deleting badge: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+        @self.app.get("/api/admin/badges/{badge_id}")
+        async def get_badge(badge_id: int):
+            """Get detailed information about a specific badge"""
+            try:
+                badge = await BadgeManager().get_badge(badge_id)
+                if not badge:
+                    raise HTTPException(status_code=404, detail="Badge not found")
+                return badge.to_dict()
+            except Exception as e:
+                self.logger.error(f"Error fetching badge: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+            
         
         
         #Other
