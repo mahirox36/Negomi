@@ -5,17 +5,31 @@ import os
 
 class Color:
     def __init__(self, value: int | str):
-        self.value = value
         if isinstance(value, str):
-            self.value = int(value.replace("#", "0x"), 16)
+            if not value.startswith("#"):
+                raise ValueError("String color must start with '#'")
+            try:
+                self.value = int(value.replace("#", ""), 16)
+            except ValueError:
+                raise ValueError("Invalid hex color format")
+        elif isinstance(value, int):
+            if not 0 <= value <= 0xFFFFFF:
+                raise ValueError("Integer color must be between 0 and 16777215")
+            self.value = value
+        else:
+            raise ValueError("Color must be a hex string or integer")
+        self.hex = f"#{self.value:06x}"
 
     def __str__(self):
-        return f"{hex(self.value).replace('0x', '#')}"
+        return self.hex
     
     def __eq__(self, other):
         if isinstance(other, Color):
             return self.value == other.value
         return False
+
+    def __repr__(self):
+        return f"Color('{self.hex}')"
 
 
 class Config:

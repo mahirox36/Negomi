@@ -24,5 +24,6 @@ export interface LayoutItem {
     name: string;
     type: string;
     value: string;
+    description?: string;
   }>;
 }
