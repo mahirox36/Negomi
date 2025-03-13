@@ -141,3 +141,78 @@
   }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+}
+
+@keyframes warning-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px) rotate(-0.5deg); }
+  20%, 40%, 60%, 80% { transform: translateX(2px) rotate(0.5deg); }
+}
+.animate-warning-shake {
+  animation: warning-shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+.react-colorful {
+  user-select: none;
+  touch-action: none;
+}
+
+.react-colorful__saturation {
+  touch-action: none;
+  cursor: grab;
+}
+
+.react-colorful__saturation:active {
+  cursor: grabbing;
+}
+
+.react-colorful__hue {
+  touch-action: none;
+  cursor: grab;
+}
+
+.react-colorful__hue:active {
+  cursor: grabbing;
+}
+
+.react-colorful__pointer {
+  width: 18px;
+  height: 18px;
+  touch-action: none;
+}
+.custom-picker.react-colorful {
+  width: 200px;
+  height: 200px;
+  user-select: none;
+}
+
+.custom-picker .react-colorful__saturation {
+  border-radius: 4px 4px 0 0;
+  border-bottom: 10px solid transparent;
+  touch-action: none;
+}
+
+.custom-picker .react-colorful__hue {
+  height: 20px;
+  border-radius: 0 0 4px 4px;
+  touch-action: none;
+}
+
+.custom-picker .react-colorful__pointer {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  border: 2px solid white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+}
+
+.color-picker-root {
+  isolation: isolate;
+}

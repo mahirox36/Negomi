@@ -10,9 +10,13 @@ import { usePathname } from 'next/navigation';
 interface ServerLayoutProps {
   children: ReactNode;
   serverId: string;
+  sidebarProps?: {
+    hasUnsavedChanges?: boolean;
+    onNavigationAttempt?: () => void;
+  };
 }
 
-export default function ServerLayout({ children, serverId }: ServerLayoutProps) {
+export default function ServerLayout({ children, serverId, sidebarProps }: ServerLayoutProps) {
   const pathname = usePathname();
 
   return (
@@ -20,7 +24,11 @@ export default function ServerLayout({ children, serverId }: ServerLayoutProps) 
       <Navbar />
       <div className="pt-16">
         <div className="flex">
-          <ServerSidebar serverId={serverId} />
+          <ServerSidebar 
+            serverId={serverId}
+            hasUnsavedChanges={sidebarProps?.hasUnsavedChanges}
+            onNavigationAttempt={sidebarProps?.onNavigationAttempt}
+          />
           <div className="flex-1 p-8 relative">
             <div className="max-w-4xl mx-auto">
               <AnimatePresence mode="wait">
