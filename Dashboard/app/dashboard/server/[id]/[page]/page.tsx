@@ -8,40 +8,56 @@ import { useLayout } from "@/providers/LayoutProvider";
 import { LayoutItem } from "@/types/layout";
 import Link from "next/link";
 import axios from "axios";
+import AccessDenied from "@/app/components/forbidden";
 
 export default function ServerPage() {
   const params = useParams();
   const { pageLayout, fetchPageLayout } = useLayout();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isOwner, setIsOwner] = useState<boolean | null>(null);
-
+  const [error, setError] = useState<string | null>(null);
+  
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const response = await axios.get(`/api/guilds/${params.id}/is_admin`);
-        setIsAdmin(response.data.isAdmin);
+        const response = await fetch(`/api/guilds/${params.id}/is_admin`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to check admin status');
+        }
+        
+        setIsAdmin(data.isAdmin);
       } catch (error) {
+        console.error("Admin check error:", error);
         setIsAdmin(false);
-      }
-    };
-
-    const checkOwnerStatus = async () => {
-      try {
-        const response = await axios.get(`/api/admin/is_owner`);
-        setIsOwner(response.data.is_owner);
-      } catch (error) {
-        setIsOwner(false);
+        setError(error instanceof Error ? error.message : 'Failed to check permissions');
       }
     };
 
     checkAdminStatus();
-    checkOwnerStatus();
     fetchPageLayout(params.page as string);
   }, [fetchPageLayout, params.id, params.page]);
 
-  if (isAdmin === null || isOwner === null) return <LoadingScreen message="Checking Permissions" />;
-  if (!isAdmin || !isOwner) return <div>You do not have permission to view this page.</div>;
-  if (!pageLayout) return <LoadingScreen message="Loading Page" />;
+  if (isAdmin === null) {
+    return <LoadingScreen message="Checking Permissions" />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <AccessDenied 
+        error={new Error(error || "You do not have permission to view this page.")} 
+        reset={() => window.location.reload()} 
+      />
+    );
+  }
+
+  if (!pageLayout) {
+    return <LoadingScreen message="Loading Page" />;
+  }
 
   const renderLayoutItem = (item: LayoutItem, index: number) => {
     switch (item.type) {

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { User, Guild } from "../types/discord";
 import LoadingScreen from "../components/LoadingScreen";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -16,46 +18,59 @@ export default function Dashboard() {
         const userResponse = await fetch("/api/auth/user", {
           credentials: "include",
         });
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUser(userData.user);
-        } else {
-          window.location.href = "/api/auth/discord/login";
+        
+        if (!userResponse.ok) {
+          if (userResponse.status === 401 || userResponse.status === 403) {
+            router.push("/api/auth/discord/login");
+            return;
+          }
+          throw new Error("Failed to fetch user data");
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        window.location.href = "/api/auth/discord/login";
-      }
-    };
 
-    const fetchGuildData = async () => {
-      try {
+        const userData = await userResponse.json();
+        setUser(userData.user);
+        
+        // Only fetch guild data if we have a valid user
         const guildResponse = await fetch("/api/auth/user/guilds", {
           credentials: "include",
         });
-        if (guildResponse.ok) {
-          const guildData = await guildResponse.json();
-          setGuilds(guildData.guilds);
+        
+        if (!guildResponse.ok) {
+          throw new Error("Failed to fetch guild data");
         }
+
+        const guildData = await guildResponse.json();
+        setGuilds(guildData.guilds);
       } catch (error) {
-        console.error("Error fetching guild data:", error);
+        console.error("Error:", error);
+        router.push("/api/auth/discord/login");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-    fetchGuildData();
-  }, []);
+  }, [router]);
+
+  // Redirect if not authenticated and not loading
+  if (!loading && !user) {
+    router.push("/api/auth/discord/login");
+    return null;
+  }
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  // Only render dashboard if we have a user
+  if (!user) {
+    return null;
+  }
 
   const getGuildIcon = (guild: Guild) => {
     if (!guild.icon) return "/default-guild-icon.png";
     return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
   };
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   return (
     <DashboardLayout user={user} guilds={guilds}>

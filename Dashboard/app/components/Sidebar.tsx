@@ -82,13 +82,20 @@ export default function Sidebar({ guilds }: SidebarProps) {
 
         return canvas.toDataURL();
     }
+    // Check if the icon hash starts with 'a_' which indicates it's an animated icon (GIF)
+    if (guild.icon.startsWith('a_')) {
+      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.gif`;
+    }
     return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
   };
 
   // Generate Discord OAuth URL for bot addition
   const getBotInviteUrl = async (guildId: string) => {
     try {
-      const res = await fetch(`/api/auth/discord/login?guild_id=${guildId}`);
+      const res = await fetch(`/api/auth/bot/invite${guildId ? `?guild_id=${guildId}` : ''}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to get invite URL');
       const data = await res.json();
       return data.url;
     } catch (error) {
@@ -102,14 +109,28 @@ export default function Sidebar({ guilds }: SidebarProps) {
 
   // Load invite URLs for not joined guilds
   useEffect(() => {
-    const loadInviteUrls = async () => {
+    const loadInviteUrls = debounce(async () => {
       const urls: { [key: string]: string } = {};
-      for (const guild of adminGuilds.filter(g => !joinedGuilds.includes(g.id))) {
-        urls[guild.id] = await getBotInviteUrl(guild.id);
+      const notJoinedGuildsArr = adminGuilds.filter(g => !joinedGuilds.includes(g.id));
+      
+      // Process guilds in batches of 5
+      for (let i = 0; i < notJoinedGuildsArr.length; i += 5) {
+        const batch = notJoinedGuildsArr.slice(i, i + 5);
+        await Promise.all(
+          batch.map(async (guild) => {
+            urls[guild.id] = await getBotInviteUrl(guild.id);
+          })
+        );
+        if (i + 5 < notJoinedGuildsArr.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay between batches
+        }
       }
+      
       setInviteUrls(urls);
-    };
+    }, 500);
+
     loadInviteUrls();
+    return () => loadInviteUrls.cancel();
   }, [joinedGuilds, adminGuilds]);
 
   // Separate guilds into joined and not joined
@@ -129,7 +150,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
               {/* Joined servers */}
               {joinedGuildsList.map(guild => (
                 <Link
-                  href={`/dashboard/server/${guild.id}`}
+                  href={`/dashboard/server/${guild.id}/overview`}
                   key={guild.id}
                   className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white"
                 >
@@ -174,3 +195,23 @@ export default function Sidebar({ guilds }: SidebarProps) {
     </div>
   );
 }
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
+  let timeoutId: NodeJS.Timeout;
+  const debouncedFunc = (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    return new Promise<ReturnType<T>>((resolve) => {
+      timeoutId = setTimeout(() => {
+        resolve(func(...args));
+      }, wait);
+    });
+  };
+  debouncedFunc.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  };
+  return debouncedFunc;
+}
+
