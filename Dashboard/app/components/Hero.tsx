@@ -63,26 +63,34 @@ export default function Hero() {
 
       {/* Animated particles */}
       <div className="absolute inset-0 z-0">
-        {[...Array(50)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="star"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{
-              scale: [0, 1, 0],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 3 + 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
+        {[...Array(50)].map((_, i) => {
+          // Generate deterministic values using the index
+          const duration = 2 + (i % 3);
+          const delay = (i * 0.1) % 2;
+          const left = ((i * 17) % 100);
+          const top = ((i * 23) % 100);
+          
+          return (
+            <motion.div
+              key={i}
+              className="star"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: duration,
+                repeat: Infinity,
+                delay: delay,
+              }}
+              style={{
+                left: `${left}%`,
+                top: `${top}%`,
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Content container */}

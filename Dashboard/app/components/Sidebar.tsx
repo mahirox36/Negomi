@@ -89,50 +89,6 @@ export default function Sidebar({ guilds }: SidebarProps) {
     return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
   };
 
-  // Generate Discord OAuth URL for bot addition
-  const getBotInviteUrl = async (guildId: string) => {
-    try {
-      const res = await fetch(`/api/auth/bot/invite${guildId ? `?guild_id=${guildId}` : ''}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to get invite URL');
-      const data = await res.json();
-      return data.url;
-    } catch (error) {
-      console.error("Failed to get bot invite URL:", error);
-      return "#";
-    }
-  };
-
-  // State for invite URLs
-  const [inviteUrls, setInviteUrls] = useState<{ [key: string]: string }>({});
-
-  // Load invite URLs for not joined guilds
-  useEffect(() => {
-    const loadInviteUrls = debounce(async () => {
-      const urls: { [key: string]: string } = {};
-      const notJoinedGuildsArr = adminGuilds.filter(g => !joinedGuilds.includes(g.id));
-      
-      // Process guilds in batches of 5
-      for (let i = 0; i < notJoinedGuildsArr.length; i += 5) {
-        const batch = notJoinedGuildsArr.slice(i, i + 5);
-        await Promise.all(
-          batch.map(async (guild) => {
-            urls[guild.id] = await getBotInviteUrl(guild.id);
-          })
-        );
-        if (i + 5 < notJoinedGuildsArr.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay between batches
-        }
-      }
-      
-      setInviteUrls(urls);
-    }, 500);
-
-    loadInviteUrls();
-    return () => loadInviteUrls.cancel();
-  }, [joinedGuilds, adminGuilds]);
-
   // Separate guilds into joined and not joined
   const joinedGuildsList = adminGuilds.filter(guild => joinedGuilds.includes(guild.id));
   const notJoinedGuildsList = adminGuilds.filter(guild => !joinedGuilds.includes(guild.id));
@@ -171,7 +127,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
                   <h4 className="text-white/70 text-xs font-medium mb-2">Available Servers</h4>
                   {notJoinedGuildsList.map(guild => (
                     <a
-                      href={inviteUrls[guild.id] || '#'}
+                      href={`/api/auth/bot/invite?guild_id=${guild.id}`}
                       key={guild.id}
                       className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/60 hover:text-white"
                     >
@@ -195,6 +151,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
     </div>
   );
 }
+
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
   let timeoutId: NodeJS.Timeout;
   const debouncedFunc = (...args: Parameters<T>) => {

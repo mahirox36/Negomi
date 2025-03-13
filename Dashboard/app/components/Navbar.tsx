@@ -160,56 +160,50 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/discord/logout', {
-        method: 'POST',
-        credentials: 'include',
+      const response = await fetch("/api/auth/discord/logout", {
+        method: "POST",
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Logout failed');
+        throw new Error("Logout failed");
       }
 
       // Clear local storage
       localStorage.clear();
-      
+
       // Force page reload to clear all state
-      window.location.href = '/';
+      window.location.href = "/";
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Still clear storage and redirect on error
       localStorage.clear();
-      window.location.href = '/';
+      window.location.href = "/";
     }
   };
 
   useEffect(() => {
     const checkOwnerStatus = async () => {
       // Check if we already have the owner status in localStorage
-      const cachedOwnerStatus = localStorage.getItem('isOwner');
-      
+      const cachedOwnerStatus = localStorage.getItem("isOwner");
+
       if (user && cachedOwnerStatus === null) {
         try {
-          const response = await fetch(
-            "/admin/is_owner",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ user_id: user.id }),
-              credentials: "include",
-            }
-          );
+          const response = await fetch("/api/admin/is_owner", {
+            credentials: "include",
+          });
           const data = await response.json();
           console.log("Owner status:", data.is_owner);
           setIsOwner(data.is_owner);
           // Cache the result
-          localStorage.setItem('isOwner', data.is_owner.toString());
+          localStorage.setItem("isOwner", data.is_owner.toString());
         } catch (error) {
           console.error("Error checking owner status:", error);
           setIsOwner(false);
-          localStorage.setItem('isOwner', 'false');
+          localStorage.setItem("isOwner", "false");
         }
       } else if (cachedOwnerStatus !== null) {
-        setIsOwner(cachedOwnerStatus === 'true');
+        setIsOwner(cachedOwnerStatus === "true");
       }
     };
 

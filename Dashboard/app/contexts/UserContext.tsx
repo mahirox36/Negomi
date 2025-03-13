@@ -20,23 +20,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/user', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const fetchUser = async () => {
+        try {
+          const response = await fetch('/api/auth/user', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      };
 
-    fetchUser();
+      fetchUser();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleSetUser = (newUser: DiscordOAuth2.User | null) => {

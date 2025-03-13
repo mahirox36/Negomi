@@ -15,7 +15,6 @@ export default function AdminLayout({
         <div className="px-4 mx-auto">
           <div className="flex items-center justify-between h-16">
             <Link href="/admin" className="flex items-center space-x-3">
-              <img src="/logo.png" alt="Logo" className="w-8 h-8" />
               <span className="text-xl font-bold text-white">Admin Panel</span>
             </Link>
           </div>
