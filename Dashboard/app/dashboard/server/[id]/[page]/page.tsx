@@ -64,21 +64,42 @@ export default function ServerPage() {
       case "header":
         return (
           <div key={index} className="bg-white/10 backdrop-blur-lg rounded-lg p-6">
-            <h1 className="text-2xl font-bold text-white mb-2">{item.text}</h1>
-            <p className="text-white/70 mb-8">{item.subtext}</p>
+            <div className="flex items-center gap-3 mb-4">
+              {item.icon && (
+                <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
+                  <i className={`${item.icon} text-2xl text-white`}></i>
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-white">{item.text}</h1>
+                <p className="text-white/70">{item.subtext}</p>
+              </div>
+            </div>
           </div>
         );
       case "cards":
         return (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div key={index} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {item.buttons?.map((button, buttonIndex) => (
               <Link
                 key={buttonIndex}
                 href={`/dashboard/server/${params.id}${button.link}`}
-                className="block p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                className="block p-6 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <h3 className="text-white font-semibold mb-1">{button.text}</h3>
-                <p className="text-white/60 text-sm">{button.subtext}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  {button.icon && (
+                    <div className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-lg">
+                      <i className={`${button.icon} text-white`}></i>
+                    </div>
+                  )}
+                  <h3 className="text-white font-semibold">{button.text}</h3>
+                </div>
+                <p className="text-white/60 text-sm mb-4">{button.subtext}</p>
+                {button.buttonText && (
+                  <span className="inline-block px-4 py-2 bg-white/10 rounded-md text-sm text-white hover:bg-white/20 transition-colors">
+                    {button.buttonText}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -87,17 +108,26 @@ export default function ServerPage() {
         return (
           <div key={index} className="bg-white/5 rounded-lg p-6 mb-8">
             <div className="flex items-center gap-3 mb-4">
-              {item.icon && <i className={`${item.icon} text-xl text-white/70`}></i>}
+              {item.icon && (
+                <div className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-lg">
+                  <i className={`${item.icon} text-white`}></i>
+                </div>
+              )}
               <div>
                 <h2 className="text-lg font-semibold text-white">{item.text}</h2>
                 <p className="text-sm text-white/70">{item.subtext}</p>
               </div>
             </div>
             <div className="space-y-4">
-              {item.settings?.map((setting: any, settingIndex: number) => (
-                <div key={settingIndex} className="flex items-center justify-between">
-                  <span className="text-white">{setting.name}</span>
-                  {setting.type === "colour" && (
+              {item.settings?.map((setting, settingIndex) => (
+                <div key={settingIndex} className="flex items-center justify-between group relative">
+                  <div className="flex flex-col">
+                    <span className="text-white">{setting.name}</span>
+                    {setting.description && (
+                      <span className="text-xs text-white/50">{setting.description}</span>
+                    )}
+                  </div>
+                  {setting.type === "color" && (
                     <div className="flex items-center gap-2">
                       <div
                         className="w-6 h-6 rounded border border-white/20"
