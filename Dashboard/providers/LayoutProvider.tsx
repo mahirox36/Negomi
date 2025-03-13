@@ -35,13 +35,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
 
   const fetchPageLayout = useCallback(async (page: string) => {
     try {
-      // Convert page names like "basic-settings" to "Basic Settings"
-      const formattedPage = page
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      
-      const response = await fetch(`/api/layout/settings/server/${formattedPage}`);
+      const response = await fetch(`/api/layout/settings/server/${page}`);
       if (!response.ok) {
         throw new Error('Failed to fetch page layout');
       }

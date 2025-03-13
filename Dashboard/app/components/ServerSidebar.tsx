@@ -28,26 +28,18 @@ export default function ServerSidebar({ serverId }: ServerSidebarProps) {
     >
       <div className="space-y-8">
         {Object.entries(serverSidebar).map(([section, items]) => (
-          <motion.div
-            key={section}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
+          <motion.div key={section}>
             <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">
               {section}
             </h3>
             <div className="space-y-1">
               {items.map((item) => {
-                const pagePath = item.name.toLowerCase().replace(/\s+/g, "-");
-                const isActive =
-                  pathname === `/dashboard/server/${serverId}/${pagePath}`;
+                const isActive = pathname === `/dashboard/server/${serverId}/${item.link}`;
 
                 return (
                   <Link
                     key={item.name}
-                    href={`/dashboard/server/${serverId}/${pagePath}`}
+                    href={`/dashboard/server/${serverId}/${item.link}`}
                   >
                     <motion.div
                       className={`flex items-center px-2 py-2 rounded-lg transition-colors relative ${
