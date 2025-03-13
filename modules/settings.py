@@ -56,3 +56,7 @@ class FeatureManager:
             self.file.save()
             return True
         return False
+    
+    def delete_class(self) -> None:
+        """Delete the feature class"""
+        self.file.delete()

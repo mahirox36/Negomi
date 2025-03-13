@@ -488,27 +488,48 @@ class DashboardCog(commands.Cog):
                 member = guild.get_member(int(user["id"]))
                 
                 if not member:
+                    # Return 403 with isAdmin: false to trigger AccessDenied component
                     return JSONResponse(
                         status_code=403,
-                        content={"detail": "User is not a member of this guild"}
+                        content={
+                            "isAdmin": False,
+                            "detail": "You are not a member of this server. Please join the server first."
+                        }
                     )
 
                 is_admin = member.guild_permissions.administrator
                 if not is_admin:
+                    # Return 403 with isAdmin: false to trigger AccessDenied component
                     return JSONResponse(
                         status_code=403,
-                        content={"detail": "User is not an admin in this guild"}
+                        content={
+                            "isAdmin": False,
+                            "detail": "You need administrator permissions to access this page."
+                        }
                     )
 
-                return JSONResponse({"isAdmin": True})
+                return JSONResponse({
+                    "isAdmin": True,
+                    "detail": "Access granted"
+                })
 
             except HTTPException as e:
-                return JSONResponse(status_code=e.status_code, content={"detail": str(e.detail)})
+                # Return consistent format for HTTPExceptions
+                return JSONResponse(
+                    status_code=e.status_code, 
+                    content={
+                        "isAdmin": False,
+                        "detail": str(e.detail)
+                    }
+                )
             except Exception as e:
                 self.logger.error(f"Error checking admin status: {str(e)}")
                 return JSONResponse(
                     status_code=500,
-                    content={"detail": "Internal server error"}
+                    content={
+                        "isAdmin": False,
+                        "detail": "An internal server error occurred. Please try again later."
+                    }
                 )
         
         @self.app.get("/api/guilds/{guild_id}/channels_names")
@@ -670,6 +691,16 @@ class DashboardCog(commands.Cog):
                 return {"success": True}
             except Exception as e:
                 self.logger.error(f"Error saving settings: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
+        
+        @self.app.delete("/api/guilds/{guild_id}/settings/{page}")
+        async def delete_settings(guild_id: int, page: str):
+            """Delete all settings for a specific page"""
+            try:
+                FeatureManager(guild_id, page).delete_class()
+                return {"success": True}
+            except Exception as e:
+                self.logger.error(f"Error deleting settings: {str(e)}")
                 raise HTTPException(status_code=400, detail=str(e))
 
         # Features
