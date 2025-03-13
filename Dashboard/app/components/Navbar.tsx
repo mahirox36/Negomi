@@ -4,9 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { getDiscordLoginUrl } from "../utils/auth";
 import { useUser } from "../contexts/UserContext";
-import { API_BASE_URL } from "../config";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -159,11 +158,28 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("isOwner"); // Clear the cached owner status
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/discord/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      // Clear local storage
+      localStorage.clear();
+      
+      // Force page reload to clear all state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear storage and redirect on error
+      localStorage.clear();
+      window.location.href = '/';
+    }
   };
 
   useEffect(() => {
@@ -174,7 +190,7 @@ export default function Navbar() {
       if (user && cachedOwnerStatus === null) {
         try {
           const response = await fetch(
-            `${API_BASE_URL}/admin/is_owner`,
+            "/admin/is_owner",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -363,7 +379,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                href={getDiscordLoginUrl()}
+                href="/api/auth/discord/login" //TODO: Change it for production
                 className="text-white text-sm md:text-base"
               >
                 Login

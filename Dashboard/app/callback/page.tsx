@@ -1,14 +1,56 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../contexts/UserContext";
 import LoadingScreen from "../components/LoadingScreen";
+import axios from "axios";
+import { debounce } from "lodash";
 
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
+  const [error, setError] = useState<string | null>(null);
+
+  const processCallback = useCallback(
+    debounce(async (code: string) => {
+      try {
+        const response = await axios.post("/api/auth/discord/callback", 
+          { code }, 
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            validateStatus: (status) => status < 500,
+            timeout: 10000,
+          }
+        );
+
+        if (response.status !== 200) {
+          throw new Error(response.data.detail || 'Authentication failed');
+        }
+
+        const { user, accessToken } = response.data;
+        
+        // Store access token in cookie
+        document.cookie = `accessToken=${accessToken}; path=/; max-age=604800; SameSite=Strict`;
+        
+        setUser(user);
+        router.push("/dashboard");
+      } catch (error) {
+        console.error("Authentication error:", error);
+        if (axios.isAxiosError(error)) {
+          setError(error.response?.data?.detail || error.message);
+        } else {
+          setError('An unexpected error occurred');
+        }
+        setTimeout(() => router.push("/"), 3000);
+      }
+    }, 500), // Debounce for 500ms
+    [router, setUser]
+  );
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -17,31 +59,21 @@ export default function CallbackPage() {
       return;
     }
 
-    const processCallback = async () => {
-      try {
-        const response = await fetch("/api/auth/discord/callback", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ code }),
-        });
+    processCallback(code);
 
-        if (!response.ok) {
-          throw new Error("Failed to authenticate");
-        }
-
-        const data = await response.json();
-        setUser(data.user);
-        router.push("/dashboard");
-      } catch (error) {
-        console.error("Authentication failed:", error);
-        router.push("/");
-      }
+    return () => {
+      processCallback.cancel();
     };
+  }, [searchParams, processCallback]);
 
-    processCallback();
-  }, [router, searchParams, setUser]);
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="text-red-500 text-xl mb-4">{error}</div>
+        <div className="text-gray-400">Redirecting to home...</div>
+      </div>
+    );
+  }
 
   return <LoadingScreen message="Authenticating..." />;
 }

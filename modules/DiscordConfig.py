@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from modules.config import Config, Color as color
 
-VERSION = "0.40"
+VERSION = "0.41"
 
 @dataclass
 class Colors:
@@ -25,7 +25,8 @@ class OAuthSettings:
     token: str = "Your Bot Token"
     client_id: str = "Your Client ID"
     client_secret: str = "Your Client Secret"
-    redirect_url: str = "http://localhost:8080/callback"
+    redirect_url: str = "https://example.com/callback"
+    debug_redirect_url: str = "http://localhost:3000/callback"
 
 @dataclass
 class BotConfig:
@@ -67,7 +68,8 @@ class BotConfig:
                 "token": self.oauth.token,
                 "client_id": self.oauth.client_id,
                 "client_secret": self.oauth.client_secret,
-                "redirect_url": self.oauth.redirect_url
+                "redirect_url": self.oauth.redirect_url,
+                "debug_redirect_url": self.oauth.debug_redirect_url
             },
             "Colors": color_data,
             "AI": {
@@ -139,7 +141,8 @@ class BotConfig:
                     token=str(oauth_data.get("token", default_config.oauth.token)),
                     client_id=str(oauth_data.get("client_id", default_config.oauth.client_id)),
                     client_secret=str(oauth_data.get("client_secret", default_config.oauth.client_secret)),
-                    redirect_url=str(oauth_data.get("redirect_url", default_config.oauth.redirect_url))
+                    redirect_url=str(oauth_data.get("redirect_url", default_config.oauth.redirect_url)),
+                    debug_redirect_url=str(oauth_data.get("debug_redirect_url", default_config.oauth.debug_redirect_url))
                 ),
                 ai_enabled=bool(ai_data.get("enabled", default_config.ai_enabled)),
                 ai_ip=str(ai_data.get("ip", default_config.ai_ip)),

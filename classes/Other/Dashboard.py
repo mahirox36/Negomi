@@ -17,6 +17,10 @@ from modules.Nexon import overwriteOwner, debug, colours, config
 from modules.settings import FeatureManager
 import requests
 from fastapi.responses import JSONResponse
+from cachetools import TTLCache
+from aiohttp import ClientSession, ClientTimeout
+import time
+from typing import Dict, List, Optional, Union, Any
 
 #types string enum
 class Types(StrEnum):
@@ -148,11 +152,21 @@ class DashboardCog(commands.Cog):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            expose_headers=["*"]
         )
         self.npm_command = "npm run dev" if debug else "npm run start"
         
         self.terms_and_services: Optional[str] = None
         self.privacy_policy: Optional[str] = None
+        
+        # Add caches
+        self.token_cache = TTLCache(maxsize=1000, ttl=3600)
+        self.user_cache = TTLCache(maxsize=1000, ttl=300)
+        self.guild_cache = TTLCache(maxsize=1000, ttl=300)
+        self.rate_limits: Dict[str, float] = {}
+        self.session: Optional[ClientSession] = None
+        # Add invite URL cache
+        self.invite_url_cache = TTLCache(maxsize=100, ttl=300)  # 5 minutes cache
         
         self.setup_routes()
     
@@ -269,6 +283,51 @@ class DashboardCog(commands.Cog):
                 raise HTTPException(status_code=404, detail="Guild not found")
         return guild
 
+    async def get_session(self) -> ClientSession:
+        if self.session is None or self.session.closed:
+            self.session = ClientSession(timeout=ClientTimeout(total=10))
+        return self.session
+
+    async def rate_limited_request(self, endpoint: str, method: str = "GET", **kwargs) -> Any:
+        """Make a rate-limited request to Discord API"""
+        now = time.time()
+        key = f"{method}:{endpoint}"
+        
+        # Check rate limit
+        if key in self.rate_limits:
+            time_passed = now - self.rate_limits[key]
+            if time_passed < 0.5:  # Minimum 500ms between requests
+                await asyncio.sleep(0.5 - time_passed)
+        
+        self.rate_limits[key] = now
+        
+        session = await self.get_session()
+        async with session.request(method, f"https://discord.com/api/v10{endpoint}", **kwargs) as resp:
+            if resp.status == 429:
+                retry_after = float(resp.headers.get('Retry-After', 1))
+                await asyncio.sleep(retry_after)
+                return await self.rate_limited_request(endpoint, method, **kwargs)
+            return await resp.json()
+
+    async def verify_auth(self, request: Request) -> Optional[str]:
+        """Verify authentication and return access token if valid"""
+        access_token = request.cookies.get("accessToken")
+        if not access_token:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        # Verify token is valid by checking user cache or making a test request
+        if access_token not in self.user_cache:
+            try:
+                user = await self.rate_limited_request(
+                    "/users/@me",
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                self.user_cache[access_token] = user
+            except Exception as e:
+                raise HTTPException(status_code=401, detail="Invalid token")
+                
+        return access_token
+
     def setup_routes(self):
         
         # Bot
@@ -354,20 +413,50 @@ class DashboardCog(commands.Cog):
                 "verification_level": str(guild.verification_level),
                 "owner_id": guild.owner_id
             }
-        @self.app.get("/api/guilds/{guild_id}/is_admin")
+        @self.app.post("/api/guilds/{guild_id}/is_admin")
         async def is_admin(guild_id: int, request: Request):
             """Check if the user is an admin in the guild"""
-            user_id = request.cookies.get("user_id")
-            if not user_id:
-                raise HTTPException(status_code=401, detail="Not authenticated")
+            try:
+                access_token = await self.verify_auth(request)
+                
+                # Get user from cache or API
+                if access_token in self.user_cache:
+                    user = self.user_cache[access_token]
+                else:
+                    user = await self.rate_limited_request(
+                        "/users/@me",
+                        headers={"Authorization": f"Bearer {access_token}"}
+                    )
+                    self.user_cache[access_token] = user
 
-            guild = await self.get_guild(guild_id)
-            member = guild.get_member(int(user_id))
-            if not member:
-                raise HTTPException(status_code=404, detail="Member not found in guild")
+                # Get guild
+                guild = await self.get_guild(guild_id)
+                member = guild.get_member(int(user["id"]))
+                
+                if not member:
+                    return JSONResponse(
+                        status_code=403,
+                        content={"detail": "User is not a member of this guild"}
+                    )
 
-            is_admin = any(role.permissions.administrator for role in member.roles)
-            return {"isAdmin": is_admin}
+                is_admin = member.guild_permissions.administrator
+                if not is_admin:
+                    return JSONResponse(
+                        status_code=403,
+                        content={"detail": "User is not an admin in this guild"}
+                    )
+
+                return JSONResponse({"isAdmin": True})
+
+            except HTTPException as e:
+                return JSONResponse(status_code=e.status_code, content={"detail": str(e.detail)})
+            except Exception as e:
+                self.logger.error(f"Error checking admin status: {str(e)}")
+                return JSONResponse(
+                    status_code=500,
+                    content={"detail": "Internal server error"}
+                )
+        
         @self.app.get("/api/guilds/{guild_id}/channels_names")
         async def get_guild_channels_names(guild_id: int):
             """Get channel names for a specific guild"""
@@ -577,56 +666,103 @@ class DashboardCog(commands.Cog):
 
         @self.app.post("/api/auth/discord/callback")
         async def discord_callback(request: DiscordCallbackRequest):
-            code = request.code
-            data = {
-                "client_id": config.oauth.client_id,
-                "client_secret": config.oauth.client_secret,
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": config.oauth.redirect_url,
-            }
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
-            response = requests.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
-            if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail="Failed to authenticate with Discord")
-
-            tokens = response.json()
-            access_token = tokens["access_token"]
-            user_response = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"})
-            if user_response.status_code != 200:
-                raise HTTPException(status_code=user_response.status_code, detail="Failed to fetch user information")
-
-            user = user_response.json()
-            return {"user": user, "accessToken": access_token}
+            try:
+                code = request.code
+                
+                # Check cache first
+                if code in self.token_cache:
+                    return JSONResponse(self.token_cache[code])
+                
+                data = {
+                    "client_id": config.oauth.client_id,
+                    "client_secret": config.oauth.client_secret,
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": config.oauth.redirect_url if not debug else config.oauth.debug_redirect_url,
+                }
+                
+                session = await self.get_session()
+                async with session.post(
+                    "https://discord.com/api/oauth2/token",
+                    data=data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                ) as response:
+                    if response.status != 200:
+                        error_data = await response.json()
+                        raise HTTPException(
+                            status_code=response.status,
+                            detail=f"Discord auth failed: {error_data.get('error_description', 'Unknown error')}"
+                        )
+                    
+                    tokens = await response.json()
+                    access_token = tokens["access_token"]
+                    
+                    # Get user data
+                    user = await self.rate_limited_request(
+                        "/users/@me",
+                        headers={"Authorization": f"Bearer {access_token}"}
+                    )
+                    
+                    response_data = {
+                        "user": user,
+                        "accessToken": access_token
+                    }
+                    
+                    # Cache the response
+                    self.token_cache[code] = response_data
+                    self.user_cache[access_token] = user
+                    
+                    return JSONResponse(response_data)
+                    
+            except Exception as e:
+                self.logger.error(f"Discord callback error: {str(e)}")
+                raise HTTPException(status_code=400, detail=str(e))
 
         @self.app.get("/api/auth/user")
         async def get_user(request: Request):
-            access_token = request.cookies.get("accessToken")
-            if not access_token:
-                return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+            """Get authenticated user data"""
+            try:
+                access_token = await self.verify_auth(request)
+                
+                # Return cached user data if available
+                if access_token in self.user_cache:
+                    return {"user": self.user_cache[access_token]}
+                
+                # Should never reach here due to verify_auth, but just in case
+                raise HTTPException(status_code=401, detail="Not authenticated")
+                
+            except HTTPException as e:
+                return JSONResponse(
+                    status_code=e.status_code,
+                    content={"detail": str(e.detail)}
+                )
 
-            user_response = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"})
-            if user_response.status_code != 200:
-                return JSONResponse(status_code=user_response.status_code, content={"detail": "Failed to fetch user information"})
-
-            user = user_response.json()
-            return {"user": user}
-            
         @self.app.get("/api/auth/user/guilds")
         async def get_user_guilds(request: Request):
-            access_token = request.cookies.get("accessToken")
-            if not access_token:
-                return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+            """Get user's guilds"""
+            try:
+                access_token = await self.verify_auth(request)
+                
+                session = await self.get_session()
+                async with session.get(
+                    "https://discord.com/api/users/@me/guilds",
+                    headers={"Authorization": f"Bearer {access_token}"}
+                ) as response:
+                    if response.status != 200:
+                        raise HTTPException(
+                            status_code=response.status,
+                            detail="Failed to fetch guild information"
+                        )
+                        
+                    guilds = await response.json()
+                    return {"guilds": guilds}
+                    
+            except HTTPException as e:
+                return JSONResponse(
+                    status_code=e.status_code,
+                    content={"detail": str(e.detail)}
+                )
 
-            guilds_response = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {access_token}"})
-            if guilds_response.status_code != 200:
-                return JSONResponse(status_code=guilds_response.status_code, content={"detail": "Failed to fetch guild information"})
-
-            guilds = guilds_response.json()
-            return {"guilds": guilds}
-        
         @self.app.get("/api/auth/discord/login")
         async def get_discord_login(guild_id: Optional[str] = None):
             """Get Discord OAuth2 login URL"""
@@ -635,7 +771,7 @@ class DashboardCog(commands.Cog):
             base_url = "https://discord.com/api/oauth2/authorize"
             params = {
                 "client_id": config.oauth.client_id,
-                "redirect_uri": config.oauth.redirect_url,
+                "redirect_uri": config.oauth.redirect_url if not debug else config.oauth.debug_redirect_url,
                 "response_type": "code",
                 "scope": " ".join(SCOPES)
             }
@@ -644,10 +780,88 @@ class DashboardCog(commands.Cog):
                 params["guild_id"] = guild_id
             
             auth_url = f"{base_url}?{'&'.join(f'{k}={v}' for k,v in params.items())}"
-            return {"url": auth_url}
+            return JSONResponse(
+                {"message": "Redirecting to Discord OAuth2"},
+                headers={"Location": auth_url},
+                status_code=307
+            )
+        @self.app.post("/api/auth/discord/logout")
+        async def logout(request: Request):
+            """Log out user from Discord"""
+            try:
+                access_token = request.cookies.get("accessToken")
+                if not access_token:
+                    return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+                session = await self.get_session()
+                async with session.post(
+                    "https://discord.com/api/oauth2/token/revoke",
+                    data={
+                        "token": access_token,
+                        "client_id": config.oauth.client_id,
+                        "client_secret": config.oauth.client_secret,
+                    },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                ) as response:
+                    if response.status != 200:
+                        self.logger.error(f"Failed to revoke token: {await response.text()}")
+
+                # Clear caches regardless of revoke success
+                if access_token in self.user_cache:
+                    del self.user_cache[access_token]
+
+                response = JSONResponse({"success": True})
+                response.delete_cookie("accessToken")
+                response.delete_cookie("user_id")
+                return response
+
+            except Exception as e:
+                self.logger.error(f"Logout error: {str(e)}")
+                return JSONResponse({"success": False, "error": str(e)})
+        
+        @self.app.get("/api/auth/bot/invite")
+        async def get_bot_invite(guild_id: Optional[str] = None):
+            """Get bot invite URL with rate limiting and caching"""
+            cache_key = f"invite_url_{guild_id}" if guild_id else "invite_url_default"
+            
+            # Check cache
+            if cache_key in self.invite_url_cache:
+                return JSONResponse({"url": self.invite_url_cache[cache_key]})
+            
+            # Generate invite URL
+            SCOPES = ["bot", "applications.commands"]
+            PERMISSIONS = "8"  # Administrator permissions
+            
+            params = {
+                "client_id": config.oauth.client_id,
+                "permissions": PERMISSIONS,
+                "scope": " ".join(SCOPES)
+            }
+            
+            if guild_id:
+                params["guild_id"] = guild_id
+                
+            url = f"https://discord.com/api/oauth2/authorize?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+            
+            # Cache the URL
+            self.invite_url_cache[cache_key] = url
+            
+            return JSONResponse({"url": url})
         
         
-        
+    async def _handle_npm_output(self, stream, prefix):
+        while True:
+            line = await stream.readline()
+            if not line:
+                break
+            decoded_line = line.decode().strip()
+            if "Warning" in decoded_line:
+                self.logger.warning(f"[NPM] {decoded_line}")
+            elif "[ERROR]" in decoded_line:
+                self.logger.error(f"[NPM] {decoded_line}")
+            elif debug:
+                self.logger.info(f"[NPM] {decoded_line}")
+
     async def start_dashboard(self):
         """Start the dashboard"""
         self.logger.info("Starting web dashboard...")
@@ -671,7 +885,8 @@ class DashboardCog(commands.Cog):
         try:
             await asyncio.gather(
                 self.server.serve(),
-                self.npm_process.communicate()
+                self._handle_npm_output(self.npm_process.stdout, "stdout"),
+                self._handle_npm_output(self.npm_process.stderr, "stderr")
             )
             self.logger.info("Web dashboard started successfully")
         except Exception as e:
@@ -680,6 +895,10 @@ class DashboardCog(commands.Cog):
                 self.npm_process.terminate()
             raise
 
+    async def cleanup(self):
+        if self.session and not self.session.closed:
+            await self.session.close()
+
     @commands.Cog.listener()
     async def on_ready(self):
         asyncio.create_task(self.start_dashboard())
@@ -687,6 +906,7 @@ class DashboardCog(commands.Cog):
     def cog_unload(self):
         if self.npm_process and self.npm_process.returncode is None:
             self.npm_process.terminate()
+        asyncio.create_task(self.cleanup())
 
 def setup(client):
     client.add_cog(DashboardCog(client))
