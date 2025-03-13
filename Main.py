@@ -178,7 +178,7 @@ class DiscordBot(commands.Bot):
                     type=nexon.ActivityType.watching,
                     name=Presence
                 ),
-                status=nexon.Status.idle
+                status=nexon.Status.idle if debug else nexon.Status.online
             )
             
             await self.sync_application_commands()

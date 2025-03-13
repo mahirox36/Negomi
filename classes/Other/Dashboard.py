@@ -1041,7 +1041,11 @@ class DashboardCog(commands.Cog):
             # Cache the URL
             self.invite_url_cache[cache_key] = url
             
-            return JSONResponse({"url": url})
+            return JSONResponse(
+                {"message": "Redirecting to bot invite URL"},
+                headers={"Location": url},
+                status_code=307
+            )
         
         
     async def _handle_npm_output(self, stream, prefix):
