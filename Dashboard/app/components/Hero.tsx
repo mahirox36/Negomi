@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Stars from "./Stars";
 
 export default function Hero() {
   // Floating animation variant
@@ -43,10 +44,10 @@ export default function Hero() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center">
-      {/* Animated background gradient */}
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Animated background gradient - below stars */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-b from-pink-500/90 via-purple-600/90 to-purple-800/90"
+        className="absolute inset-0 bg-gradient-to-b from-pink-500/90 via-purple-600/90 to-purple-800/90 z-[1]"
         animate={{
           background: [
             "linear-gradient(to bottom, #ec4899, #9333ea, #6b21a8)",
@@ -61,15 +62,18 @@ export default function Hero() {
         }}
       />
 
-      {/* Add gradient overlay for smooth transition */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 z-[2] bg-gradient-to-b from-transparent to-purple-800" />
+      {/* Stars layer */}
+      <Stars className="absolute inset-0 z-[2]" />
 
-      {/* Content container */}
+      {/* Add gradient overlay for smooth transition - above stars */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 z-[3] bg-gradient-to-b from-transparent to-purple-800" />
+
+      {/* Content container - above stars */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative z-[20] text-center px-4"
+        className="relative z-[3] text-center px-4"
       >
         {/* Title with improved padding and unified text */}
         <motion.div className="overflow-hidden">

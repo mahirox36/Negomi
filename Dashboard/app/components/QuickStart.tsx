@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Stars from "./Stars"
 
 export default function QuickStart() {
   const steps = [
@@ -14,10 +15,14 @@ export default function QuickStart() {
   ]
 
   return (
-    // <div className="py-24 bg-gradient-to-b from-indigo-800 to-purple-900" id="setup">
+    <div className="relative py-24 overflow-hidden" id="setup">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-800 via-purple-900 to-purple-950 z-[1]" />
+      
+      {/* Stars layer */}
+      <Stars className="absolute inset-0 z-[2]" />
 
-    <div className="py-24 bg-gradient-to-b from-indigo-800 via-purple-900 to-purple-950" id="setup">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-[3] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

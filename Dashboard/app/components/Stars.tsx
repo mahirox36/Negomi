@@ -32,6 +32,7 @@ export default function Stars({ className = "" }: { className?: string }) {
               top: `${top}%`,
               width: `${size}px`,
               height: `${size}px`,
+              transform: `translateZ(0)`, // Performance optimization
             }}
           />
         );
