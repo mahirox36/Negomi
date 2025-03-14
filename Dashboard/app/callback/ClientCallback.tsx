@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../contexts/UserContext";
@@ -8,7 +7,7 @@ import LoadingScreen from "../components/LoadingScreen";
 import axios from "axios";
 import { debounce } from "lodash";
 
-function ClientCallback() {
+export default function ClientCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
@@ -49,7 +48,7 @@ function ClientCallback() {
         }
         setTimeout(() => router.push("/"), 3000);
       }
-    }, 500), // Debounce for 500ms
+    }, 500),
     [router, setUser]
   );
 
@@ -77,12 +76,4 @@ function ClientCallback() {
   }
 
   return <LoadingScreen message="Authenticating..." />;
-}
-
-export default function CallbackPage() {
-  return (
-    <Suspense fallback={<LoadingScreen message="Loading..." />}>
-      <ClientCallback />
-    </Suspense>
-  );
 }
