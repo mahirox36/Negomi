@@ -68,6 +68,13 @@
     "Ollama": "Custom",
     "Roadmap": "Husky",
     "callback": "Pipe",
-    "statistics": "Docs"
+    "statistics": "Docs",
+    "terms-of-service": "Tasks",
+    "privacy-policy": "Aurelia",
+    "badges": "Proto",
+    "[id]" : "Json",
+    "[page]" : "Json",
+    "create" : "Download",
+    "edit" : "Upload",
   },
 }
