@@ -52,7 +52,7 @@ export default function Features() {
   ]
 
   return (
-    <div className="py-24 bg-gradient-to-b from-purple-600 to-indigo-900" id="features">
+    <div className="py-24 bg-gradient-to-b from-purple-800 via-purple-700 to-indigo-800" id="features">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -71,7 +71,7 @@ export default function Features() {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}  // Removed index * 0.1 delay
+              transition={{ duration: 0.2 }}  // Removed index * 0.1 delay
               viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
               className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-filter backdrop-blur-lg"

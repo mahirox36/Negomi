@@ -14,7 +14,7 @@ export default function QuickStart() {
   ]
 
   return (
-    <div className="py-24 bg-gradient-to-b from-indigo-900 to-purple-800" id="setup">
+    <div className="py-24 bg-gradient-to-b from-indigo-800 to-purple-900" id="setup">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -33,7 +33,7 @@ export default function QuickStart() {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5}}
+              transition={{ duration: 0.2}}
               viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
               className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-filter backdrop-blur-lg"

@@ -49,11 +49,14 @@
 
 .star {
   position: absolute;
-  width: 2px;
-  height: 2px;
+  width: 3px;
+  height: 3px;
   background: white;
   border-radius: 50%;
-  animation: twinkle 1s infinite alternate;
+  @apply absolute bg-white rounded-full;
+  box-shadow: 0 0 20px #fff, 0 0 30px #fff, 0 0 40px #fff;  /* Much stronger glow */
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
 @keyframes twinkle {

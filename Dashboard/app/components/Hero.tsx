@@ -46,12 +46,12 @@ export default function Hero() {
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600"
+        className="absolute inset-0 z-[1] bg-gradient-to-b from-pink-500 via-purple-600 to-purple-800"
         animate={{
           background: [
-            "linear-gradient(to bottom right, #ec4899, #9333ea)",
-            "linear-gradient(to bottom right, #8b5cf6, #6366f1)",
-            "linear-gradient(to bottom right, #ec4899, #9333ea)",
+            "linear-gradient(to bottom, #ec4899, #9333ea, #6b21a8)",
+            "linear-gradient(to bottom, #8b5cf6, #6366f1, #6b21a8)",
+            "linear-gradient(to bottom, #ec4899, #9333ea, #6b21a8)",
           ],
         }}
         transition={{
@@ -61,44 +61,15 @@ export default function Hero() {
         }}
       />
 
-      {/* Animated particles */}
-      <div className="absolute inset-0 z-0">
-        {[...Array(50)].map((_, i) => {
-          // Generate deterministic values using the index
-          const duration = 2 + (i % 3);
-          const delay = (i * 0.1) % 2;
-          const left = ((i * 17) % 100);
-          const top = ((i * 23) % 100);
-          
-          return (
-            <motion.div
-              key={i}
-              className="star"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: duration,
-                repeat: Infinity,
-                delay: delay,
-              }}
-              style={{
-                left: `${left}%`,
-                top: `${top}%`,
-              }}
-            />
-          );
-        })}
-      </div>
+      {/* Add gradient overlay for smooth transition */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 z-[2] bg-gradient-to-b from-transparent to-purple-800" />
 
       {/* Content container */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative z-10 text-center px-4"
+        className="relative z-[20] text-center px-4"
       >
         {/* Title with improved padding and unified text */}
         <motion.div className="overflow-hidden">
@@ -160,7 +131,7 @@ export default function Hero() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="no-select relative px-8 py-4 bg-white rounded-full font-bold text-lg text-purple-600 transition-colors duration-200 hover:text-purple-700"
+                className="no-select relative px-8 py-4 bg-white rounded-full font-bold text-lg text-purple-600 transition-colors duration-100 hover:text-purple-700"
               >
                 Add to Discord
               </motion.div>
@@ -187,7 +158,7 @@ export default function Hero() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="no-select relative px-8 py-4 bg-transparent backdrop-blur-sm border-2 border-white/50 rounded-full font-bold text-lg transition-all duration-200"
+                className="no-select relative px-8 py-4 bg-transparent backdrop-blur-sm border-2 border-white/50 rounded-full font-bold text-lg transition-all duration-100"
               >
                 <span className="relative z-10 text-white">
                   ✨ Open Dashboard ✨

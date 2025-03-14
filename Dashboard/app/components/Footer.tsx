@@ -24,17 +24,26 @@ export default function Footer() {
 
   return (
     <footer className="relative mt-16">
-      {/* Gradient overlay for smooth transition */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-purple-900/60 pointer-events-none" />
+      {/* Updated gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/80 to-purple-900 pointer-events-none" />
       
-      {/* Wave divider */}
-      <div className="absolute top-0 left-0 right-0 overflow-hidden -translate-y-full">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="fill-purple-900/30 w-full h-16">
-          <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V56.44Z"></path>
+      {/* Updated wave divider with stronger colors */}
+      <div className="absolute top-0 left-0 right-0 overflow-hidden -translate-y-[99%]">
+        <svg 
+          viewBox="0 0 1200 120" 
+          preserveAspectRatio="none" 
+          className="relative block w-full h-[150px]"
+          style={{ transform: 'rotateY(180deg)' }}
+        >
+          <path 
+            d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+            className="fill-purple-900"
+          />
         </svg>
       </div>
       
-      <div className="relative bg-purple-900/30 backdrop-blur-lg pt-16 pb-12">
+      {/* Updated footer background with stronger gradient */}
+      <div className="relative bg-gradient-to-b from-purple-900 to-purple-950 pt-16 pb-12 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
             {/* Logo and brand info */}
