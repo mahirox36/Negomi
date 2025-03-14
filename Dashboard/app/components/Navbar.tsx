@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useUser } from "../contexts/UserContext";
-import axios from "axios";
 
 interface User {
   id: string;

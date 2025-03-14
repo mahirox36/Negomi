@@ -5,7 +5,6 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import LoadingScreen from "../components/LoadingScreen";
 import { motion } from "framer-motion";
-import Navbar from "../components/Navbar";
 
 export default function TermsOfService() {
   const [content, setContent] = useState<string>("");
@@ -33,7 +32,6 @@ export default function TermsOfService() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-600 to-purple-800">
-      <Navbar />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

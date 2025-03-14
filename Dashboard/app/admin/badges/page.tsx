@@ -140,7 +140,7 @@ export default function BadgesPage() {
                 exit={{ opacity: 0 }}
                 onClick={() => setPreviewBadge(null)}
                 className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-                style={{ top: "4rem" }} // Push down by navbar height
+                style={{ top: "4rem" }}
               />
 
               {/* Modal Container */}

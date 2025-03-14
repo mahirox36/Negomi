@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import ClientProvider from './providers'
 import { metadata } from './metadata'
 import { LayoutProvider } from '@/providers/LayoutProvider';
+import Navbar from "./components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,7 +25,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <LayoutProvider>
-          <ClientProvider>{children}</ClientProvider>
+          <ClientProvider>
+            <div className="min-h-screen bg-gradient-to-b from-purple-950 to-purple-950 relative">
+              <Navbar />
+              {children}
+            </div>
+          </ClientProvider>
         </LayoutProvider>
       </body>
     </html>

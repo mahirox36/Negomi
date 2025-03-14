@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import Navbar from './Navbar';
 import ServerSidebar from './ServerSidebar';
 import PageTransition from './PageTransition';
 import { usePathname } from 'next/navigation';
@@ -21,7 +20,6 @@ export default function ServerLayout({ children, serverId, sidebarProps }: Serve
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <Navbar />
       <div className="pt-16">
         <div className="flex">
           <ServerSidebar 
