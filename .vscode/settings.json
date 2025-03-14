@@ -47,17 +47,6 @@
       }
     ]
   },
-  "material-icon-theme.folders.associations": {
-    "Features": "plugin",
-    "OllamaSetup": "download",
-    "Dashboard": "serverless",
-    "Working on Progress": "Ci",
-    "Nexon": "Quasar",
-    "Ollama": "Custom",
-    "Roadmap": "Husky",
-    "callback": "Pipe",
-    "statistics": "Docs"
-  },
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -69,5 +58,16 @@
     "**/builds": true,
     "**/logs": true
   },
-  "python.analysis.typeCheckingMode": "basic"
+  "python.analysis.typeCheckingMode": "basic",
+  "material-icon-theme.folders.associations": {
+    "Features": "plugin",
+    "OllamaSetup": "download",
+    "Dashboard": "serverless",
+    "Working on Progress": "Ci",
+    "Nexon": "Quasar",
+    "Ollama": "Custom",
+    "Roadmap": "Husky",
+    "callback": "Pipe",
+    "statistics": "Docs"
+  },
 }
