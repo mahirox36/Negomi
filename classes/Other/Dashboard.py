@@ -1101,7 +1101,7 @@ class DashboardCog(commands.Cog):
             
             # Check cache
             if cache_key in self.invite_url_cache:
-                return JSONResponse({"url": self.invite_url_cache[cache_key]})
+                return {"url": self.invite_url_cache[cache_key]}
             
             # Generate invite URL
             SCOPES = ["bot", "applications.commands"]
