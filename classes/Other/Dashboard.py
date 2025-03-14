@@ -1127,6 +1127,24 @@ class DashboardCog(commands.Cog):
                 status_code=307
             )
         
+        @self.app.get("/api/owner_pfp_url")
+        async def get_owner_pfp_url():
+            """Get the bot owner's profile picture URL"""
+            try:
+                ownerID = overwriteOwner or self.bot.owner_id
+                if not isinstance(ownerID, int):
+                    return {"url": None}
+                owner = self.bot.get_user(ownerID)
+                if not owner:
+                    owner = await self.bot.fetch_user(ownerID)
+                if owner.avatar:
+                    return {"url": str(owner.avatar.url)}
+                else:
+                    return {"url": None}
+            except Exception as e:
+                self.logger.error(f"Error fetching owner's profile picture: {str(e)}")
+                return {"url": None}
+        
         
     async def _handle_npm_output(self, stream, prefix):
         while True:

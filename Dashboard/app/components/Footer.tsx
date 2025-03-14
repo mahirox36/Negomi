@@ -1,21 +1,17 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Footer() {
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
+  const [ownerPfp, setOwnerPfp] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      // Here you would typically send this to your API
-      console.log("Subscribed with:", email);
-      setSubscribed(true);
-      setEmail("");
-    }
-  };
+  useEffect(() => {
+    fetch('/api/owner_pfp_url')
+      .then(res => res.json())
+      .then(data => setOwnerPfp(data.url))
+      .catch(err => console.error('Failed to load owner pfp:', err));
+  }, []);
 
   const fadeInUpVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -45,7 +41,7 @@ export default function Footer() {
       {/* Footer background */}
       <div className="relative bg-gradient-to-b from-purple-950 to-purple-950 pt-16 pb-12 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
             {/* Logo and brand info */}
             <motion.div 
               initial="hidden"
@@ -56,8 +52,12 @@ export default function Footer() {
               className="col-span-1 md:col-span-2 lg:col-span-1"
             >
               <div className="flex items-center mb-4">
-                <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-xl">N</span>
+                <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
+                  {ownerPfp ? (
+                    <img src={ownerPfp} alt="Owner" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="bg-indigo-500 w-full h-full animate-pulse" />
+                  )}
                 </div>
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-300">
                   Negomi
@@ -75,6 +75,7 @@ export default function Footer() {
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
               variants={fadeInUpVariants}
+              className="space-y-3 sm:space-y-0"
             >
               <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
               <ul className="space-y-3">
@@ -84,13 +85,8 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="#pricing" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
-                    <span className="mr-2">→</span> Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
-                    <span className="mr-2">→</span> FAQ
+                  <a href="#statistics" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
+                    <span className="mr-2">→</span> Statistics
                   </a>
                 </li>
                 <li>
@@ -108,6 +104,7 @@ export default function Footer() {
               transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true }}
               variants={fadeInUpVariants}
+              className="space-y-3 sm:space-y-0"
             >
               <h3 className="text-lg font-semibold text-white mb-4">Legal</h3>
               <ul className="space-y-3">
@@ -128,41 +125,6 @@ export default function Footer() {
                 </li>
               </ul>
             </motion.div>
-
-            {/* Newsletter */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
-              variants={fadeInUpVariants}
-            >
-              <h3 className="text-lg font-semibold text-white mb-4">Stay Updated</h3>
-              <p className="text-indigo-200 mb-4">Subscribe to our newsletter for the latest features and updates.</p>
-              
-              {!subscribed ? (
-                <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="px-4 py-2 rounded bg-purple-800/50 border border-purple-700 text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                  <button 
-                    type="submit" 
-                    className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded text-white font-medium transition-colors duration-300"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-              ) : (
-                <div className="bg-indigo-900/50 border border-indigo-700 rounded p-3 text-indigo-200">
-                  Thanks for subscribing! 🎉
-                </div>
-              )}
-            </motion.div>
           </div>
           
           <hr className="border-purple-700/50 mb-8" />
@@ -173,9 +135,9 @@ export default function Footer() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
             variants={fadeInUpVariants}
-            className="flex flex-col md:flex-row justify-between items-center"
+            className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0"
           >
-            <div className="text-white/90 mb-6 md:mb-0">© 2025 Negomi Bot. All rights reserved.</div>
+            <div className="text-white/90 text-center sm:text-left">© 2025 Negomi Bot. All rights reserved.</div>
             <div className="flex flex-wrap gap-4 justify-center">
               <a 
                 href="https://discord.gg/HC2bryKU5Y" 
