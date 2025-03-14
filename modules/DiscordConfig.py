@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from modules.config import Config, Color as color
 
-VERSION = "0.41"
+VERSION = "0.42"
 
 @dataclass
 class Colors:
@@ -35,6 +35,7 @@ class BotConfig:
     send_to_online_owner: bool = True
     logger_level: str = "INFO"
     debug: bool = False
+    split_frontend: bool = False
     colors: Colors = field(default_factory=Colors)
     oauth: OAuthSettings = field(default_factory=OAuthSettings)
     ai_enabled: bool = False
@@ -62,6 +63,7 @@ class BotConfig:
                 "send_to_online_owner": self.send_to_online_owner,
                 "logger_level": self.logger_level,
                 "debug": self.debug,
+                "split_frontend": self.split_frontend,
                 "version": self.version
             },
             "OAuth": {
@@ -136,6 +138,7 @@ class BotConfig:
                 send_to_online_owner=bool(bot_data.get("send_to_online_owner", default_config.send_to_online_owner)),
                 logger_level=str(bot_data.get("logger_level", default_config.logger_level)),
                 debug=bool(bot_data.get("debug", default_config.debug)),
+                split_frontend=bool(bot_data.get("split_frontend", default_config.split_frontend)),
                 colors=colors,
                 oauth=OAuthSettings(
                     token=str(oauth_data.get("token", default_config.oauth.token)),
@@ -176,6 +179,7 @@ overwriteOwner = config.owner_id
 send_to_owner_enabled = config.send_to_online_owner
 logger_level = config.logger_level
 debug = config.debug
+split_frontend = config.split_frontend
 colors = config.colors
 colours = config.colors
 enableAI = config.ai_enabled

@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from modules.Nexon import logger
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from modules.Nexon import overwriteOwner, debug, colours, config
+from modules.Nexon import overwriteOwner, debug, colours, config, split_frontend
 from modules.settings import FeatureManager
 import requests
 from fastapi.responses import JSONResponse
@@ -920,19 +920,19 @@ class DashboardCog(commands.Cog):
         
         
         #Other
-        @self.app.get("/api/terms_and_services")
+        @self.app.get("/api/terms-and-service")
         async def get_terms_and_services():
             """Get terms and services"""
-            if not self.terms_and_services:
+            if self.terms_and_services:
                 return self.terms_and_services
             else:
                 with open("Terms of Service.md", "r") as file:
                     self.terms_and_services = file.read()
                 return self.terms_and_services
-        @self.app.get("/api/privacy_policy")
+        @self.app.get("/api/privacy-policy")
         async def get_privacy_policy():
             """Get privacy policy"""
-            if not self.privacy_policy:
+            if self.privacy_policy:
                 return self.privacy_policy
             else:
                 with open("Privacy Policy.md", "r") as file:
@@ -1146,11 +1146,12 @@ class DashboardCog(commands.Cog):
         self.logger.info("Starting web dashboard...")
 
         # Start npm process
-        self.npm_process = await asyncio.create_subprocess_shell(
-            f"cd Dashboard && {self.npm_command}",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        if not split_frontend:
+            self.npm_process = await asyncio.create_subprocess_shell(
+                f"cd Dashboard && {self.npm_command}",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
         # Start FastAPI server
         config = uvicorn.Config(
@@ -1162,15 +1163,19 @@ class DashboardCog(commands.Cog):
         self.server = uvicorn.Server(config)
         
         try:
-            await asyncio.gather(
-                self.server.serve(),
-                self._handle_npm_output(self.npm_process.stdout, "stdout"),
-                self._handle_npm_output(self.npm_process.stderr, "stderr")
-            )
             self.logger.info("Web dashboard started successfully")
+            if not split_frontend and self.npm_process:
+                self.logger.info("NPM process started successfully")
+                await asyncio.gather(
+                    self.server.serve(),
+                    self._handle_npm_output(self.npm_process.stdout, "stdout"),
+                    self._handle_npm_output(self.npm_process.stderr, "stderr")
+                )
+            else:
+                await self.server.serve()
         except Exception as e:
             self.logger.error(f"Error starting dashboard: {e}")
-            if self.npm_process and self.npm_process.returncode is None:
+            if self.npm_process and self.npm_process.returncode is None and not split_frontend:
                 self.npm_process.terminate()
             raise
 
