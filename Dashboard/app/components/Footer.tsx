@@ -23,11 +23,11 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative mt-16">
-      {/* Updated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/80 to-purple-900 pointer-events-none" />
+    <footer className="relative mt-36">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950 to-purple-950 pointer-events-none" />
       
-      {/* Updated wave divider with stronger colors */}
+      {/* Wave divider */}
       <div className="absolute top-0 left-0 right-0 overflow-hidden -translate-y-[99%]">
         <svg 
           viewBox="0 0 1200 120" 
@@ -37,13 +37,13 @@ export default function Footer() {
         >
           <path 
             d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
-            className="fill-purple-900"
+            className="fill-purple-950"
           />
         </svg>
       </div>
       
-      {/* Updated footer background with stronger gradient */}
-      <div className="relative bg-gradient-to-b from-purple-900 to-purple-950 pt-16 pb-12 backdrop-blur-sm">
+      {/* Footer background */}
+      <div className="relative bg-gradient-to-b from-purple-950 to-purple-950 pt-16 pb-12 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
             {/* Logo and brand info */}

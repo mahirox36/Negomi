@@ -43,10 +43,10 @@ export default function Hero() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center">
       {/* Animated background gradient */}
       <motion.div
-        className="absolute inset-0 z-[1] bg-gradient-to-b from-pink-500 via-purple-600 to-purple-800"
+        className="absolute inset-0 bg-gradient-to-b from-pink-500/90 via-purple-600/90 to-purple-800/90"
         animate={{
           background: [
             "linear-gradient(to bottom, #ec4899, #9333ea, #6b21a8)",

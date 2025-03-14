@@ -14,7 +14,9 @@ export default function QuickStart() {
   ]
 
   return (
-    <div className="py-24 bg-gradient-to-b from-indigo-800 to-purple-900" id="setup">
+    // <div className="py-24 bg-gradient-to-b from-indigo-800 to-purple-900" id="setup">
+
+    <div className="py-24 bg-gradient-to-b from-indigo-800 via-purple-900 to-purple-950" id="setup">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
