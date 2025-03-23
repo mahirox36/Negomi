@@ -20,7 +20,6 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState("");
   const [isAtTop, setIsAtTop] = useState(true);
 
   useEffect(() => {
@@ -36,113 +35,14 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path: string) => {
-    // Remove scroll check for non-home pages to make transitions instant
-    if (!path.startsWith("/#")) {
-      return pathname === path;
-    }
-
-    // Home page and section checks remain the same
-    if (path === "/") {
-      return pathname === "/" && isAtTop && !activeSection;
-    }
-
-    if (path.startsWith("/#") && pathname === "/") {
-      return activeSection === path.substring(2);
-    }
-
-    return false;
+    return pathname === path;
   };
 
-  // Generate unique layoutId based on current active section/page
+  // Generate unique layoutId based on current page
   const getLayoutId = () => {
-    if (pathname === "/") {
-      return activeSection ? `section-${activeSection}` : "home";
-    }
     return pathname.replace("/", "page-");
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (pathname !== "/") {
-        setActiveSection("");
-        return;
-      }
-
-      // Check if we're at the top of the page
-      if (window.scrollY < 100) {
-        setActiveSection("");
-        return;
-      }
-
-      const sections = ["features", "setup"];
-      const viewportMiddle = window.innerHeight / 2;
-
-      // Find the section closest to the middle of the viewport
-      let closestSection = "";
-      let closestDistance = Infinity;
-
-      sections.forEach((section) => {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const distance = Math.abs(
-            rect.top + rect.height / 2 - viewportMiddle
-          );
-
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestSection = section;
-          }
-        }
-      });
-
-      setActiveSection(closestSection);
-    };
-
-    // Run once immediately to set initial state
-    handleScroll();
-
-    // Add smooth scroll behavior
-    const handleNavClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const href = target.getAttribute("href");
-
-      if (href?.startsWith("/#")) {
-        e.preventDefault();
-        const sectionId = href.replace("/#", "");
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    };
-
-    document.querySelectorAll('a[href^="/#"]').forEach((link) => {
-      link.addEventListener("click", handleNavClick as any);
-    });
-
-    // Throttle scroll event for better performance
-    let ticking = false;
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      document.querySelectorAll('a[href^="/#"]').forEach((link) => {
-        link.removeEventListener("click", handleNavClick as any);
-      });
-    };
-  }, [pathname, activeSection]); // Add pathname as dependency
-
-  // Add click outside handler
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -224,42 +124,14 @@ export default function Navbar() {
     e: React.MouseEvent<HTMLAnchorElement>,
     path: string
   ) => {
-    if (path.startsWith("/#") && pathname !== "/") {
-      e.preventDefault();
-      const sectionId = path.replace("/#", "");
-
-      // Store the target section in localStorage
-      localStorage.setItem("scrollTarget", sectionId);
-
-      // Navigate to home page
-      window.location.href = "/";
-    }
+    // No special handling needed anymore
   };
-
-  // Add effect to handle scroll after navigation
-  useEffect(() => {
-    if (pathname === "/") {
-      const scrollTarget = localStorage.getItem("scrollTarget");
-      if (scrollTarget) {
-        // Clear the stored target
-        localStorage.removeItem("scrollTarget");
-
-        // Small delay to ensure the page is loaded
-        setTimeout(() => {
-          const element = document.getElementById(scrollTarget);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-          }
-        }, 500); // Increased delay for more reliability
-      }
-    }
-  }, [pathname]);
 
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed w-full bg-white/10 backdrop-blur-lg z-[200]"
+      className="fixed w-full bg-white/10 backdrop-blur-lg"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-select">
         <div className="flex items-center justify-between h-16">
@@ -288,16 +160,19 @@ export default function Navbar() {
                         : "text-gray-300 hover:text-white"
                     }`}
                 >
-                  {item.label}
+                  <span className="relative z-10">{item.label}</span>
                   {isActive(item.path) && (
                     <motion.div
                       layoutId="navbar-indicator"
-                      className="absolute inset-0 rounded-md bg-white/20 -z-10"
+                      className="absolute inset-x-0 top-0 h-full rounded-md bg-white/20"
                       initial={false}
                       transition={{
                         type: "spring",
                         bounce: 0.15,
                         duration: 0.5,
+                        layout: {
+                          axis: "x"
+                        }
                       }}
                     />
                   )}
@@ -372,7 +247,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                href="/api/auth/discord/login" //TODO: Change it for production
+                href="/api/auth/discord/login"
                 className="text-white text-sm md:text-base"
               >
                 Login
