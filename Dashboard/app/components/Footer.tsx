@@ -109,20 +109,20 @@ export default function Footer() {
               <h3 className="text-lg font-semibold text-white mb-4">Legal</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="/terms-of-service" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
+                  <a href="/terms" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
                     <span className="mr-2">→</span> Terms of Service
                   </a>
                 </li>
                 <li>
-                  <a href="/privacy-policy" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
+                  <a href="/privacy" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
                     <span className="mr-2">→</span> Privacy Policy
                   </a>
                 </li>
-                <li>
+                {/* <li>
                   <a href="/cookie-policy" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
                     <span className="mr-2">→</span> Cookie Policy
                   </a>
-                </li>
+                </li> */}
               </ul>
             </motion.div>
           </div>
