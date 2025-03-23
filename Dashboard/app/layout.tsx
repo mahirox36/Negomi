@@ -26,9 +26,13 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <LayoutProvider>
           <ClientProvider>
-            <div className="min-h-screen bg-gradient-to-b from-purple-950 to-purple-950 relative">
-              <Navbar />
-              {children}
+            <div className="min-h-screen bg-gradient-to-b from-purple-950 to-purple-950">
+              <div className="relative z-50">
+                <Navbar />
+              </div>
+              <div className="relative z-0">
+                {children}
+              </div>
             </div>
           </ClientProvider>
         </LayoutProvider>

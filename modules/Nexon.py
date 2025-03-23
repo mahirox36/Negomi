@@ -16,13 +16,22 @@ from .settings import FeatureManager, FeatureDisabled
 import logging
 
 Level = logger_level.lower()
-if Level.startswith("n"): Level = logging.NOTSET
-elif Level.startswith("d"): Level = logging.DEBUG
-elif Level.startswith("i"): Level = logging.INFO
-elif Level.startswith("w"): Level = logging.WARNING
-elif Level.startswith("e"): Level = logging.ERROR
-elif Level.startswith("c"): Level = logging.CRITICAL
-else: Level = logging.INFO
+match Level[0]:
+    case "n":
+        Level = logging.NOTSET
+    case "d":
+        Level = logging.DEBUG
+    case "i":
+        Level = logging.INFO
+    case "w":
+        Level = logging.WARNING
+    case "e":
+        Level = logging.ERROR
+    case "c":
+        Level = logging.CRITICAL
+    case _:
+        Level = logging.INFO
+
 logger = logging.getLogger("bot")
 
 from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline

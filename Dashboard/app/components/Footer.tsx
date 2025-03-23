@@ -80,12 +80,12 @@ export default function Footer() {
               <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#features" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
+                  <a href="/#features" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
                     <span className="mr-2">→</span> Features
                   </a>
                 </li>
                 <li>
-                  <a href="#statistics" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
+                  <a href="/statistics" className="text-indigo-200 hover:text-white transition duration-300 flex items-center">
                     <span className="mr-2">→</span> Statistics
                   </a>
                 </li>
