@@ -1,6 +1,6 @@
 from datetime import datetime
 import platform
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, UploadFile, File
 import psutil
 from typing import TYPE_CHECKING
 from modules.DiscordConfig import overwriteOwner
@@ -111,3 +111,29 @@ async def get_bot_pfp_url(request: Request):
             return {"url": None}
     except Exception as e:
         return {"url": None}
+
+@router.post("/upload")
+async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
+    """Upload an image file and return its URL"""
+    backend: DashboardCog = request.app.state.backend
+    
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        return {"error": "Only image files are allowed", "status": 400}, 400
+        
+    # Read file content
+    content = await file.read()
+    
+    # Check file size (3MB limit)
+    if len(content) > 3 * 1024 * 1024:
+        return {"error": "File size must be less than 3MB", "status": 400}, 400
+    
+    try:
+        # Reset file position after reading
+        await file.seek(0)
+        # Upload file using the provided function
+        filename = file.filename or "uploaded_file"
+        url, _ = backend.upload_image(file, filename)
+        return {"url": url, "status": 200}
+    except Exception as e:
+        return {"error": str(e), "status": 500}, 500

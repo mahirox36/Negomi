@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
 from .baseModels import *
 from .layout import pages
-from nexon.badge import BadgeManager
+from nexon import BadgeManager, Feature
 if TYPE_CHECKING:
     from ...classes.Other.Dashboard import DashboardCog
 
@@ -162,7 +162,7 @@ async def get_settings(guild_id: int, page: str, request: Request):
     """Get saved settings for a specific page"""
     backend: DashboardCog = request.app.state.backend
     try:
-        featureManager = FeatureManager(guild_id, page.replace("%20", " "))
+        featureManager = await Feature.get_guild_feature(guild_id, page.replace("%20", " "))
         settings = {}
         
         # Get the page layout
@@ -188,10 +188,10 @@ async def save_settings(guild_id: int, page: str, request: Request):
     try:
         data = await request.json()
         settings = data.get("settings", {})
-        featureManager = FeatureManager(guild_id, page)
+        featureManager = await Feature.get_guild_feature(guild_id, page)
         
         for setting_name, value in settings.items():
-            featureManager.set_setting(setting_name, value)
+            await featureManager.set_setting(setting_name, value)
         
         return {"success": True}
     except Exception as e:
@@ -202,7 +202,7 @@ async def save_settings(guild_id: int, page: str, request: Request):
 async def delete_settings(guild_id: int, page: str):
     """Delete all settings for a specific page"""
     try:
-        FeatureManager(guild_id, page).delete_class()
+        await (await Feature.get_guild_feature(guild_id, page)).delete_class()
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -212,19 +212,19 @@ async def delete_settings(guild_id: int, page: str):
 @router.post("/{guild_id}/features/{class_name}/set")
 async def set_feature(guild_id: int, class_name: str, request: FeatureSetRequest):
     """Set a feature for a specific guild"""
-    featureManager = FeatureManager(guild_id, class_name)
-    featureManager.set_setting(request.feature_name, request.value)
+    featureManager = await Feature.get_guild_feature(guild_id, class_name)
+    await featureManager.set_setting(request.feature_name, request.value)
     return {"success": True}
 @router.get("/{guild_id}/features/{class_name}/get")
 async def get_feature(guild_id: int, class_name: str, feature_name: str):
     """Get a feature for a specific guild"""
-    featureManager = FeatureManager(guild_id, class_name)
-    return {feature_name: featureManager.get_setting(feature_name)}
+    featureManager = await Feature.get_guild_feature(guild_id, class_name)
+    return {feature_name: await featureManager.get_setting(feature_name)}
 @router.post("/{guild_id}/features/{class_name}/reset")
 async def reset_feature(guild_id: int, class_name: str, feature_name: str):
     """Reset a feature for a specific guild"""
-    featureManager = FeatureManager(guild_id, class_name)
-    if featureManager.delete_setting(feature_name):
+    featureManager = await Feature.get_guild_feature(guild_id, class_name)
+    if await featureManager.delete_setting(feature_name):
         return {"success": True}
     else:
         raise HTTPException(status_code=404, detail="Feature not found")
@@ -232,21 +232,21 @@ async def reset_feature(guild_id: int, class_name: str, feature_name: str):
 @router.post("/{guild_id}/features/{class_name}/enable")
 async def enable_feature(guild_id: int, class_name: str):
     """Enable a class for a specific guild"""
-    featureManager = FeatureManager(guild_id, class_name)
-    if featureManager.is_disabled():
-        featureManager.enable_class()
+    featureManager = await Feature.get_guild_feature(guild_id, class_name)
+    if not featureManager.enabled:
+        await featureManager.enable()
         return {"success": True}
     else:
         raise HTTPException(status_code=400, detail="Feature already enabled")
 @router.post("/{guild_id}/features/{class_name}/disable")
 async def disable_feature(guild_id: int, class_name: str):
     """Disable a class for a specific guild"""
-    featureManager = FeatureManager(guild_id, class_name)
-    if featureManager.is_enabled():
-        featureManager.disable_class()
+    featureManager = await Feature.get_guild_feature(guild_id, class_name)
+    if featureManager.enabled:
+        await featureManager.disable()
         return {"success": True}
     else:
         raise HTTPException(status_code=400, detail="Feature already disabled")
 @router.get("/{guild_id}/features/{class_name}/status")
 async def get_feature_status(guild_id: int, class_name: str):
-    return {"enabled": FeatureManager(guild_id, class_name).is_enabled()}       
+    return {"enabled": (await Feature.get_guild_feature(guild_id, class_name)).enabled}       

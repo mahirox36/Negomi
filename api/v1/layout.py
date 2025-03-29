@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
 from modules.Nexon import colours
 from .baseModels import *
+from nexon.enums import RequirementType
 
 if TYPE_CHECKING:
     from ...classes.Other.Dashboard import DashboardCog
@@ -234,3 +235,6 @@ async def get_server_sidebar():
 async def get_server_settings_page(page: str):
     """Get server settings page"""
     return pages[page]
+@router.get("/badges/requirements")
+async def get_badges_requirements():
+    return [requirement.value for requirement in RequirementType]

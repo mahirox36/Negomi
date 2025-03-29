@@ -53,12 +53,23 @@ class DashboardCog(commands.Cog):
         # Add invite URL cache
         self.invite_url_cache = TTLCache(maxsize=100, ttl=300)  # 5 minutes cache
         
-        # self.s3_client: S3Client = boto3.client(
-        #     "s3",
-        #     endpoint_url=config.cloudflare.endpoint,
-        #     aws_access_key_id=config.cloudflare.access_key_id,
-        #     aws_secret_access_key=config.cloudflare.secret_access_key,
-        # )
+        # Initialize S3 client with validation
+        try:
+            logger.info(config.cloudflare.endpoint)
+            if not config.cloudflare.endpoint or not config.cloudflare.endpoint.startswith(('http://', 'https://')):
+                self.logger.error("Invalid Cloudflare endpoint URL. Must start with http:// or https://")
+                self.s3_client = None
+            else:
+                self.s3_client = boto3.client(
+                    "s3",
+                    endpoint_url=config.cloudflare.endpoint.rstrip('/'),  # Remove trailing slashes
+                    aws_access_key_id=config.cloudflare.access_key_id,
+                    aws_secret_access_key=config.cloudflare.secret_access_key,
+                    region_name="auto"  # Add default region
+                )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize S3 client: {str(e)}")
+            self.s3_client = None
         
         self.register_routes()
 
@@ -73,9 +84,37 @@ class DashboardCog(commands.Cog):
     
     def upload_image(self, file, filename: str):
         """Uploads an image file to Cloudflare R2 and returns the public URL."""
-        unique_filename = f"{uuid.uuid4()}-{filename}"
-        # self.s3_client.upload_fileobj(file.file, config.cloudflare.bucket_name, unique_filename, ExtraArgs={"ACL": "public-read"})
-        return f"{config.cloudflare.endpoint}/{config.cloudflare.bucket_name}/{unique_filename}"
+        if not self.s3_client:
+            raise HTTPException(status_code=500, detail="S3 client not initialized")
+        try:
+            unique_filename = f"{uuid.uuid4()}-{filename}"
+            self.s3_client.upload_fileobj(
+                file.file, 
+                config.cloudflare.bucket_name, 
+                unique_filename, 
+                ExtraArgs={"ACL": "public-read"}
+            )
+            return (
+                f"{config.cloudflare.public_bucket_url.rstrip('/')}/{unique_filename}",
+                f"{config.cloudflare.endpoint.rstrip('/')}/{config.cloudflare.bucket_name}/{unique_filename}"
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to upload image: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to upload image")
+    
+    def delete_image(self, filename: str):
+        """Deletes an image file from Cloudflare R2."""
+        if not self.s3_client:
+            raise HTTPException(status_code=500, detail="S3 client not initialized")
+        try:
+            self.s3_client.delete_object(
+                Bucket=config.cloudflare.bucket_name,
+                Key=filename
+            )
+            return {"detail": "Image deleted successfully"}
+        except Exception as e:
+            self.logger.error(f"Failed to delete image: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to delete image")
     
     def get_commands_func(self):
         if not self.commands:

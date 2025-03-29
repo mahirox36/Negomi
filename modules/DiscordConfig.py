@@ -20,6 +20,7 @@ class Cloudflare:
     access_key_id: str = "<ACCESS KEY ID>"
     secret_access_key: str ="<SECRET ACCESS KEY>"
     endpoint: str = "<END POINT>"
+    public_bucket_url: str = "<PUBLIC BUCKET URL>"
     bucket_name : str = "negomi-images"
     
 
@@ -179,10 +180,11 @@ class BotConfig:
                     database=str(database_data.get("database", default_config.database.database)),
                 ),
                 cloudflare=Cloudflare(
-                    access_key_id=str(database_data.get("access_key_id", default_config.cloudflare.access_key_id)),
-                    secret_access_key=str(database_data.get("secret_access_key", default_config.cloudflare.secret_access_key)),
-                    endpoint=str(database_data.get("endpoint", default_config.cloudflare.endpoint)),
-                    bucket_name=str(database_data.get("bucket_name", default_config.cloudflare.bucket_name)),
+                    access_key_id=str(cloudflare_data.get("access_key_id", default_config.cloudflare.access_key_id)),
+                    secret_access_key=str(cloudflare_data.get("secret_access_key", default_config.cloudflare.secret_access_key)),
+                    endpoint=str(cloudflare_data.get("endpoint", default_config.cloudflare.endpoint)),
+                    public_bucket_url=str(cloudflare_data.get("public_bucket_url", default_config.cloudflare.public_bucket_url)),
+                    bucket_name=str(cloudflare_data.get("bucket_name", default_config.cloudflare.bucket_name)),
                 ),
                 ai_enabled=bool(ai_data.get("enabled", default_config.ai_enabled)),
                 ai_ip=str(ai_data.get("ip", default_config.ai_ip)),

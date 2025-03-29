@@ -1,9 +1,11 @@
+import re
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
 
-from nexon import ComparisonType, Rarity, RequirementType
-from modules.Nexon import overwriteOwner
+from nexon import ComparisonType, File, Rarity, RequirementType
+import nexon
+from modules.Nexon import download_image_to_bytes, overwriteOwner
 from .baseModels import *
 from nexon.badge import BadgeManager
 
@@ -97,6 +99,7 @@ async def check_owner(request: Request):
 @router.post("/badges/create")
 async def create_badge(request: Request, badge_request: CreateBadgeRequest):
     """Create a new badge"""
+    backend: DashboardCog = request.app.state.backend
     try:
         # Convert dictionary requirements to BadgeRequirement objects
         await check_owner(request)
@@ -108,9 +111,22 @@ async def create_badge(request: Request, badge_request: CreateBadgeRequest):
                 str(req.get("value")), 
             ) for req in badge_request.requirements
         ]
+        guild = backend.client.get_guild(1262297191884521514)
+        if not guild:
+            guild = await backend.client.fetch_guild(1262297191884521514)
+        image = download_image_to_bytes(badge_request.icon_url)
+        if not image:
+            raise Exception("No image founded")
+        emoji = await guild.create_custom_emoji(
+            name=f"{badge_request.name.replace(" ", "_")}_badge",
+            image=image,
+            reason=f"Creating New Badge Called {badge_request.name}"
+        )
+        # <:9473f46e80349ffde33845582cd9f65f:1355397901119000717>
         await BadgeManager().create_badge(name=badge_request.name,
             description=badge_request.description,
             icon_url=badge_request.icon_url,
+            emoji=f"<:{emoji.name}:{emoji.id}>",
             rarity=Rarity(badge_request.rarity),
             requirements=requirements,
             hidden=badge_request.hidden)
@@ -122,8 +138,20 @@ async def create_badge(request: Request, badge_request: CreateBadgeRequest):
 async def get_badges(request: Request):
     """Get all badges"""
     try:
-        badges = await BadgeManager().get_all_badges()
-        return {"badges": [badge.to_dict() for badge in badges]}
+        
+        await check_owner(request)
+        
+        badge_manager = BadgeManager()
+        badges = await badge_manager.get_all_badges()
+        # Convert badges to a list of dictionaries, handling each badge individually
+        badge_list = []
+        for badge in badges:
+            try:
+                badge_dict = await badge.to_dict()
+                badge_list.append(badge_dict)
+            except Exception as e:
+                continue
+        return {"badges": badge_list}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -153,22 +181,41 @@ async def edit_badge(badge_id: int,request: Request, request_badge: CreateBadgeR
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/badges/{badge_id}/delete")
+@router.delete("/badges/{badge_id}")
 async def delete_badge(badge_id: int, request: Request):
     """Delete a badge"""
+    backend: DashboardCog = request.app.state.backend
     try:
         await check_owner(request)
+        badgeManager = BadgeManager()
+        badge = await badgeManager.get_badge(badge_id)
+        if not badge:
+            raise HTTPException(status_code=404, detail=f"No Badge with the ID {badge_id} found.")
+        backend.delete_image(badge.icon_url.split("/")[-1])
+        guild = backend.client.get_guild(1262297191884521514)
+        if not guild:
+            guild = await backend.client.fetch_guild(1262297191884521514)
+        emoji_id = re.search(r"<:\w+:(\d+)>", badge.emoji)
+        if not emoji_id:
+            raise RuntimeError("Not Expected to not find an emoji id")
+        emoji_id = int(emoji_id.group(1))
+        emoji = nexon.utils.get(guild.emojis, id=emoji_id)
+        if not emoji:
+            raise ValueError("Couldn't Find Emoji")
+        await emoji.delete()
         await BadgeManager().delete_badge(badge_id)
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/badges/{badge_id}")
-async def get_badge(badge_id: int):
+async def get_badge(badge_id: int, request:Request):
     """Get detailed information about a specific badge"""
     try:
+        await check_owner(request)
         badge = await BadgeManager().get_badge(badge_id)
         if not badge:
             raise HTTPException(status_code=404, detail="Badge not found")
-        return badge.to_dict()
+        return await badge.to_dict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
