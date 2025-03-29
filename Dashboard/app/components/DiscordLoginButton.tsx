@@ -1,21 +1,12 @@
+import axios from "axios";
 import { motion } from "framer-motion";
 
-export default function DiscordLoginButton() {
-    const handleLogin = async () => {
-      try {
-        const res = await fetch("/api/auth/discord/login");
-        const data = await res.json();
-        window.location.href = data.url;
-      } catch (error) {
-        console.error("Failed to get login URL:", error);
-      }
-    };
-  
+export default function DiscordLoginButton() {  
     return (
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={handleLogin}
+        onClick={() => window.location.href = "https://negomi.mahirou.online/api/discord/login"}
         className="flex items-center gap-2.5 px-4 py-2 bg-background border border-input hover:bg-accent hover:text-accent-foreground rounded-md font-medium transition-colors"
       >
         <svg

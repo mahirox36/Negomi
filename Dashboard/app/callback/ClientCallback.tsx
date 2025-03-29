@@ -16,7 +16,7 @@ export default function ClientCallback() {
   const processCallback = useCallback(
     debounce(async (code: string) => {
       try {
-        const response = await axios.post("/api/auth/discord/callback", 
+        const response = await axios.post("/api/v1/auth/discord/callback", 
           { code }, 
           {
             headers: {
@@ -25,6 +25,7 @@ export default function ClientCallback() {
             },
             validateStatus: (status) => status < 500,
             timeout: 10000,
+            withCredentials: true
           }
         );
 

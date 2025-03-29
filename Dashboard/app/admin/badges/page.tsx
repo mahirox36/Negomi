@@ -31,7 +31,7 @@ export default function BadgesPage() {
 
   const fetchBadges = async () => {
     try {
-      const response = await fetch("/api/admin/badges", {
+      const response = await fetch("/api/v1/admin/badges", {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch badges");
@@ -48,7 +48,7 @@ export default function BadgesPage() {
     if (!confirm("Are you sure you want to delete this badge?")) return;
 
     try {
-      const response = await fetch(`/api/admin/badges/${id}`, {
+      const response = await fetch(`/api/v1/admin/badges/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

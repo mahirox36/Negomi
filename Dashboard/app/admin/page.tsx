@@ -14,7 +14,7 @@ export default function AdminPage() {
     // Fetch stats from API
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/admin/stats", { credentials: "include" });
+        const response = await fetch("/api/v1/admin/stats", { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
           setStats(data);

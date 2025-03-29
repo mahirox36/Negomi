@@ -21,12 +21,14 @@ export default function Sidebar({ guilds }: SidebarProps) {
       if (adminGuilds.length > 0) {
         setIsLoading(true);
         try {
-          const res = await fetch("/api/guilds/filter_joined", {
+          const res = await fetch("/api/v1/guilds/filter_joined", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ guilds: adminGuilds.map(g => g.id) }),
+            credentials: "include",
+            
           });
           const data = await res.json();
           setJoinedGuilds(data);
@@ -127,7 +129,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
                   <h4 className="text-white/70 text-xs font-medium mb-2">Available Servers</h4>
                   {notJoinedGuildsList.map(guild => (
                     <a
-                      href={`/api/auth/bot/invite?guild_id=${guild.id}`}
+                      href={`/api/v1/auth/bot/invite?guild_id=${guild.id}`}
                       key={guild.id}
                       className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/60 hover:text-white"
                     >

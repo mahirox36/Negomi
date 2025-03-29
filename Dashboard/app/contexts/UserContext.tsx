@@ -24,7 +24,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       const fetchUser = async () => {
         try {
-          const response = await fetch('/api/auth/user', {
+          const response = await fetch('/api/v1/auth/user', {
             credentials: 'include'
           });
           if (response.ok) {

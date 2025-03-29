@@ -15,13 +15,13 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userResponse = await fetch("/api/auth/user", {
+        const userResponse = await fetch("/api/v1/auth/user", {
           credentials: "include",
         });
         
         if (!userResponse.ok) {
           if (userResponse.status === 401 || userResponse.status === 403) {
-            router.push("/api/auth/discord/login");
+            router.push("/api/v1/auth/discord/login");
             return;
           }
           throw new Error("Failed to fetch user data");
@@ -31,7 +31,7 @@ export default function Dashboard() {
         setUser(userData.user);
         
         // Only fetch guild data if we have a valid user
-        const guildResponse = await fetch("/api/auth/user/guilds", {
+        const guildResponse = await fetch("/api/v1/auth/user/guilds", {
           credentials: "include",
         });
         
@@ -43,7 +43,7 @@ export default function Dashboard() {
         setGuilds(guildData.guilds);
       } catch (error) {
         console.error("Error:", error);
-        router.push("/api/auth/discord/login");
+        router.push("/api/v1/auth/discord/login");
       } finally {
         setLoading(false);
       }
@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   // Redirect if not authenticated and not loading
   if (!loading && !user) {
-    router.push("/api/auth/discord/login");
+    router.push("/api/v1/auth/discord/login");
     return null;
   }
 

@@ -71,7 +71,7 @@ export default function EditBadgePage({
   useEffect(() => {
     const fetchBadge = async () => {
       try {
-        const response = await fetch(`/api/admin/badges/${id}`, {
+        const response = await fetch(`/api/v1/admin/badges/${id}`, {
           credentials: "include",
         });
         if (!response.ok) throw new Error("Failed to fetch badge");
@@ -91,7 +91,7 @@ export default function EditBadgePage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/admin/badges/${id}/edit`, {
+      const response = await fetch(`/api/v1/admin/badges/${id}/edit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, requirements }),

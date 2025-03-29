@@ -21,21 +21,21 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSidebar = useCallback(async () => {
     if (sidebar) return;
-    const response = await fetch('/api/layout/settings/sidebar');
+    const response = await fetch('/api/v1/layout/settings/sidebar');
     const data = await response.json();
     setSidebar(data);
   }, [sidebar]);
 
   const fetchServerSidebar = useCallback(async () => {
     if (serverSidebar) return;
-    const response = await fetch('/api/layout/settings/server/sidebar');
+    const response = await fetch('/api/v1/layout/settings/server/sidebar');
     const data = await response.json();
     setServerSidebar(data);
   }, [serverSidebar]);
 
   const fetchPageLayout = useCallback(async (page: string) => {
     try {
-      const response = await fetch(`/api/layout/settings/server/${page}`);
+      const response = await fetch(`/api/v1/layout/settings/server/${page}`);
       if (!response.ok) {
         throw new Error('Failed to fetch page layout');
       }

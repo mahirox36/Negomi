@@ -43,7 +43,7 @@ export default function CreateBadgePage() {
   ];
 
   const comparisonTypes = [
-    "equal",
+    "==",
     "greater",
     "less",
     "greater_equal",
@@ -65,7 +65,7 @@ export default function CreateBadgePage() {
         })),
       };
 
-      const response = await fetch("/api/admin/badges/create", {
+      const response = await fetch("/api/v1/admin/badges/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(badgeData),

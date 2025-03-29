@@ -14,7 +14,7 @@ export default function TermsOfService() {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await axios.get("/api/terms-and-service");
+        const response = await axios.get("/api/v1/bot/terms-and-service", {withCredentials: true});
         setContent(response.data);
       } catch (err) {
         setError("Failed to load Terms of Service");

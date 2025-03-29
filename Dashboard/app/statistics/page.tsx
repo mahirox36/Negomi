@@ -12,6 +12,7 @@ import {
 import { FiCpu, FiHardDrive, FiClock, FiActivity } from "react-icons/fi";
 import Link from "next/link";
 import PageWrapper from "../components/PageWrapper";
+import axios from "axios";
 
 // Update the type to match the API response structure
 type DetailedStats = {
@@ -82,10 +83,10 @@ export default function StatisticsPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = "/api/stats";
+        const apiUrl = "/api/v1/bot/stats";
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+        const response = await axios.get(apiUrl, {withCredentials: true});
+        const data = await response.data;
 
         const processedData = {
           system: {
@@ -128,11 +129,10 @@ export default function StatisticsPage() {
 
     const fetchGuilds = async () => {
       try {
-        const apiUrl = "/api/guilds";
+        const apiUrl = "/api/v1/guilds";
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        setGuilds(data.guilds);
+        const response = await axios.get(apiUrl, {withCredentials: true});
+        setGuilds(response.data.guilds);
       } catch (error) {
         console.error("Error fetching guilds:", error);
       }

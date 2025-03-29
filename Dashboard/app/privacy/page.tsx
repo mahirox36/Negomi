@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await axios.get("/api/privacy-policy");
+        const response = await axios.get("/api/v1/bot/privacy-policy", {withCredentials: true});
         setContent(response.data);
       } catch (err) {
         setError("Failed to load Privacy Policy");

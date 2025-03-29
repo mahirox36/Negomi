@@ -37,7 +37,7 @@ export default function ServerPage() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const response = await fetch(`/api/guilds/${params.id}/is_admin`, {
+        const response = await fetch(`/api/v1/guilds/${params.id}/is_admin`, {
           method: "POST",
           credentials: "include",
         });
@@ -59,7 +59,7 @@ export default function ServerPage() {
     const loadSavedValues = async () => {
       try {
         const response = await axios.get(
-          `/api/guilds/${params.id}/settings/${params.page}`
+          `/api/v1/guilds/${params.id}/settings/${params.page}`, {withCredentials: true}
         );
         if (response.data && response.data.settings) {
           const savedValues = response.data.settings;
@@ -120,8 +120,9 @@ export default function ServerPage() {
 
   const handleSave = async () => {
     try {
-      await axios.post(`/api/guilds/${params.id}/settings/${params.page}`, {
+      await axios.post(`/api/v1/guilds/${params.id}/settings/${params.page}`, {
         settings: currentValues,
+        withCredentials: true
       });
       setOriginalValues(currentValues);
       setHasChanges(false);
@@ -174,7 +175,7 @@ export default function ServerPage() {
   const handleReset = async () => {
     try {
       setResettingPanel(0); // Use this for the animation effect
-      await axios.delete(`/api/guilds/${params.id}/settings/${params.page}`);
+      await axios.delete(`/api/v1/guilds/${params.id}/settings/${params.page}`, {withCredentials: true});
 
       // Reset all values to defaults
       const newValues: Record<string, any> = {};

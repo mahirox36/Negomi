@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Command } from "../types/commands";
 import CommandCard from "../components/CommandCard";
 import PageWrapper from "../components/PageWrapper";
+import axios from "axios";
 
 export type FilterType = "all" | "admin" | "user" | "guild";
 
@@ -21,11 +22,10 @@ export default function CommandsPage() {
 
   const fetchCommands = async () => {
     try {
-      const apiUrl = "/api/commands";
+      const apiUrl = "/api/v1/bot/commands";
 
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      setCommands(Array.isArray(data.commands) ? data.commands : []);
+      const response = await axios.get(apiUrl, {withCredentials: true});
+      setCommands(Array.isArray(response.data.commands) ? response.data.commands : []);
     } catch (error) {
       console.error("Error fetching commands:", error);
       setCommands([]);
