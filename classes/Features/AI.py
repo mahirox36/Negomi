@@ -74,10 +74,7 @@ class AI(commands.Cog):
     def __init__(self, client:Client):
         self.client = client
         self.conversation_manager = ConversationManager()
-        self.settings = DataManager("AI", file_name="settings", default={
-            "public_channels": {},  # guild_id: channel_id
-            "active_threads": {}    # user_id: thread_id
-        })
+        self.settings: Feature
         self.ready = False
         self.gemini: Optional[genai.Client] = genai.Client(api_key=Gemini_API) if Gemini_API else None
         self.emote_mapping = {
@@ -95,6 +92,10 @@ class AI(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         global system
+        self.settings = await Feature.get_global_feature("AI", default={
+            "public_channels": {},  # guild_id: channel_id
+            "active_threads": {}    # user_id: thread_id
+        })
         models = [model.model.split(":")[0] for model in negomi.list().models if model.model is not None]
         system= system.format(AI="Negomi", short="smart and humorous", name="Mahiro",
                       pronouns="He", pronouns2= "His", relationship= "daughter", relationshipByPOV="Father", 
@@ -119,7 +120,7 @@ class AI(commands.Cog):
 
         # Handle private threads
         if isinstance(message.channel, Thread):
-            active_threads = self.settings.get("active_threads", {})
+            active_threads = self.settings.get_setting("active_threads", {})
             if str(message.channel.id) in active_threads.values():
                 await process_message(message, "thread")
                 return
@@ -127,7 +128,7 @@ class AI(commands.Cog):
         # Handle public channels
         if isinstance(message.channel, TextChannel):
             if message.guild:   
-                public_channels = self.settings.get("public_channels", {})
+                public_channels = self.settings.get_setting("public_channels", {})
                 if str(message.guild.id) in public_channels:
                     if message.channel.id == int(public_channels[str(message.guild.id)]):
                         await process_message(message)
@@ -252,10 +253,9 @@ class AI(commands.Cog):
         )
         
         # Update active threads in settings
-        active_threads = self.settings.get("active_threads", {})
+        active_threads = self.settings.get_setting("active_threads", {})
         active_threads[str(ctx.user.id)] = str(thread.id)
-        self.settings.set("active_threads", active_threads)
-        self.settings.save()
+        await self.settings.set_setting("active_threads", active_threads)
 
         await ctx.response.send_info(f"Created private chat thread {thread.mention}", "AI Created!")
         await thread.send(f"Hello {ctx.user.mention}! How can I help you today?")
@@ -269,10 +269,9 @@ class AI(commands.Cog):
         if not ctx.guild or not channel:
             return await ctx.response.send_info("Failed to set channel", "Error")
             
-        public_channels = self.settings.get("public_channels", {})
+        public_channels = self.settings.get_setting("public_channels", {})
         public_channels[str(ctx.guild.id)] = str(channel.id)
-        self.settings.set("public_channels", public_channels)
-        self.settings.save()
+        await self.settings.set_setting("public_channels", public_channels)
         
         await ctx.response.send_info(f"Set {channel.mention} as public AI chat channel", "AI Channel Set")
 
@@ -285,13 +284,12 @@ class AI(commands.Cog):
     async def disable_public(self, ctx: init):
         if not ctx.guild:
             return await ctx.response.send_info("Failed to disable public AI chat", "Error")
-        public_channels = self.settings.get("public_channels", {})
+        public_channels = self.settings.get_setting("public_channels", {})
         guild_id = str(ctx.guild.id)
         
         if guild_id in public_channels:
             del public_channels[guild_id]
-            self.settings.set("public_channels", public_channels)
-            self.settings.save()
+            await self.settings.set_setting("public_channels", public_channels)
             return await ctx.response.send_info("Disabled public AI chat", "AI Disabled!")
             
         await ctx.send(embed=Embed.Error("Public AI chat is already disabled", "AI Disabled!"))

@@ -15,41 +15,41 @@ class Request(View):
         self.client = client
         self.fromUser = fromUser
 
-    async def accept_callback(self, ctx: Interaction):
+    async def accept_callback(self, interaction: Interaction):
         if not (guild := self.client.get_guild(self.guild_id)):
             return
             
-        file = DataManager("Roles", self.guild_id, file_name="MembersRoles")
-        if not (user_data := file.data.get(f"{self.fromUser.id}")):
+        feature = await Feature.get_guild_feature(self.guild_id, "Roles")
+        data: dict = feature.get_setting("MembersRoles", {})
+        if not (user_data := data.get(str(self.fromUser.id))):
             return
             
         user = dict(user_data)
         if not (role := guild.get_role(user["roleID"])):
             return
             
-        if not ctx.user:
+        if not interaction.user:
             return
             
-        user["members"].append(f"{ctx.user.id}")
-        file.data[f"{self.fromUser.id}"].update(user)
-        file.data.update({
-            f"{ctx.user.id}": {
+        user["members"].append(f"{interaction.user.id}")
+        data[f"{self.fromUser.id}"].update(user)
+        data.update({
+            f"{interaction.user.id}": {
                 "owner": False,
                 "roleID": role.id,
             }
         })
-        file.save()
+        await feature.save()
         
-        if not (member := guild.get_member(ctx.user.id)):
+        if not (member := guild.get_member(interaction.user.id)):
             return
             
         await member.add_roles(role)
         
-        await ctx.response.send_message(
+        await interaction.response.send_message(
             embed=Embed.Info(
                 title=f"You Joined a {self.fromUser.display_name}'s Role",
-                description=f"In {guild.name} and Role {role.name}",
-                author=[guild.name, guild.icon.url if guild.icon else None]
+                description=f"In {guild.name} and Role {role.name}"
             ),
             ephemeral=True
         )
@@ -71,55 +71,18 @@ class Roles(commands.Cog):
     async def role(self,ctx:init):
         pass
     
-    @slash_command(name="mode",description="Change the mode of role creation", default_member_permissions=Permissions(administrator=True))
-    async def setup(self, ctx: init, mode: str = SlashOption(
-        name="mode",
-        description="Select who can create roles",
-        choices={"Everyone": "everyone", "Only Boosters": "boosters"},
-        required=True
-    )):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(
-                embed=Embed.Error(
-                    "This command can only be used in a server.",
-                    title="Server Only Command"
-                ),
-                ephemeral=True
-            )
-            return
-        file = DataManager("Roles", guild.id, file_name="Settings")
-        
-        try:
-            if not file.data:
-                file.data = {}
-        except AttributeError:
-            file.data = {}
-            
-        file.data["creation_mode"] = mode
-        file.save()
-        
-        mode_text = "everyone" if mode == "everyone" else "only server boosters"
-        await ctx.send(
-            embed=Embed.Info(
-                title="Role Creation Mode Updated",
-                description=f"Role creation is now available to {mode_text}."
-            ),
-            ephemeral=True
-        )
+    
     @role.subcommand(name="create",description="Create a role for yourself")
     async def create_role(self, ctx: Interaction, name: str, color: str = SlashOption(
         "color", "Type Hex code or one of these colors", required=True, autocomplete=True
     )):
-        if not ctx.guild:
-            return
+        if not ctx.guild or not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("Your are not in a server"))
             
         # Check role creation mode
-        settings_file = DataManager("Roles", ctx.guild.id, file_name="Settings")
-        try:
-            mode = settings_file.data.get("creation_mode", "everyone")
-        except AttributeError:
-            mode = "everyone"
+        feature = await Feature.get_guild_feature(ctx.guild.id, "Roles")
+        data: dict = feature.get_setting("Settings", {})
+        mode = data.get("creation_mode", "everyone")
 
         # Check if user is booster when required
         if mode == "boosters" and not getattr(ctx.user, "premium_since", None):
@@ -142,13 +105,12 @@ class Roles(commands.Cog):
             return
 
         guild = ctx.guild
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        try:
-            if file.data.get(f"{ctx.user.id}") != None:
-                await ctx.send(embed=Embed.Error("You already have a role"),ephemeral=True)
-                return
-        except AttributeError: file.data = {}
-        if name.lower() in self.notAllowed:
+        feature = await Feature.get_guild_feature(ctx.guild.id, "Roles")
+        data: dict = feature.get_setting("Settings", {})
+        if data.get(str(ctx.user.id)):
+            await ctx.send(embed=Embed.Error("You already have a role"),ephemeral=True)
+            return
+        if name.lower() in self.notAllowed: #TODO: use a library instead
             await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
             return
         role = await guild.create_role(reason=f"{ctx.user.name}/{ctx.user.id} Created a role",
@@ -160,22 +122,24 @@ class Roles(commands.Cog):
             "roleID"    :role.id,
             "members"   :[]
         }}
-        file.data.update(data)
-        file.save()
+        data.update(data)
+        await feature.save()
     
     @role.subcommand(name="edit",description="Edit your own role like the name or role or both!")
     @cooldown(15)
-    async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
+    async def role_edit(self,ctx: Interaction, name: Optional[str] = None, color:str=SlashOption("color","Type Hex code or one of these colors",
                                         required=False, autocomplete=True,default=None)):
         guild = ctx.guild
-        if not guild:
+        if not guild or not ctx.user or not isinstance(ctx.user, Member):
             await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
             return
         if color != None:
-            color = self.colors[color.capitalize()]
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
+            color = self.colors.get(color.capitalize(), Color("#FFFFFF")).hex
+            colorInt = self.colors.get(color.capitalize(), Color("#FFFFFF")).value
+        feature = await Feature.get_guild_feature(guild.id, "Roles")
+        data: dict = feature.get_setting("MembersRoles", {})
         try:
-            user = file.data.get(f"{ctx.user.id}")
+            user = data.get(str(ctx.user.id))
             if user == None:
                 await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
@@ -185,29 +149,31 @@ class Roles(commands.Cog):
         except AttributeError: 
             await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
             return
-        try:
+        if name:
             if name.lower() in self.notAllowed:
                 await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
                 return
-        except AttributeError:pass
         role = guild.get_role(user["roleID"])
+        if not role:
+           role= await guild.fetch_role(user["roleID"])
         if (name == None) and (color == None):
             await ctx.send(embed=Embed.Error("you haven't change anything ||trying to be funny?||"),ephemeral=True)
             return
         if name != None:await role.edit(name=name)
-        if color!= None:await role.edit(color=color)
+        if color!= None:await role.edit(color=colorInt)
         await ctx.send(embed=Embed.Info(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
 
 
     @role.subcommand(name="delete",description="delete your own role")
     async def role_delete(self,ctx:init):
         guild = ctx.guild
-        if not guild:
+        if not guild or not ctx.user:
             await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
             return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
+        feature = await Feature.get_guild_feature(guild.id, "Roles")
+        data: dict = feature.get_setting("MembersRole", {})
         try:
-            user = file.data.get(f"{ctx.user.id}")
+            user = data.get(str(ctx.user.id))
             if user == None:
                 await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
@@ -218,12 +184,14 @@ class Roles(commands.Cog):
             await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
             return
         role = guild.get_role(user["roleID"])
+        if not role:
+            role = await guild.fetch_role(user["roleID"])
         await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
         await ctx.send(embed=Embed.Info(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
         for i in user["members"]:
-            del file.data[i]
-        del file.data[f"{ctx.user.id}"]
-        file.save()
+            del data[i]
+        del data[f"{ctx.user.id}"]
+        await feature.save()
     
     @user_command("Role: Add User", contexts=[InteractionContextType.guild])
     async def role_user_add_user_command(self,ctx:init, member:Member):
@@ -237,10 +205,12 @@ class Roles(commands.Cog):
     @cooldown(15)
     async def role_user_add(self,ctx:init, member:Member):
         guild = ctx.guild
-        if not guild:
+        if not guild or not ctx.user or isinstance(ctx.user, User) or not ctx.channel or isinstance(ctx.channel, (CategoryChannel, ForumChannel)):
             await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
             return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
+        
+        feature = await Feature.get_guild_feature(guild.id, "Roles")
+        data: dict = feature.get_setting("MembersRole", {})
         if ctx.user.id == member.id:
             await ctx.send(embed=Embed.Error("You can't add yourself"),ephemeral=True)
             return
@@ -248,12 +218,12 @@ class Roles(commands.Cog):
             await ctx.send(embed=Embed.Error("You can't add a bot"),ephemeral=True)
             return
         try:
-            user = dict(file.data.get(f"{ctx.user.id}"))
-            user2= file.data.get(f"{member.id}")
-            if user == None:
+            user: Optional[dict] = data.get(str(ctx.user.id))
+            user2: Optional[dict] = data.get(f"{member.id}")
+            if not user:
                 await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
-            if user2 != None:
+            if user2:
                 await ctx.send(embed=Embed.Error("He/She already have a role"),ephemeral=True)
                 return
             if user["owner"] == False:
@@ -265,11 +235,13 @@ class Roles(commands.Cog):
         view = Request(guild.id,self.client,ctx.user)
         #Send DM or Channel
         role = guild.get_role(user["roleID"])
+        if not role:
+            role = await guild.fetch_role(user["roleID"])
         try:
-            await member.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await member.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}"),
                               view=view)
         except:
-            await ctx.channel.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
+            await ctx.channel.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}"),
                                 view=view)
         await ctx.send(embed=Embed.Info(title="Invited!",description=f"You have Invited {member.mention}"))
 
@@ -277,10 +249,11 @@ class Roles(commands.Cog):
     @cooldown(15)
     async def role_user_remove(self,ctx:init, member:Member):
         guild = ctx.guild
-        if not guild:
+        if not guild or not ctx.user:
             await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
             return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
+        feature = await Feature.get_guild_feature(guild.id, "Roles")
+        data: dict = feature.get_setting("MembersRole", {})
         if ctx.user.id == member.id:
             await ctx.send(embed=Embed.Error("You can't remove yourself"),ephemeral=True)
             return
@@ -288,12 +261,12 @@ class Roles(commands.Cog):
             await ctx.send(embed=Embed.Error("You can't remove a bot"),ephemeral=True)
             return
         try:
-            user = file.data.get(f"{ctx.user.id}")
-            user2= file.data.get(f"{member.id}")
-            if user == None:
+            user = data.get(f"{ctx.user.id}")
+            user2= data.get(f"{member.id}")
+            if not user:
                 await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
                 return
-            elif user2 == None:
+            elif not user2:
                 await ctx.send(embed=Embed.Error("He/She doesn't have a role"),ephemeral=True)
                 return
             elif user["owner"] == False:
@@ -305,10 +278,12 @@ class Roles(commands.Cog):
             await ctx.send(embed=Embed.Error("You & Him/Her Don't have a role"),ephemeral=True)
             return
         role = guild.get_role(user["roleID"])
+        if not role:
+            role = await guild.fetch_role(user["roleID"])
         user["members"].remove(f"{member.id}")
-        file.data[f"{ctx.user.id}"].update(user)
-        del file.data[f"{member.id}"]
-        file.save()
+        data[f"{ctx.user.id}"].update(user)
+        del data[f"{member.id}"]
+        await feature.save()
         await member.remove_roles(role)
 
         await ctx.send(embed=Embed.Info(f"The {member.display_name} Removed!", title="Member Removed!"),ephemeral=True)

@@ -35,13 +35,13 @@ class timeCapsule(commands.Cog):
             return await ctx.send(embed=Embed.Error("Invalid date! Please enter a valid year, month, and day."))
         if target_date <= now:
             return await ctx.send(embed=Embed.Error("The date must be in the future!"))
-        file = DataManager("TimeCapsule", default=[])
-        file.append({
+        feature = await Feature.get_global_feature("TimeCapsule", default=[])
+        feature.settings.append({
             "ID":ctx.user.id,
             "message":message,
             "time": target_date.isoformat()
         })
-        file.save()
+        await feature.save()
         await ctx.send(embed=Embed.Info(title="Saved",description="Your Time Capsule saved"))
     
     @capsule.subcommand("list", "List of your time Capsules")
@@ -49,9 +49,9 @@ class timeCapsule(commands.Cog):
         await ctx.response.defer(ephemeral=True)
         if not ctx.user:
             return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
-        file = DataManager("TimeCapsule", default=[])
+        feature = await Feature.get_global_feature("TimeCapsule", default=[])
         data = []
-        for time in file.data:
+        for time in feature.settings:
             if time["ID"] == ctx.user.id:
                 data.append(time)
         if data:
@@ -77,30 +77,36 @@ class timeCapsule(commands.Cog):
         await self.check_time_capsules()
 
     async def check_time_capsules(self):
-        file = DataManager("TimeCapsule", default=[])
+        feature = await Feature.get_global_feature("TimeCapsule", default=[])
         now = datetime.now()
         updated_data = []
-        
-        for capsule in file.data:
-            target_date = datetime.fromisoformat(capsule["time"])
+
+        for capsule in feature.settings:
+            try:
+                target_date = datetime.fromisoformat(capsule["time"])
+            except ValueError:
+                # Skip invalid date formats
+                continue
+
             if target_date <= now:
-                user = self.client.get_user(capsule["ID"])
-                if not user:
-                    await self.client.fetch_user(capsule["ID"])
-                if user:
-                    try:
-                        await user.send(f"{user.mention}",embed=Embed.Info(
-                            title="Time Capsule",
-                            description=f"`Here's your message from the past:`\n{capsule['message']}"
-                        ))
-                    except:
-                        continue
+                try:
+                    user = await self.client.fetch_user(capsule["ID"])
+                    if user:
+                        await user.send(
+                            embed=Embed.Info(
+                                title="Time Capsule",
+                                description=f"📜 **Here's your message from the past:**\n\n{capsule['message']}"
+                            )
+                        )
+                except Exception as e:
+                    # Log the error for debugging purposes
+                    print(f"Failed to send Time Capsule to user {capsule['ID']}: {e}")
             else:
                 updated_data.append(capsule)
-        
-        file.data = updated_data
-        if file.data:
-            file.save()
+
+        # Update the feature settings with remaining capsules
+        feature.settings = updated_data
+        await feature.save()
     
     
 
