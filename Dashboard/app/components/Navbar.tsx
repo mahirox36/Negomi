@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
@@ -9,106 +9,22 @@ import { useUser } from "../contexts/UserContext";
 interface User {
   id: string;
   username: string;
-  avatar: string;
-  global_name?: string;
+  avatar: string | null | undefined;
+  global_name?: string | null;
 }
 
 export default function Navbar() {
   const { user } = useUser();
-  const [isOwner, setIsOwner] = useState<boolean | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOwner, setIsOwner] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
   const profileRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const [isAtTop, setIsAtTop] = useState(true);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsAtTop(window.scrollY < 100);
-    };
-
-    // Initial check
-    handleScroll();
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const isActive = (path: string) => {
-    return pathname === path;
-  };
-
-  // Generate unique layoutId based on current page
-  const getLayoutId = () => {
-    return pathname.replace("/", "page-");
-  };
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
-        setIsProfileOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch("/api/auth/discord/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-
-      // Clear local storage
-      localStorage.clear();
-
-      // Force page reload to clear all state
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Still clear storage and redirect on error
-      localStorage.clear();
-      window.location.href = "/";
-    }
-  };
-
-  useEffect(() => {
-    const checkOwnerStatus = async () => {
-      // Check if we already have the owner status in localStorage
-      const cachedOwnerStatus = localStorage.getItem("isOwner");
-
-      if (user && cachedOwnerStatus === null) {
-        try {
-          const response = await fetch("/api/admin/is_owner", {
-            credentials: "include",
-          });
-          const data = await response.json();
-          console.log("Owner status:", data.is_owner);
-          setIsOwner(data.is_owner);
-          // Cache the result
-          localStorage.setItem("isOwner", data.is_owner.toString());
-        } catch (error) {
-          console.error("Error checking owner status:", error);
-          setIsOwner(false);
-          localStorage.setItem("isOwner", "false");
-        }
-      } else if (cachedOwnerStatus !== null) {
-        setIsOwner(cachedOwnerStatus === "true");
-      }
-    };
-
-    checkOwnerStatus();
-  }, [user]);
-
+  // Navigation items definition
   const baseNavItems = [
     { path: "/", label: "Home" },
     { path: "/dashboard", label: "Dashboard" },
@@ -120,25 +36,121 @@ export default function Navbar() {
     ? [...baseNavItems, { path: "/admin", label: "Admin" }]
     : baseNavItems;
 
-  const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    path: string
-  ) => {
-    // No special handling needed anymore
+  // Check if we're on the current page
+  const isActive = useCallback((path: string) => pathname === path, [pathname]);
+
+  // Handle scroll effects
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    handleScroll(); // Initial check
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) && 
+      !(event.target instanceof Element && event.target.matches('button[name="Hamburger Menu"], button[name="Hamburger Menu"] *'))) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close mobile menu on navigation change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Check owner status
+  useEffect(() => {
+    const checkOwnerStatus = async () => {
+      if (!user) {
+        setIsOwner(false);
+        return;
+      }
+
+      // Try to get from localStorage first
+      const cachedStatus = localStorage.getItem("isOwner");
+      
+      if (cachedStatus !== null) {
+        setIsOwner(cachedStatus === "true");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/v1/admin/is_owner", {
+          credentials: "include",
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch owner status");
+        
+        const data = await response.json();
+        setIsOwner(Boolean(data.is_owner));
+        localStorage.setItem("isOwner", String(data.is_owner));
+      } catch (error) {
+        console.error("Error checking owner status:", error);
+        setIsOwner(false);
+        localStorage.setItem("isOwner", "false");
+      }
+    };
+
+    checkOwnerStatus();
+  }, [user]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/v1/auth/discord/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear storage and redirect regardless of success/failure
+      localStorage.clear();
+      window.location.href = "/";
+    }
+  };
+
+  // Get avatar URL
+  const getAvatarUrl = (user: User) => {
+    const format = user.avatar?.startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}`;
   };
 
   return (
     <motion.nav
       initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className="fixed w-full bg-white/10 backdrop-blur-lg"
+      animate={{ 
+        y: 0,
+        backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0)" 
+      }}
+      transition={{ duration: 0.3 }}
+      className="fixed w-full z-50 backdrop-blur-lg"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-select">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <motion.div
             className="flex items-center"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Link href="/" className="text-white font-bold text-xl">
               Negomi
@@ -147,51 +159,81 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4 relative">
+            <div className="ml-10 flex items-center space-x-4">
               {navItems.map((item) => (
-                <Link
+                <motion.div
                   key={item.path}
-                  href={item.path}
-                  onClick={(e) => handleNavigation(e, item.path)}
-                  className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${
+                  className="relative"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 17
+                  }}
+                >
+                  <Link
+                    href={item.path}
+                    className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                      group hover:text-white flex items-center ${
                       isActive(item.path)
                         ? "text-white"
-                        : "text-gray-300 hover:text-white"
+                        : "text-gray-300"
                     }`}
-                >
-                  <span className="relative z-10">{item.label}</span>
-                  {isActive(item.path) && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-x-0 top-0 h-full rounded-md bg-white/20"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.15,
-                        duration: 0.5,
-                        layout: {
-                          axis: "x"
-                        }
-                      }}
-                    />
-                  )}
-                </Link>
+                  >
+                    <span className="relative z-10">
+                      {item.label}
+                      <motion.span
+                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-white/70 rounded-full"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: isActive(item.path) ? 1 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </span>
+                  </Link>
+                  
+                  <AnimatePresence>
+                    {isActive(item.path) && (
+                      <motion.div
+                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/20 to-white/10"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)",
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  <motion.div
+                    className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={false}
+                    whileHover={{
+                      opacity: 1,
+                      boxShadow: "0 0 20px rgba(255, 255, 255, 0.15)"
+                    }}
+                  />
+                </motion.div>
               ))}
             </div>
           </div>
 
-          {/* Profile Section - Now visible on both desktop and mobile */}
+          {/* Right side: Profile & Mobile menu button */}
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="relative" ref={profileRef}>
                 <motion.div
-                  className="flex items-center space-x-4 cursor-pointer group"
+                  className="flex items-center space-x-3 cursor-pointer group"
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="flex items-center space-x-2">
+                    <span className="text-white hidden md:inline text-sm">
+                      {user.global_name || user.username}
+                    </span>
                     <motion.svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -208,26 +250,24 @@ export default function Navbar() {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </motion.svg>
-                    <span className="text-white hidden md:inline">
-                      {user.global_name || user.username}
-                    </span>
                   </div>
-                  <img
-                    src={`https://cdn.discordapp.com/avatars/${user.id}/${
-                      user.avatar
-                    }.${user.avatar?.startsWith("a_") ? "gif" : "png"}`}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all">
+                    <img
+                      src={getAvatarUrl(user)}
+                      alt="Avatar"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 </motion.div>
 
                 <AnimatePresence>
                   {isProfileOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute md:right-0 -right-4 mt-2 w-48 rounded-md shadow-lg bg-white/10 backdrop-blur-lg ring-1 ring-black ring-opacity-5"
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white/10 backdrop-blur-lg ring-1 ring-white/10 overflow-hidden"
                     >
                       <div className="py-1">
                         {/* Show username in dropdown on mobile */}
@@ -236,7 +276,7 @@ export default function Navbar() {
                         </div>
                         <button
                           onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/20"
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
                         >
                           Logout
                         </button>
@@ -247,19 +287,21 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                href="/api/auth/discord/login"
-                className="text-white text-sm md:text-base"
+                href="/api/v1/auth/discord/login"
+                className="text-white hover:text-gray-200 text-sm md:text-base font-medium transition-colors"
               >
                 Login
               </Link>
             )}
 
-            {/* Mobile Menu Button - Now after profile section */}
+            {/* Mobile Menu Button */}
             <motion.button
+              name="Hamburger Menu"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-white/20 focus:outline-none"
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <svg
                 className="h-6 w-6"
@@ -267,13 +309,12 @@ export default function Navbar() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <path
+                <motion.path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d={
-                    isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"
-                  }
+                  animate={{ d: isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16" }}
+                  transition={{ duration: 0.2 }}
                 />
               </svg>
             </motion.button>
@@ -281,25 +322,27 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu - Navigation links only */}
+      {/* Mobile Menu */}
       <AnimatePresence>
-        {isOpen && (
+        {isMenuOpen && (
           <motion.div
+            ref={menuRef}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 30,
+              opacity: { duration: 0.2 } 
+            }}
             className="md:hidden overflow-hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/5">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
-                  onClick={(e) => {
-                    setIsOpen(false);
-                    handleNavigation(e, item.path);
-                  }}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
                     ${
                       isActive(item.path)
