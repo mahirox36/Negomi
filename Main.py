@@ -172,6 +172,14 @@ class DiscordBot(commands.Bot):
         """Handler for when the bot is ready."""
         if not hasattr(self, '_ready_called'):
             self._ready_called = True
+            await nexon.init_db(
+                config.database.username,
+                config.database.password,
+                config.database.host,
+                config.database.port,
+                config.database.db_name,
+                config.database.database
+                )
             
             await self.change_presence(
                 activity=nexon.Activity(
