@@ -155,29 +155,68 @@ async def get_badges(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/badges/{badge_id}/edit")
-async def edit_badge(badge_id: int,request: Request, request_badge: CreateBadgeRequest):
+@router.put("/badges/{badge_id}")
+async def edit_badge(badge_id: int, request: Request, request_badge: CreateBadgeRequest):
     """Edit an existing badge"""
     try:
+        backend: DashboardCog = request.app.state.backend
         await check_owner(request)
-        # Convert dictionary requirements to BadgeRequirement objects
-        requirements: list[tuple[RequirementType, ComparisonType, str]] = [
+        
+        badge_manager = BadgeManager()
+        
+        # Convert requirements
+        requirements = [
             (
                 RequirementType(req.get("type")),
                 ComparisonType(req.get("comparison")),
-                str(req.get("value")), 
+                str(req.get("value"))
             ) for req in request_badge.requirements
         ]
         
-        await BadgeManager().update_badge(badge_id,
-                                          name=request_badge.name,
-                                            description=request_badge.description,
-                                            icon_url=request_badge.icon_url,
-                                            rarity=Rarity(request_badge.rarity),
-                                            requirements=requirements,
-                                            hidden=request_badge.hidden
-                                            )
+        # Handle emoji update if icon changed
+        existing_badge = await badge_manager.get_badge(badge_id)
+        if not existing_badge:
+            raise HTTPException(status_code=404, detail="Badge not found")
+        
+        emoji_str = existing_badge.emoji
+        if existing_badge.icon_url != request_badge.icon_url:
+            guild = backend.client.get_guild(1262297191884521514)
+            if not guild:
+                guild = await backend.client.fetch_guild(1262297191884521514)
+            
+            # Delete old image and emoji
+            backend.delete_image(existing_badge.icon_url.split("/")[-1])
+            emoji_id = re.search(r"<:\w+:(\d+)>", existing_badge.emoji)
+            if emoji_id:
+                emoji_id = int(emoji_id.group(1))
+                emoji = nexon.utils.get(guild.emojis, id=emoji_id)
+                if emoji:
+                    await emoji.delete()
+            
+            # Create new emoji
+            image = download_image_to_bytes(request_badge.icon_url)
+            if not image:
+                raise Exception("No image found")
+            new_emoji = await guild.create_custom_emoji(
+                name=f"{request_badge.name.replace(' ', '_')}_badge",
+                image=image,
+                reason=f"Updating Badge Called {request_badge.name}"
+            )
+            emoji_str = f"<:{new_emoji.name}:{new_emoji.id}>"
+
+        await badge_manager.update_badge(
+            badge_id,
+            name=request_badge.name,
+            description=request_badge.description,
+            icon_url=request_badge.icon_url,
+            emoji=emoji_str,
+            rarity=Rarity(request_badge.rarity),
+            requirements=requirements,
+            hidden=request_badge.hidden
+        )
+        
         return {"success": True}
+        
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
