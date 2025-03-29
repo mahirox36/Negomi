@@ -1,4 +1,4 @@
-# Negomi Discord Bot 0.8.3
+# Negomi Discord Bot 0.8.4
 
 ## 🤖 Add Bot
 
@@ -8,10 +8,9 @@ To add the bot to your server, click the link below:
 
 ## 🚀 Features
 
-- 🛡️ Advanced Moderation - Complete moderator system with role hierarchy and security automation
 - 🎭 Custom Roles - Member-created roles with full customization options
 - 🔊 Temporary Voice - Dynamic voice channels with user-controlled settings
-- 🤖 Enhanced AI Integration - Intelligent server management and member interactions
+- 🤖 Enhanced AI Integration - Intelligent member interactions
 - 👋 Advanced Welcome System - Custom greetings with beautifully generated images
 - 💾 Comprehensive Backup - Complete server protection including channels, roles, and permissions
 - 🎯 Achievement System - Activity-based rewards system
@@ -26,9 +25,9 @@ To add the bot to your server, click the link below:
 - Overall Progress: █░░░░░░░░░░░░░░░░░░░ 3% (1/31)
 - Currently Working On:
   - Nextcord Forked Library called [Nexon](https://github.com/mahirox36/Nexon)
-  - Currently Working On: Custom Database called [Hyper-Database](https://github.com/mahirox36/Hyper-Database)
-  - Currently Working On: Dashboard
-  - Currently Working On: Customizable Badges
+  - Database
+  - Dashboard
+  - Customizable Badges
 
 #### Advanced User Profile System
 
