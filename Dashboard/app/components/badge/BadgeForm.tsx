@@ -16,23 +16,70 @@ interface BadgeFormData {
 
 interface BadgeFormProps {
   onSubmit: (data: BadgeFormData, requirements: any[]) => Promise<void>;
+  initialData?: any;
+  isEditMode?: boolean;
 }
 
-export function BadgeForm({ onSubmit }: BadgeFormProps) {
-  const [formData, setFormData] = useState<BadgeFormData>({
-    name: "",
-    description: "",
-    icon_url: "",
-    rarity: 1,
-    hidden: false,
+const rarityMap: Record<string, number> = {
+  'common': 1,
+  'uncommon': 2,
+  'rare': 3,
+  'epic': 4,
+  'legendary': 5
+};
+
+const comparisonMap: Record<string, string> = {
+  'EQUAL': '==',
+  'GREATER': '>',
+  'LESS': '<',
+  'GREATER_EQUAL': '>=',
+  'LESS_EQUAL': '<=',
+  'NOT_EQUAL': '!='
+};
+
+export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFormProps) {
+  const [formData, setFormData] = useState<BadgeFormData>(() => {
+    if (initialData) {
+      return {
+        name: initialData.name || "",
+        description: initialData.description || "",
+        icon_url: initialData.icon_url || "",
+        rarity: initialData.rarity ? rarityMap[initialData.rarity.toLowerCase()] : 1,
+        hidden: initialData.hidden || false,
+      };
+    }
+    return {
+      name: "",
+      description: "",
+      icon_url: "",
+      rarity: 1,
+      hidden: false,
+    };
   });
-  const [requirements, setRequirements] = useState<Array<{ type: string; comparison: string; value: string }>>([]);
+
+  const [requirements, setRequirements] = useState<Array<{ type: string; comparison: string; value: string }>>(() => {
+    if (initialData?.requirements) {
+      return initialData.requirements.map((req: any) => ({
+        type: req.type.toLowerCase(),
+        comparison: comparisonMap[req.comparison] || '==',
+        value: req.value
+      }));
+    }
+    return [];
+  });
+
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialData?.icon_url) {
+      setPreview(initialData.icon_url);
+    }
+  }, [initialData]);
 
   const validateFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -174,7 +221,7 @@ export function BadgeForm({ onSubmit }: BadgeFormProps) {
         disabled={loading}
         className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-lg font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] text-white disabled:opacity-50"
       >
-        {loading ? "Creating..." : "Create Badge"}
+        {loading ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Badge" : "Create Badge")}
       </button>
     </form>
   );

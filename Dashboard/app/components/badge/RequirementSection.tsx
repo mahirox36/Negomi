@@ -16,9 +16,19 @@ interface RequirementSectionProps {
   setRequirements: (requirements: Requirement[]) => void;
 }
 
-const comparisonTypes = ["==", ">", "<", ">=", "<=", "!="];
+const comparisonMap: Record<string, string> = {
+  "==": "EQUAL",
+  ">": "GREATER",
+  "<": "LESS",
+  ">=": "GREATER_EQUAL",
+  "<=": "LESS_EQUAL",
+  "!=": "NOT_EQUAL"
+};
 
-export function RequirementSection({ requirements, setRequirements }: RequirementSectionProps) {
+export function RequirementSection({
+  requirements,
+  setRequirements,
+}: RequirementSectionProps) {
   const [requirementTypes, setRequirementTypes] = useState<string[]>([]);
 
   useEffect(() => {
@@ -33,8 +43,15 @@ export function RequirementSection({ requirements, setRequirements }: Requiremen
     setRequirements([...requirements, { type: "", comparison: "", value: "" }]);
   };
 
-  const updateRequirement = (index: number, field: keyof Requirement, value: string) => {
+  const updateRequirement = (
+    index: number,
+    field: keyof Requirement,
+    value: string
+  ) => {
     const newReqs = [...requirements];
+    if (field === 'type') {
+      value = value.toUpperCase();
+    }
     newReqs[index] = { ...newReqs[index], [field]: value };
     setRequirements(newReqs);
   };
@@ -66,12 +83,16 @@ export function RequirementSection({ requirements, setRequirements }: Requiremen
             exit={{ opacity: 0, y: -10 }}
             className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg space-y-4"
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium text-slate-300 mb-1 block">Type</label>
+                <label className="text-sm font-medium text-slate-300 mb-1 block">
+                  Type
+                </label>
                 <select
                   value={req.type}
-                  onChange={(e) => updateRequirement(index, "type", e.target.value)}
+                  onChange={(e) =>
+                    updateRequirement(index, "type", e.target.value)
+                  }
                   className="w-full p-2 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 text-white"
                   required
                 >
@@ -84,30 +105,39 @@ export function RequirementSection({ requirements, setRequirements }: Requiremen
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-300 mb-1 block">Comparison</label>
+                <label className="text-sm font-medium text-slate-300 mb-1 block">
+                  Comparison
+                </label>
                 <select
                   value={req.comparison}
-                  onChange={(e) => updateRequirement(index, "comparison", e.target.value)}
+                  onChange={(e) =>
+                    updateRequirement(index, "comparison", e.target.value)
+                  }
                   className="w-full p-2 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 text-white"
                   required
                 >
                   <option value="">Select comparison</option>
-                  {comparisonTypes.map((comp) => (
-                    <option key={comp} value={comp}>{comp}</option>
+                  {Object.keys(comparisonMap).map((comp) => (
+                    <option key={comp} value={comp}>
+                      {comparisonMap[comp]}
+                    </option>
                   ))}
                 </select>
               </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-300 mb-1 block">Value</label>
-              <input
-                type="text"
-                value={req.value}
-                onChange={(e) => updateRequirement(index, "value", e.target.value)}
-                className="w-full p-2 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 text-white"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-1 block">
+                  Value
+                </label>
+                <input
+                  type="text"
+                  value={req.value}
+                  onChange={(e) =>
+                    updateRequirement(index, "value", e.target.value)
+                  }
+                  className="w-full p-2 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 text-white"
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex justify-end">

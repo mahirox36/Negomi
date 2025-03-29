@@ -64,15 +64,15 @@ export default function BadgesPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-slate-900/50 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-slate-800"
+        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
       >
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
             Manage Badges
           </h1>
           <Link
             href="/admin/badges/create"
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors flex items-center space-x-2"
           >
             <i className="fas fa-plus text-sm" />
             <span>Create Badge</span>
@@ -88,7 +88,7 @@ export default function BadgesPage() {
                 key={badge.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg flex items-center justify-between hover:bg-slate-800/70 transition-colors"
+                className="p-4 bg-neutral-800/50 border border-neutral-700/50 rounded-lg flex items-center justify-between hover:bg-neutral-800/70 transition-colors"
               >
                 <div className="flex items-center space-x-4">
                   <img
@@ -104,21 +104,21 @@ export default function BadgesPage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setPreviewBadge(badge)}
-                    className="px-3 py-1 bg-slate-500/20 text-slate-300 hover:bg-slate-500/30 rounded transition-colors flex items-center space-x-1"
+                    className="px-3 py-1 bg-neutral-500/20 text-neutral-300 hover:bg-neutral-500/30 rounded transition-colors flex items-center space-x-1"
                   >
                     <i className="fas fa-eye text-sm" />
                     <span>View</span>
                   </button>
                   <Link
                     href={`/admin/badges/edit/${badge.id}`}
-                    className="px-3 py-1 bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 rounded transition-colors flex items-center space-x-1"
+                    className="px-3 py-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 rounded transition-colors flex items-center space-x-1"
                   >
                     <i className="fas fa-edit text-sm" />
                     <span>Edit</span>
                   </Link>
                   <button
                     onClick={() => handleDelete(badge.id)}
-                    className="px-3 py-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded transition-colors flex items-center space-x-1"
+                    className="px-3 py-1 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 rounded transition-colors flex items-center space-x-1"
                   >
                     <i className="fas fa-trash text-sm" />
                     <span>Delete</span>
@@ -151,17 +151,17 @@ export default function BadgesPage() {
                 className="fixed inset-0 flex items-start justify-center"
                 style={{ top: "4rem", height: "calc(100vh - 4rem)" }} // Adjust height and position
               >
-                <motion.div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full m-4 shadow-2xl overflow-y-auto max-h-[calc(100vh-8rem)]">
+                <motion.div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-2xl p-6 max-w-lg w-full m-4 shadow-2xl overflow-y-auto max-h-[calc(100vh-8rem)]">
                   {/* Modal Content */}
                   <div className="space-y-6">
                     {/* Header */}
                     <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
                         Badge Details
                       </h3>
                       <button
                         onClick={() => setPreviewBadge(null)}
-                        className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
+                        className="p-2 hover:bg-neutral-700/50 rounded-lg transition-colors text-neutral-400 hover:text-white"
                       >
                         <i className="fas fa-times" />
                       </button>
@@ -170,23 +170,23 @@ export default function BadgesPage() {
                     {/* Badge Info */}
                     <div className="flex items-start space-x-4">
                       <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-200" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-200" />
                         <img
                           src={previewBadge.icon_url}
                           alt={previewBadge.name}
-                          className="relative w-20 h-20 rounded-full border-2 border-slate-700 bg-slate-800"
+                          className="relative w-20 h-20 rounded-full border-2 border-neutral-700 bg-neutral-800"
                         />
                       </div>
                       <div>
                         <h4 className="text-xl font-semibold text-white">
                           {previewBadge.name}
                         </h4>
-                        <p className="text-slate-300 text-sm mt-1">
+                        <p className="text-neutral-300 text-sm mt-1">
                           {previewBadge.description}
                         </p>
                         <div className="flex items-center space-x-2 mt-2">
-                          <span className="text-xs text-slate-400">ID:</span>
-                          <code className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300">
+                          <span className="text-xs text-neutral-400">ID:</span>
+                          <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
                             {previewBadge.id}
                           </code>
                         </div>
@@ -195,24 +195,24 @@ export default function BadgesPage() {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-slate-800/50 p-3 rounded-lg text-center">
-                        <div className="text-sm text-slate-400 mb-1">
+                      <div className="bg-neutral-800/50 p-3 rounded-lg text-center">
+                        <div className="text-sm text-neutral-400 mb-1">
                           Rarity
                         </div>
                         <div className="text-white font-semibold">
                           Level {previewBadge.rarity}
                         </div>
                       </div>
-                      <div className="bg-slate-800/50 p-3 rounded-lg text-center">
-                        <div className="text-sm text-slate-400 mb-1">
+                      <div className="bg-neutral-800/50 p-3 rounded-lg text-center">
+                        <div className="text-sm text-neutral-400 mb-1">
                           Status
                         </div>
                         <div className="text-white font-semibold">
                           {previewBadge.hidden ? "Hidden" : "Visible"}
                         </div>
                       </div>
-                      <div className="bg-slate-800/50 p-3 rounded-lg text-center">
-                        <div className="text-sm text-slate-400 mb-1">
+                      <div className="bg-neutral-800/50 p-3 rounded-lg text-center">
+                        <div className="text-sm text-neutral-400 mb-1">
                           Created
                         </div>
                         <div className="text-white font-semibold text-sm">
@@ -224,24 +224,24 @@ export default function BadgesPage() {
                     </div>
 
                     {/* Requirements */}
-                    <div className="border-t border-slate-700/50 pt-4">
+                    <div className="border-t border-neutral-700/50 pt-4">
                       <h5 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <i className="fas fa-list-check mr-2 text-blue-400" />
+                        <i className="fas fa-list-check mr-2 text-indigo-400" />
                         Requirements
                       </h5>
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-700 pr-2">
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-track-neutral-800 scrollbar-thumb-neutral-700 pr-2">
                         {previewBadge.requirements.map((req, index) => (
                           <motion.div
                             key={index}
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between hover:bg-slate-800 transition-colors"
+                            className="bg-neutral-800/50 p-3 rounded-lg flex items-center justify-between hover:bg-neutral-800 transition-colors"
                           >
-                            <span className="text-slate-300 text-sm capitalize">
+                            <span className="text-neutral-300 text-sm capitalize">
                               {req.type.replace(/_/g, " ")}
                             </span>
-                            <span className="text-blue-400 text-sm font-medium">
+                            <span className="text-indigo-400 text-sm font-medium">
                               {req.comparison.replace(/_/g, " ")} {req.value}
                               {req.specific_value && ` (${req.specific_value})`}
                             </span>
@@ -253,7 +253,7 @@ export default function BadgesPage() {
                     {/* Close Button */}
                     <button
                       onClick={() => setPreviewBadge(null)}
-                      className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] text-white"
+                      className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] text-white"
                     >
                       Close Preview
                     </button>
