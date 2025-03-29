@@ -4,7 +4,24 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from modules.config import Config, Color as color
 
-VERSION = "0.42"
+VERSION = "0.44"
+
+@dataclass
+class Database:
+    username: str = "<USERNAME>"
+    password: str = "<PASSWORD>"
+    host: str = "localhost"
+    port: int = 5432
+    db_name: str = "bot"
+    database: str = "postgres"
+
+@dataclass
+class Cloudflare:
+    access_key_id: str = "<ACCESS KEY ID>"
+    secret_access_key: str ="<SECRET ACCESS KEY>"
+    endpoint: str = "<END POINT>"
+    bucket_name : str = "negomi-images"
+    
 
 @dataclass
 class Colors:
@@ -22,9 +39,9 @@ class Colors:
 
 @dataclass
 class OAuthSettings:
-    token: str = "Your Bot Token"
-    client_id: str = "Your Client ID"
-    client_secret: str = "Your Client Secret"
+    token: str = "<DISCORD_BOT_TOKEN>"
+    client_id: str = "<DISCORD_CLIENT_ID>"
+    client_secret: str = "<DISCORD_CLIENT_SECRET>"
     redirect_url: str = "https://example.com/callback"
     debug_redirect_url: str = "http://localhost:3000/callback"
 
@@ -37,6 +54,8 @@ class BotConfig:
     debug: bool = False
     split_frontend: bool = False
     colors: Colors = field(default_factory=Colors)
+    database: Database = field(default_factory=Database)
+    cloudflare: Cloudflare = field(default_factory=Cloudflare)
     oauth: OAuthSettings = field(default_factory=OAuthSettings)
     ai_enabled: bool = False
     ai_ip: str = "127.0.0.1"
@@ -73,6 +92,8 @@ class BotConfig:
                 "redirect_url": self.oauth.redirect_url,
                 "debug_redirect_url": self.oauth.debug_redirect_url
             },
+            "Database": self.database.__dict__,
+            "Cloudflare": self.cloudflare.__dict__,
             "Colors": color_data,
             "AI": {
                 "enabled": self.ai_enabled,
@@ -82,7 +103,7 @@ class BotConfig:
             "TestingGuilds": self.testing_guilds
         }
         
-        cfg.set_layout(["Bot", "OAuth", "Colors", "AI", "TestingGuilds"])
+        cfg.set_layout(["Bot", "OAuth", "Database", "Cloudflare", "Colors", "AI", "TestingGuilds"])
         cfg.data = data
         cfg.save()
 
@@ -102,6 +123,8 @@ class BotConfig:
             # Load existing data
             bot_data = cfg.data.get("Bot", {})
             oauth_data = cfg.data.get("OAuth", {})
+            database_data = cfg.data.get("Database", {})
+            cloudflare_data = cfg.data.get("Cloudflare", {})
             colors_data = cfg.data.get("Colors", {})
             ai_data = cfg.data.get("AI", {})
             
@@ -146,6 +169,20 @@ class BotConfig:
                     client_secret=str(oauth_data.get("client_secret", default_config.oauth.client_secret)),
                     redirect_url=str(oauth_data.get("redirect_url", default_config.oauth.redirect_url)),
                     debug_redirect_url=str(oauth_data.get("debug_redirect_url", default_config.oauth.debug_redirect_url))
+                ),
+                database=Database(
+                    username=str(database_data.get("username", default_config.database.username)),
+                    password=str(database_data.get("password", default_config.database.password)),
+                    host=str(database_data.get("host", default_config.database.host)),
+                    port=int(database_data.get("port", default_config.database.port)),
+                    db_name=str(database_data.get("db_name", default_config.database.db_name)),
+                    database=str(database_data.get("database", default_config.database.database)),
+                ),
+                cloudflare=Cloudflare(
+                    access_key_id=str(database_data.get("access_key_id", default_config.cloudflare.access_key_id)),
+                    secret_access_key=str(database_data.get("secret_access_key", default_config.cloudflare.secret_access_key)),
+                    endpoint=str(database_data.get("endpoint", default_config.cloudflare.endpoint)),
+                    bucket_name=str(database_data.get("bucket_name", default_config.cloudflare.bucket_name)),
                 ),
                 ai_enabled=bool(ai_data.get("enabled", default_config.ai_enabled)),
                 ai_ip=str(ai_data.get("ip", default_config.ai_ip)),

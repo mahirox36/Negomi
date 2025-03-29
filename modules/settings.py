@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from nexon.dataManager import DataManager
+from nexon import DataManager
 import logging
 logger = logging.getLogger("bot")
 
