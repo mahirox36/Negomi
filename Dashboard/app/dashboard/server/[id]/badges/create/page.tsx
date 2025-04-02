@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { BadgeForm } from "../../../../../components/badge/BadgeForm";
 import SettingsLayout from "@/app/components/ServerLayout";
+import { ThemeType, themeConfig } from '@/app/lib/theme';
 
 export default function CreateServerBadgePage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function CreateServerBadgePage() {
       };
 
       const response = await fetch(
-        `/api/v1/servers/${serverId}/badges/create`,
+        `/api/v1/guilds/${serverId}/badges/create`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -50,10 +51,10 @@ export default function CreateServerBadgePage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
         >
-          <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className={`text-4xl font-bold mb-8 bg-gradient-to-r ${themeConfig.purple.gradient} bg-clip-text text-transparent`}>
             Create Server Badge
           </h1>
-          <BadgeForm onSubmit={handleSubmit} />
+          <BadgeForm onSubmit={handleSubmit} theme="purple"/>
         </motion.div>
       </div>
     </SettingsLayout>

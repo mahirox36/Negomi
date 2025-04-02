@@ -35,7 +35,7 @@ export default function ServerBadgesPage() {
 
   const fetchBadges = async () => {
     try {
-      const response = await fetch(`/api/v1/servers/${serverId}/badges`, {
+      const response = await fetch(`/api/v1/guilds/${serverId}/badges`, {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch badges");
@@ -52,7 +52,7 @@ export default function ServerBadgesPage() {
     if (!confirm("Are you sure you want to delete this badge?")) return;
 
     try {
-      const response = await fetch(`/api/v1/servers/${serverId}/badges/${id}`, {
+      const response = await fetch(`/api/v1/guilds/${serverId}/badges/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

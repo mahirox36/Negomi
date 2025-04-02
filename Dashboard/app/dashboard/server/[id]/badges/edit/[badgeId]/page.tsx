@@ -18,7 +18,7 @@ export default function EditServerBadgePage() {
     const fetchBadge = async () => {
       try {
         const response = await fetch(
-          `/api/v1/servers/${serverId}/badges/${badgeId}`,
+          `/api/v1/guilds/${serverId}/badges/${badgeId}`,
           {
             credentials: "include",
           }
@@ -39,7 +39,7 @@ export default function EditServerBadgePage() {
   const handleSubmit = async (formData: any, requirements: any[]) => {
     try {
       const response = await fetch(
-        `/api/v1/servers/${serverId}/badges/${badgeId}`,
+        `/api/v1/guilds/${serverId}/badges/${badgeId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -84,6 +84,7 @@ export default function EditServerBadgePage() {
             onSubmit={handleSubmit}
             initialData={initialData}
             isEditMode={true}
+            theme="purple"
           />
         </motion.div>
       </div>

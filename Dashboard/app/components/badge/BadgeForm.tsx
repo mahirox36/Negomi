@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { BadgeRarity } from "./BadgeRarity";
 import { RequirementSection } from "./RequirementSection";
 import { ToggleSwitch } from "@/app/components/ui/ToggleSwitch";
+import { ThemeType, themeConfig } from '@/app/lib/theme';
 
 interface BadgeFormData {
   name: string;
@@ -18,6 +19,7 @@ interface BadgeFormProps {
   onSubmit: (data: BadgeFormData, requirements: any[]) => Promise<void>;
   initialData?: any;
   isEditMode?: boolean;
+  theme?: ThemeType;
 }
 
 const rarityMap: Record<string, number> = {
@@ -37,7 +39,7 @@ const comparisonMap: Record<string, string> = {
   'NOT_EQUAL': '!='
 };
 
-export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFormProps) {
+export function BadgeForm({ onSubmit, initialData, isEditMode = false, theme = 'blue' }: BadgeFormProps) {
   const [formData, setFormData] = useState<BadgeFormData>(() => {
     if (initialData) {
       return {
@@ -136,6 +138,14 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
     }
   };
 
+  const currentTheme = themeConfig[theme];
+
+  const inputStyles = `
+    w-full p-3 bg-slate-800/50 border border-slate-700/50 rounded-lg 
+    ${currentTheme.focus} focus:ring-2 focus:ring-opacity-20
+    transition-all text-white
+  `;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
@@ -145,7 +155,7 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full p-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-white"
+          className={inputStyles}
         />
 
         <textarea
@@ -153,7 +163,7 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
           required
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full p-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all min-h-[100px] text-white"
+          className={`${inputStyles} min-h-[100px]`}
         />
 
         <div className="space-y-2">
@@ -163,7 +173,7 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             className={`relative border-2 border-dashed rounded-lg p-6 cursor-pointer transition-all
-              ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 hover:border-blue-400'}
+              ${isDragging ? currentTheme.dragActive : `border-slate-700 ${currentTheme.dragHover}`}
               ${preview ? 'h-[200px]' : 'h-[120px]'}`}
           >
             <input
@@ -206,6 +216,7 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
               onChange={(hidden) => setFormData({ ...formData, hidden })}
               label="Hidden Badge"
               description="Hidden badges are not visible until unlocked"
+              theme={theme}
             />
           </div>
         </div>
@@ -214,12 +225,16 @@ export function BadgeForm({ onSubmit, initialData, isEditMode = false }: BadgeFo
       <RequirementSection
         requirements={requirements}
         setRequirements={setRequirements}
+        theme={theme}
       />
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-lg font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] text-white disabled:opacity-50"
+        className={`w-full p-4 ${currentTheme.gradient} ${currentTheme.gradientHover} 
+          rounded-lg font-semibold text-lg 
+          transition-all transform hover:scale-[1.02] active:scale-[0.98] 
+          text-white disabled:opacity-50`}
       >
         {loading ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Badge" : "Create Badge")}
       </button>
