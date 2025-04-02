@@ -1,6 +1,6 @@
 from rich.traceback import install
 
-from nexon.badge import BadgeManager
+from nexon import BadgeManager
 install()
 
 import traceback

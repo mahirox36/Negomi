@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Run Discord Bot",
+        "type": "shell",
+        "command": "python",
+        "args": [
+          "Main.py"  // Replace with the actual name of your bot script
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "silent", // Keeps terminal from opening automatically
+          "focus": false,
+          "panel": "shared"
+        }
+      }
+    ]
+  }
+  

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from modules.DiscordConfig import overwriteOwner
 from typing import TYPE_CHECKING, Optional
 from .baseModels import *
 from modules.DiscordConfig import config
@@ -8,6 +9,21 @@ if TYPE_CHECKING:
     from ...classes.Other.Dashboard import DashboardCog
 
 router = APIRouter()
+
+async def check_owner(request: Request):
+    backend: DashboardCog = request.app.state.backend
+    access_token = await backend.verify_auth(request)
+    if access_token in backend.user_cache:
+        user = backend.user_cache[access_token]
+    else:
+        user = await backend.rate_limited_request(
+            "/users/@me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        backend.user_cache[access_token] = user
+    user_id = int(user["id"])
+    if user_id != overwriteOwner and user_id != backend.client.owner_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
 @router.post("/discord/callback")
 async def discord_callback(request: Request,data: DiscordCallbackRequest):

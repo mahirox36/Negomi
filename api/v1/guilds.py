@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
+
+from .badges import *
 from .baseModels import *
 from .layout import pages
 from nexon import BadgeManager, Feature
@@ -250,3 +252,29 @@ async def disable_feature(guild_id: int, class_name: str):
 @router.get("/{guild_id}/features/{class_name}/status")
 async def get_feature_status(guild_id: int, class_name: str):
     return {"enabled": (await Feature.get_guild_feature(guild_id, class_name)).enabled}       
+
+
+@router.post("/{guild_id}/badges/create")
+async def create_badge(guild_id: int, request: Request, badge_request: CreateBadgeRequest):
+    """Create a new badge"""
+    return await createBadge(request, badge_request, guild_id)
+
+@router.get("/{guild_id}/badges")
+async def get_badges(guild_id: int, request: Request):
+    """Get all badges"""
+    return await getBadges(request, guild_id)
+
+@router.put("/{guild_id}/badges/{badge_id}")
+async def edit_badge(guild_id: int, badge_id: int, request: Request, request_badge: CreateBadgeRequest):
+    """Edit an existing badge"""
+    return await editBadge(badge_id, request, request_badge, guild_id)
+
+@router.delete("/{guild_id}/badges/{badge_id}")
+async def delete_badge(guild_id: int, badge_id: int, request: Request):
+    """Delete a badge"""
+    return await deleteBadge(badge_id, request, guild_id)
+
+@router.get("/{guild_id}/badges/{badge_id}")
+async def get_badge(guild_id: int, badge_id: int, request:Request):
+    """Get detailed information about a specific badge"""
+    return await getBadge(badge_id, request, guild_id)
