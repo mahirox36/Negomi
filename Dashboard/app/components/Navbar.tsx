@@ -19,10 +19,14 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+  const hasMounted = useRef(false);
+
   const profileRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  const isDashboard = pathname.includes("/dashboard");
+  const isAdminPage = pathname.includes("/admin");
 
   // Navigation items definition
   const baseNavItems = [
@@ -37,27 +41,52 @@ export default function Navbar() {
     : baseNavItems;
 
   // Check if we're on the current page
-  const isActive = useCallback((path: string) => pathname === path, [pathname]);
+  const isActive = useCallback(
+    (path: string) => {
+      if (path === "/") {
+        return pathname === "/";
+      }
+      return pathname.startsWith(path);
+    },
+    [pathname]
+  );
 
   // Handle scroll effects
   useEffect(() => {
+    hasMounted.current = true;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (hasMounted.current) {
+        setIsScrolled(window.scrollY > 20);
+      }
     };
 
     handleScroll(); // Initial check
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      hasMounted.current = false;
+    };
   }, []);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
         setIsProfileOpen(false);
       }
-      if (menuRef.current && !menuRef.current.contains(event.target as Node) && 
-      !(event.target instanceof Element && event.target.matches('button[name="Hamburger Menu"], button[name="Hamburger Menu"] *'))) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(
+          event.target instanceof Element &&
+          event.target.matches(
+            'button[name="Hamburger Menu"], button[name="Hamburger Menu"] *'
+          )
+        )
+      ) {
         setIsMenuOpen(false);
       }
     };
@@ -81,7 +110,7 @@ export default function Navbar() {
 
       // Try to get from localStorage first
       const cachedStatus = localStorage.getItem("isOwner");
-      
+
       if (cachedStatus !== null) {
         setIsOwner(cachedStatus === "true");
         return;
@@ -91,9 +120,9 @@ export default function Navbar() {
         const response = await fetch("/api/v1/admin/is_owner", {
           credentials: "include",
         });
-        
+
         if (!response.ok) throw new Error("Failed to fetch owner status");
-        
+
         const data = await response.json();
         setIsOwner(Boolean(data.is_owner));
         localStorage.setItem("isOwner", String(data.is_owner));
@@ -136,9 +165,15 @@ export default function Navbar() {
   return (
     <motion.nav
       initial={{ y: -100 }}
-      animate={{ 
+      animate={{
         y: 0,
-        backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0)" 
+        backgroundColor: isAdminPage
+          ? "rgba(17, 24, 39, 1)"
+          : isDashboard
+          ? "rgba(255, 255, 255, 0.1)"
+          : hasMounted.current && isScrolled
+          ? "rgba(255, 255, 255, 0.1)"
+          : "rgba(255, 255, 255, 0)",
       }}
       transition={{ duration: 0.3 }}
       className="fixed w-full z-50 backdrop-blur-lg"
@@ -161,60 +196,54 @@ export default function Navbar() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-4">
               {navItems.map((item) => (
-                <motion.div
-                  key={item.path}
-                  className="relative"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 17
-                  }}
-                >
-                  <Link
-                    href={item.path}
+                <Link key={item.path} href={item.path}>
+                  <motion.div
                     className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                      group hover:text-white flex items-center ${
-                      isActive(item.path)
-                        ? "text-white"
-                        : "text-gray-300"
-                    }`}
+              group hover:text-white flex items-center ${
+                isActive(item.path) ? "text-white" : "text-gray-300"
+              }`}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 17,
+                    }}
                   >
-                    <span className="relative z-10">
+                    <span className="relative z-10 pointer-events-none">
                       {item.label}
                       <motion.span
-                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-white/70 rounded-full"
+                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-white/70 rounded-full pointer-events-none"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: isActive(item.path) ? 1 : 0 }}
                         transition={{ duration: 0.2 }}
                       />
                     </span>
-                  </Link>
-                  
-                  <AnimatePresence>
-                    {isActive(item.path) && (
-                      <motion.div
-                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/20 to-white/10"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        style={{
-                          boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)",
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
 
-                  <motion.div
-                    className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    initial={false}
-                    whileHover={{
-                      opacity: 1,
-                      boxShadow: "0 0 20px rgba(255, 255, 255, 0.15)"
-                    }}
-                  />
-                </motion.div>
+                    <AnimatePresence>
+                      {isActive(item.path) && (
+                        <motion.div
+                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/20 to-white/10"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          style={{
+                            boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)",
+                          }}
+                        />
+                      )}
+                    </AnimatePresence>
+
+                    <motion.div
+                      className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      initial={false}
+                      whileHover={{
+                        opacity: 1,
+                        boxShadow: "0 0 20px rgba(255, 255, 255, 0.15)",
+                      }}
+                    />
+                  </motion.div>
+                </Link>
               ))}
             </div>
           </div>
@@ -231,9 +260,7 @@ export default function Navbar() {
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="flex items-center space-x-2">
-                    <span className="text-white hidden md:inline text-sm">
-                      {user.global_name || user.username}
-                    </span>
+                    <span className="text-white hidden md:inline text-sm"></span>
                     <motion.svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -266,7 +293,11 @@ export default function Navbar() {
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 25,
+                      }}
                       className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white/10 backdrop-blur-lg ring-1 ring-white/10 overflow-hidden"
                     >
                       <div className="py-1">
@@ -313,7 +344,11 @@ export default function Navbar() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  animate={{ d: isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16" }}
+                  animate={{
+                    d: isMenuOpen
+                      ? "M6 18L18 6M6 6l12 12"
+                      : "M4 6h16M4 12h16M4 18h16",
+                  }}
                   transition={{ duration: 0.2 }}
                 />
               </svg>
@@ -330,11 +365,11 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 300, 
+            transition={{
+              type: "spring",
+              stiffness: 300,
               damping: 30,
-              opacity: { duration: 0.2 } 
+              opacity: { duration: 0.2 },
             }}
             className="md:hidden overflow-hidden"
           >

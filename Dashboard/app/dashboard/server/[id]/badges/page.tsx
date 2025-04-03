@@ -28,6 +28,7 @@ export default function ServerBadgesPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewBadge, setPreviewBadge] = useState<Badge | null>(null);
+  const [badgeLimit] = useState(8);
 
   useEffect(() => {
     fetchBadges();
@@ -65,12 +66,12 @@ export default function ServerBadgesPage() {
 
   useEffect(() => {
     if (previewBadge) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [previewBadge]);
 
@@ -83,15 +84,33 @@ export default function ServerBadgesPage() {
           className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
         >
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-              Server Badges
-            </h1>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                Server Badges
+              </h1>
+              <p className="text-neutral-400 text-sm mt-2">
+                {badges.length}/{badgeLimit} badges created
+              </p>
+            </div>
             <Link
               href={`/dashboard/server/${serverId}/badges/create`}
-              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors flex items-center space-x-2"
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                badges.length >= badgeLimit
+                  ? "bg-neutral-500 cursor-not-allowed"
+                  : "bg-indigo-500 hover:bg-indigo-600"
+              }`}
+              onClick={(e) => {
+                if (badges.length >= badgeLimit) {
+                  e.preventDefault();
+                }
+              }}
             >
               <i className="fas fa-plus text-sm" />
-              <span>Create Badge</span>
+              <span>
+                {badges.length >= badgeLimit
+                  ? "Badge Limit Reached"
+                  : "Create Badge"}
+              </span>
             </Link>
           </div>
 
@@ -195,7 +214,9 @@ export default function ServerBadgesPage() {
                             {previewBadge.description}
                           </p>
                           <div className="flex items-center space-x-2 mt-2">
-                            <span className="text-xs text-neutral-400">ID:</span>
+                            <span className="text-xs text-neutral-400">
+                              ID:
+                            </span>
                             <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
                               {previewBadge.id}
                             </code>

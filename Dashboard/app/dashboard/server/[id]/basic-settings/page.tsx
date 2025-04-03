@@ -1,12 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import LoadingScreen from "@/app/components/LoadingScreen";
-import AccessDenied from "@/app/components/forbidden";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useColorPickerRefs } from "@/hooks/useColorPickerRefs";
 import ColorPicker from "@/app/components/ColorPicker";
-import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
 import axios from "axios";
 import SettingsLayout from "../../../../components/ServerLayout";
@@ -32,59 +29,44 @@ type LayoutItem = {
 
 export default function BasicSettings() {
   const params = useParams();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [pageLayout, setPageLayout] = useState<LayoutItem[]>([]);
   const [currentValues, setCurrentValues] = useState<any>(null);
   const [originalValues, setOriginalValues] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const { getRef } = useColorPickerRefs();
+  const isLoading = useRef(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const response = await fetch(`/api/v1/guilds/${params.id}/is_admin`, {
-          method: "POST",
-          credentials: "include",
-        });
-
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-
-        if (!response.ok || !data.isAdmin) {
-          setError(data.detail || "You don't have permission to access this page");
-          setIsAdmin(false);
-        }
-      } catch (error) {
-        console.error("Admin check error:", error);
-        setIsAdmin(false);
-        setError(error instanceof Error ? error.message : "Failed to check permissions");
-      }
-    };
+    if (isLoading.current) return;
+    isLoading.current = true;
 
     const fetchPageLayout = async () => {
       try {
-        const response = await fetch(`/api/v1/layout/settings/server/basic-settings`);
-        const layoutData = await response.json();
-        setPageLayout(Array.isArray(layoutData) ? layoutData : layoutData.layout || []);
+        const [layoutRes, settingsRes] = await Promise.all([
+          fetch(`/api/v1/layout/settings/server/basic-settings`),
+          axios.get(`/api/v1/guilds/${params.id}/settings/basic-settings`, {
+            withCredentials: true,
+          }),
+        ]);
 
-        const settingsResponse = await axios.get(
-          `/api/v1/guilds/${params.id}/settings/basic-settings`,
-          { withCredentials: true }
+        const layoutData = await layoutRes.json();
+        setPageLayout(
+          Array.isArray(layoutData) ? layoutData : layoutData.layout || []
         );
 
-        if (settingsResponse.data?.settings) {
-          setCurrentValues(settingsResponse.data.settings);
-          setOriginalValues(settingsResponse.data.settings);
+        if (settingsRes.data?.settings) {
+          setCurrentValues(settingsRes.data.settings);
+          setOriginalValues(settingsRes.data.settings);
         }
       } catch (error) {
         console.error("Failed to fetch layout or settings:", error);
         setPageLayout([]);
+      } finally {
+        isLoading.current = false;
       }
     };
 
-    checkAdminStatus();
     fetchPageLayout();
   }, [params.id]);
 
@@ -118,9 +100,12 @@ export default function BasicSettings() {
 
   const handleReset = async () => {
     try {
-      await axios.delete(`/api/v1/guilds/${params.id}/settings/basic-settings`, {
-        withCredentials: true,
-      });
+      await axios.delete(
+        `/api/v1/guilds/${params.id}/settings/basic-settings`,
+        {
+          withCredentials: true,
+        }
+      );
 
       const newDefaults = pageLayout.reduce((acc: any, section) => {
         if (section.type === "panel" && section.settings) {
@@ -240,19 +225,6 @@ export default function BasicSettings() {
     }
   };
 
-  if (isAdmin === null) {
-    return <LoadingScreen message="Checking Permissions" />;
-  }
-
-  if (!isAdmin) {
-    return (
-      <AccessDenied
-        error={new Error(error || "You don't have permission to access this page")}
-        reset={() => window.location.reload()}
-      />
-    );
-  }
-
   return (
     <SettingsLayout
       serverId={params.id as string}
@@ -273,14 +245,18 @@ export default function BasicSettings() {
                   <div className="flex items-center gap-4">
                     {item.icon && (
                       <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
-                        <i className={`${item.icon} text-2xl text-white/90`}></i>
+                        <i
+                          className={`${item.icon} text-2xl text-white/90`}
+                        ></i>
                       </div>
                     )}
                     <div>
                       <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                         {item.text}
                       </h1>
-                      <p className="text-lg text-white/70 mt-1">{item.subtext}</p>
+                      <p className="text-lg text-white/70 mt-1">
+                        {item.subtext}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -295,14 +271,18 @@ export default function BasicSettings() {
                     <div className="flex items-center gap-4">
                       {item.icon && (
                         <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
-                          <i className={`${item.icon} text-xl text-white/90`}></i>
+                          <i
+                            className={`${item.icon} text-xl text-white/90`}
+                          ></i>
                         </div>
                       )}
                       <div>
                         <h2 className="text-xl font-semibold text-white">
                           {item.text}
                         </h2>
-                        <p className="text-sm text-white/70 mt-1">{item.subtext}</p>
+                        <p className="text-sm text-white/70 mt-1">
+                          {item.subtext}
+                        </p>
                       </div>
                     </div>
                   </div>

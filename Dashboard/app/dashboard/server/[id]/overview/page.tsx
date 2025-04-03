@@ -1,8 +1,6 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import LoadingScreen from "@/app/components/LoadingScreen";
-import AccessDenied from "@/app/components/forbidden";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SettingsLayout from "../../../../components/ServerLayout";
@@ -17,7 +15,7 @@ type Button = {
 };
 
 type LayoutItem = {
-  type: 'header' | 'cards';
+  type: "header" | "cards";
   text: string;
   subtext?: string;
   icon?: string;
@@ -26,32 +24,10 @@ type LayoutItem = {
 
 export default function Overview() {
   const params = useParams();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [pageLayout, setPageLayout] = useState<LayoutItem[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const response = await fetch(`/api/v1/guilds/${params.id}/is_admin`, {
-          method: "POST",
-          credentials: "include",
-        });
-
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-        
-        if (!response.ok || !data.isAdmin) {
-          setError(data.detail || "You don't have permission to access this page");
-          setIsAdmin(false);
-        }
-      } catch (error) {
-        setIsAdmin(false);
-        setError(error instanceof Error ? error.message : "Failed to check permissions");
-      }
-    };
-
     const fetchPageLayout = async () => {
       try {
         const response = await fetch(`/api/v1/layout/settings/server/overview`);
@@ -63,24 +39,8 @@ export default function Overview() {
       }
     };
 
-    checkAdminStatus();
     fetchPageLayout();
-  }, [params.id]);
-
-  // Early return for loading state
-  if (isAdmin === null) {
-    return <LoadingScreen message="Checking Permissions" />;
-  }
-
-  // Early return for access denied
-  if (!isAdmin) {
-    return (
-      <AccessDenied 
-        error={new Error(error || "You don't have permission to access this page")}
-        reset={() => window.location.reload()}
-      />
-    );
-  }
+  }, []);
 
   return (
     <SettingsLayout serverId={params.id as string}>
@@ -96,14 +56,18 @@ export default function Overview() {
                   <div className="flex items-center gap-4">
                     {item.icon && (
                       <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
-                        <i className={`${item.icon} text-2xl text-white/90`}></i>
+                        <i
+                          className={`${item.icon} text-2xl text-white/90`}
+                        ></i>
                       </div>
                     )}
                     <div>
                       <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                         {item.text}
                       </h1>
-                      <p className="text-lg text-white/70 mt-1">{item.subtext}</p>
+                      <p className="text-lg text-white/70 mt-1">
+                        {item.subtext}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -117,7 +81,11 @@ export default function Overview() {
                   {item.buttons?.map((button: Button, buttonIndex: number) => (
                     <div
                       key={buttonIndex}
-                      onClick={() => router.push(`/dashboard/server/${params.id}/${button.link}`)}
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/server/${params.id}/${button.link}`
+                        )
+                      }
                       className="group relative overflow-hidden p-6 bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -132,7 +100,9 @@ export default function Overview() {
                             {button.text}
                           </h3>
                         </div>
-                        <p className="text-white/70 text-sm mb-4">{button.subtext}</p>
+                        <p className="text-white/70 text-sm mb-4">
+                          {button.subtext}
+                        </p>
                         {button.buttonText && (
                           <span className="inline-flex items-center px-4 py-2 bg-white/10 rounded-lg text-sm text-white group-hover:bg-white/20 transition-colors">
                             {button.buttonText}
