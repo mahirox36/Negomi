@@ -56,7 +56,15 @@
     "**/Thumbs.db": true,
     "**/.sync": true,
     "**/builds": true,
-    "**/logs": true
+    "**/logs": true,
+    "**/.next": true,
+    "**/node_modules": true,
+    "migrations/": true,
+    "Data/": true,
+    "pyproject.toml": true,
+    ".gitmodules": true,
+    ".env": true,
+    "Ollama/": true,
   },
   "python.analysis.typeCheckingMode": "basic",
   "material-icon-theme.folders.associations": {
@@ -72,9 +80,9 @@
     "terms": "Tasks",
     "privacy": "Aurelia",
     "badges": "Proto",
-    "[id]" : "Json",
-    "[page]" : "Json",
-    "create" : "Download",
-    "edit" : "Upload",
-  },
+    "[id]": "Json",
+    "[page]": "Json",
+    "create": "Download",
+    "edit": "Upload"
+  }
 }

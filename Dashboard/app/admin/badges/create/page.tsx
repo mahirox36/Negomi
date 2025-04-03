@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BadgeForm } from "../../../components/badge/BadgeForm";
+import toast from "react-hot-toast";
 
 export default function CreateBadgePage() {
   const router = useRouter();
@@ -31,8 +32,8 @@ export default function CreateBadgePage() {
 
       router.push("/admin/badges");
     } catch (error) {
-      console.error("Error creating badge:", error);
-      alert(error instanceof Error ? error.message : "Failed to create badge");
+      console.error("Error creating badge:", error);  
+      toast.error("Failed to reset settings");(error instanceof Error ? error.message : "Failed to create badge");
     }
   };
 

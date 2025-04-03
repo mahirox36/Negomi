@@ -85,24 +85,24 @@ async def get_admin_stats(request: Request):
 @router.post("/badges/create")
 async def create_badge(request: Request, badge_request: CreateBadgeRequest):
     """Create a new badge"""
-    await createBadge(request, badge_request)
+    return await createBadge(request, badge_request)
 
 @router.get("/badges")
 async def get_badges(request: Request):
     """Get all badges"""
-    await getBadges(request)
+    return await getBadges(request)
 
 @router.put("/badges/{badge_id}")
 async def edit_badge(badge_id: int, request: Request, request_badge: CreateBadgeRequest):
     """Edit an existing badge"""
-    await editBadge(badge_id, request, request_badge)
+    return await editBadge(badge_id, request, request_badge)
 
 @router.delete("/badges/{badge_id}")
 async def delete_badge(badge_id: int, request: Request):
     """Delete a badge"""
-    await deleteBadge(badge_id, request)
+    return await deleteBadge(badge_id, request)
 
 @router.get("/badges/{badge_id}")
 async def get_badge(badge_id: int, request:Request):
     """Get detailed information about a specific badge"""
-    await getBadge(badge_id, request)
+    return await getBadge(badge_id, request)

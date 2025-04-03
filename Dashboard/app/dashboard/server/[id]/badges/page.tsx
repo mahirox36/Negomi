@@ -63,9 +63,20 @@ export default function ServerBadgesPage() {
     }
   };
 
+  useEffect(() => {
+    if (previewBadge) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [previewBadge]);
+
   return (
     <SettingsLayout serverId={params.id as string}>
-      <div className="container mx-auto">
+      <div className="container mx-auto min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -144,18 +155,16 @@ export default function ServerBadgesPage() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setPreviewBadge(null)}
-                  className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-                  style={{ top: "4rem" }}
+                  className="fixed top-0 left-0 w-full h-full bg-black/70 backdrop-blur-sm z-40"
                 />
 
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  className="fixed inset-0 flex items-start justify-center"
-                  style={{ top: "4rem", height: "calc(100vh - 4rem)" }}
+                  className="fixed inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center z-50 px-4"
                 >
-                  <motion.div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-2xl p-6 max-w-lg w-full m-4 shadow-2xl overflow-y-auto max-h-[calc(100vh-8rem)]">
+                  <motion.div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-2xl p-6 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">

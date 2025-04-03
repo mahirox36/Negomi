@@ -22,3 +22,5 @@ Roadmap/
 DataOLD/
 notes.*
 Nexon2
+.env
+migrations

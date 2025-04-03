@@ -172,15 +172,10 @@ class DiscordBot(commands.Bot):
         """Handler for when the bot is ready."""
         if not hasattr(self, '_ready_called'):
             self._ready_called = True
-            await nexon.init_db(
-                config.database.username,
-                config.database.password,
-                config.database.host,
-                config.database.port,
-                config.database.db_name,
-                config.database.database
-                )
-            
+            database_url = f"postgres://{config.database.username}:{config.database.password}@{config.database.host}:{config.database.port}/{config.database.db_name}"
+            with open(".env", "w") as env_file:
+                env_file.write(f"DATABASE_URL={database_url}\n")
+            await nexon.init_db()
             await self.change_presence(
                 activity=nexon.Activity(
                     type=nexon.ActivityType.watching,
