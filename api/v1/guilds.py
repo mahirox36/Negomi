@@ -7,7 +7,7 @@ from .baseModels import *
 from .layout import pages
 from nexon import BadgeManager, Feature
 if TYPE_CHECKING:
-    from ...classes.Other.Dashboard import DashboardCog
+    from classes.Other.Dashboard import DashboardCog
 
 router = APIRouter()
 
@@ -176,7 +176,6 @@ async def get_settings(guild_id: int, page: str, request: Request):
                         saved_value = featureManager.get_setting(setting["name"])
                         # If no saved value, use the default value from pages
                         settings[setting["name"]] = saved_value if saved_value is not None else setting["value"]
-                        backend.logger.info(f"Loading setting {setting['name']}: {settings[setting['name']]} (saved: {saved_value}, default: {setting['value']})")
         
         return {"settings": settings}
     except Exception as e:

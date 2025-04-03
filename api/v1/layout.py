@@ -7,7 +7,7 @@ from .baseModels import *
 from nexon.enums import RequirementType
 
 if TYPE_CHECKING:
-    from ...classes.Other.Dashboard import DashboardCog
+    from classes.Other.Dashboard import DashboardCog
     
 class Types(StrEnum):
     header = "header"
@@ -169,7 +169,6 @@ async def get_sidebar():
                     "icon": "fa-solid fa"
                 }
             ]
-            # React Adds another Section of Servers
     }
 
 @router.get("/settings/server/sidebar")
@@ -189,11 +188,11 @@ async def get_server_sidebar():
                 }
             ],
             "Features": [
-                {
-                    "name": "AI",
-                    "link": "ai",
-                    "icon": "fa-solid fa-robot"
-                },
+                # {
+                #     "name": "AI",
+                #     "link": "ai",
+                #     "icon": "fa-solid fa-robot"
+                # },
                 {
                     "name": "Auto Role",
                     "link": "auto-role",

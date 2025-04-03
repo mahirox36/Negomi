@@ -12,13 +12,21 @@ from nexon.badge import BadgeManager
 import logging
 
 if TYPE_CHECKING:
-    from ...classes.Other.Dashboard import DashboardCog
+    from classes.Other.Dashboard import DashboardCog
     
 async def getGuild(client: Bot, id: Optional[int]):
     guild = client.get_guild(1262297191884521514) if not id else client.get_guild(id)
     if not guild:
         guild = await client.fetch_guild(1262297191884521514) if not id else await client.fetch_guild(id)
     return guild
+
+async def check_guild(guild_id: int):
+    badges = await BadgeManager(guild_id).get_all_badges() or []
+    if len(badges) >= 8:
+        raise HTTPException(
+            status_code=403,
+            detail="You have exceeded the maximum badge limit for the Free Tier."
+        )
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("bot")
@@ -28,7 +36,9 @@ async def createBadge(request: Request, badge_request: CreateBadgeRequest, guild
     backend: DashboardCog = request.app.state.backend
     try:
         # Convert dictionary requirements to BadgeRequirement objects
-        if not guild_id:
+        if guild_id:
+            await check_guild(guild_id)
+        elif request:
             await check_owner(request)
         
         requirements: list[tuple[RequirementType, ComparisonType, str]] = [
@@ -59,7 +69,7 @@ async def createBadge(request: Request, badge_request: CreateBadgeRequest, guild
         # Capture and re-raise HTTP exceptions with more detail
         raise HTTPException(
             status_code=http_error.status_code,
-            detail=f"Error: {http_error.detail}. Please check the badge ID or guild ID."
+            detail=http_error.detail
         )
     
     except Exception as e:
@@ -95,7 +105,7 @@ async def getBadges(request: Request, guild_id: Optional[int] = None):
         # Capture and re-raise HTTP exceptions with more detail
         raise HTTPException(
             status_code=http_error.status_code,
-            detail=f"Error: {http_error.detail}. Please check the badge ID or guild ID."
+            detail=http_error.detail
         )
     
     except Exception as e:
@@ -173,7 +183,7 @@ async def editBadge(badge_id: int, request: Request, request_badge: CreateBadgeR
         # Capture and re-raise HTTP exceptions with more detail
         raise HTTPException(
             status_code=http_error.status_code,
-            detail=f"Error: {http_error.detail}. Please check the badge ID or guild ID."
+            detail=http_error.detail
         )
     
     except Exception as e:
@@ -213,7 +223,7 @@ async def deleteBadge(badge_id: int, request: Request, guild_id: Optional[int] =
         # Capture and re-raise HTTP exceptions with more detail
         raise HTTPException(
             status_code=http_error.status_code,
-            detail=f"Error: {http_error.detail}. Please check the badge ID or guild ID."
+            detail=http_error.detail
         )
     
     except Exception as e:
@@ -239,7 +249,7 @@ async def getBadge(badge_id: int, request:Request, guild_id: Optional[int] = Non
         # Capture and re-raise HTTP exceptions with more detail
         raise HTTPException(
             status_code=http_error.status_code,
-            detail=f"Error: {http_error.detail}. Please check the badge ID or guild ID."
+            detail=http_error.detail
         )
     
     except Exception as e:
