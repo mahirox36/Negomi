@@ -81,7 +81,7 @@ class BirthdayModal(Modal):
             if date > datetime.now():
                 return await interaction.response.send_message("Birthday cannot be in the future!", ephemeral=True)
                 
-            userData = await UserManager.from_user(interaction.user)
+            userData = await interaction.user.get_data()
             await userData.set_birthdate(date)
             
             await interaction.response.send_message("Birthday set successfully!", ephemeral=True)
@@ -93,7 +93,7 @@ class UserInfoPanel(View):
         super().__init__(timeout=900)
         self.user = user
 
-    def create_info_embed(self, data: 'UserData') -> Embed:
+    def create_info_embed(self, data: Union['UserData', MemberData]) -> Embed:
         embed = Embed(title="User Information", color=colors.Info.value)
         embed.add_field(name="Name", value=f"`{data.name}`")
         embed.add_field(name="Joined Discord", value=f"`{data.created_at}`")

@@ -58,6 +58,7 @@ async def is_owner(request: Request):
 async def get_admin_stats(request: Request):
     """Get detailed bot statistics for admin"""
     backend: DashboardCog = request.app.state.backend
+    await check_owner(request)
     try:
         # Get total badges
         badge_manager = BadgeManager()
@@ -106,3 +107,28 @@ async def delete_badge(badge_id: int, request: Request):
 async def get_badge(badge_id: int, request:Request):
     """Get detailed information about a specific badge"""
     return await getBadge(badge_id, request)
+
+@router.get("/guilds")
+async def get_guilds(request: Request):
+    """Get summary of all guilds"""
+    backend: DashboardCog = request.app.state.backend
+    await check_owner(request)
+    return {
+        "guilds": [
+            {
+                "id": guild.id,
+                "name": guild.name,
+                "member_count": guild.member_count,
+                "icon_url": str(guild.icon.url) if guild.icon else None,
+                "owner_id": guild.owner_id,
+                "boost_level": guild.premium_tier,
+                "boost_count": guild.premium_subscription_count,
+                "verification_level": str(guild.verification_level),
+                "features": guild.features,
+                "created_at": guild.created_at.timestamp(),
+                "channel_count": len(guild.channels),
+                "role_count": len(guild.roles),
+                "emoji_count": len(guild.emojis)
+            } for guild in backend.client.guilds
+        ]
+    }

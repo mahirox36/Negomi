@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
+from nexon import ChannelType
 
 from .badges import *
 from .baseModels import *
@@ -13,8 +14,13 @@ router = APIRouter()
 
 @router.get("/")
 async def get_guilds(request: Request):
-    """Get summary of all guilds"""
+    """Get summary of the top 10 most popular guilds by member count"""
     backend: DashboardCog = request.app.state.backend
+    guilds = sorted(
+        backend.client.guilds, 
+        key=lambda g: g.member_count if g.member_count is not None else 0, 
+        reverse=True
+    )[:10]
     return {
         "guilds": [
             {
@@ -31,7 +37,7 @@ async def get_guilds(request: Request):
                 "channel_count": len(guild.channels),
                 "role_count": len(guild.roles),
                 "emoji_count": len(guild.emojis)
-            } for guild in backend.client.guilds
+            } for guild in guilds
         ]
     }
 
@@ -133,18 +139,64 @@ async def get_guild_channels_names(guild_id: int, request: Request):
 async def get_guild_channels(guild_id: int, request: Request):
     """Get channels for a specific guild"""
     backend: DashboardCog = request.app.state.backend
-    guild = await backend.get_guild(guild_id)
-    
-    return {
-        "channels": [
-            {
-                "id": channel.id,
-                "name": channel.name,
-                "type": str(channel.type),
-                "position": channel.position
-            } for channel in guild.channels
-        ]
-    }
+    try:
+        guild = await backend.get_guild(guild_id)
+        channels = []
+        
+        for channel in guild.channels:
+            # Filter out categories and threads
+            if channel.type not in [ChannelType.category, ChannelType.forum]:
+                channels.append({
+                    "id": str(channel.id),
+                    "name": channel.name,
+                    "type": str(channel.type),
+                    "position": channel.position,
+                    "category": str(channel.category_id) if channel.category_id else None,
+                    "is_nsfw": getattr(channel, 'is_nsfw', lambda: False)()
+                })
+        
+        # Sort channels by position and name
+        channels.sort(key=lambda x: (x["position"], x["name"]))
+        return channels
+        
+    except Exception as e:
+        backend.logger.error(f"Error fetching channels: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch channels")
+
+@router.get("/{guild_id}/roles")
+async def get_guild_roles(guild_id: int, request: Request):
+    """Get roles for a specific guild"""
+    backend: DashboardCog = request.app.state.backend
+    try:
+        guild = await backend.get_guild(guild_id)
+        roles = []
+        
+        for role in guild.roles:
+            # Filter out @everyone role and include only assignable roles
+            if not role.is_default() and not role.is_assignable():
+                if not role.icon:
+                    role_icon = None
+                else:
+                    role_icon = role.icon.url if not isinstance(role.icon, str) else role.icon
+                color = f"#{role.color.value:06x}" 
+                roles.append({
+                    "id": str(role.id),
+                    "name": role.name,
+                    "position": role.position,
+                    "color": color,
+                    "mentionable": role.mentionable,
+                    "managed": role.managed,
+                    "permissions": role.permissions.value,
+                    "icon": role_icon,
+                })
+        
+        # Sort roles by position (highest first) and name
+        roles.sort(key=lambda x: (-x["position"], x["name"]))
+        return roles
+        
+    except Exception as e:
+        backend.logger.error(f"Error fetching roles: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch roles")
 
 @router.get("/{guild_id}/joined")
 async def get_joined_guilds(guild_id: int, request: Request) -> bool:
@@ -164,23 +216,29 @@ async def get_settings(guild_id: int, page: str, request: Request):
     """Get saved settings for a specific page"""
     backend: DashboardCog = request.app.state.backend
     try:
-        featureManager = await Feature.get_guild_feature(guild_id, page.replace("%20", " "))
+        featureManager = await Feature.get_guild_feature(guild_id, page.replace("-", "_"))
         settings = {}
         
         # Get the page layout
-        normalized_page = page.replace("%20", " ")
+        normalized_page = page.replace("-", "_")
         if normalized_page in pages:
             for item in pages[normalized_page]:
                 if item["type"] == "panel":
                     for setting in item.get("settings", []):
-                        saved_value = featureManager.get_setting(setting["name"])
-                        # If no saved value, use the default value from pages
-                        settings[setting["name"]] = saved_value if saved_value is not None else setting["value"]
-        
+                        setting_name = setting["name"]
+                        saved_value = await featureManager.get_setting(setting_name)
+                        
+                        # Handle different setting types
+                        if setting.get("multiple", False):
+                            settings[setting_name] = saved_value if saved_value else []
+                        else:
+                            settings[setting_name] = saved_value if saved_value is not None else setting.get("value")
+
         return {"settings": settings}
+        
     except Exception as e:
         backend.logger.error(f"Error getting settings: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{guild_id}/settings/{page}")
 async def save_settings(guild_id: int, page: str, request: Request):
@@ -189,15 +247,27 @@ async def save_settings(guild_id: int, page: str, request: Request):
     try:
         data = await request.json()
         settings = data.get("settings", {})
-        featureManager = await Feature.get_guild_feature(guild_id, page)
         
+        # Normalize page name for feature manager
+        normalized_page = page.replace("-", "_")
+        featureManager = await Feature.get_guild_feature(guild_id, normalized_page)
+        
+        # Validate and save each setting
         for setting_name, value in settings.items():
+            # Convert empty arrays to None for storage
+            if isinstance(value, list) and not value:
+                value = None
             await featureManager.set_setting(setting_name, value)
         
-        return {"success": True}
+        # Enable the feature if it's not already enabled
+        if not featureManager.enabled:
+            await featureManager.enable()
+        
+        return {"success": True, "message": "Settings saved successfully"}
+        
     except Exception as e:
         backend.logger.error(f"Error saving settings: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{guild_id}/settings/{page}")
 async def delete_settings(guild_id: int, page: str):

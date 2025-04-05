@@ -229,6 +229,24 @@ class DashboardCog(commands.Cog):
                 raise HTTPException(status_code=404, detail="Guild not found")
         return guild
 
+    async def get_user(self, user_id: int):
+        user = self.client.get_user(user_id)
+        if not user:
+            try:
+                user = await self.client.fetch_user(user_id)
+            except Exception as e:
+                raise HTTPException(status_code=404, detail="User not found")
+        return user
+    
+    async def get_channel(self, channel_id: int):
+        channel = self.client.get_channel(channel_id)
+        if not channel:
+            try:
+                channel = await self.client.fetch_channel(channel_id)
+            except Exception as e:
+                raise HTTPException(status_code=404, detail="Channel not found")
+        return channel
+
     async def get_session(self) -> ClientSession:
         if self.session is None or self.session.closed:
             self.session = ClientSession(timeout=ClientTimeout(total=10))

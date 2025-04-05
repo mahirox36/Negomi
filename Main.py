@@ -67,12 +67,12 @@ class DiscordBot(commands.Bot):
             return await super().on_interaction(interaction)
         if not interaction.guild:
             return await super().on_interaction(interaction)
-        cog_name = command.parent_cog.__class__.__name__ 
-        if cog_name and FeatureManager(interaction.guild.id, cog_name).is_disabled():
-            await interaction.response.send_message(
-                embed=Embed.Error("This Feature is disabled", "Feature Disabled"),ephemeral=True
-            )
-            return
+        # cog_name = command.parent_cog.__class__.__name__
+        # if cog_name and FeatureManager(interaction.guild.id, cog_name).is_disabled():
+        #     await interaction.response.send_message(
+        #         embed=Embed.Error("This Feature is disabled", "Feature Disabled"),ephemeral=True
+        #     )
+        #     return
             
         await super().on_interaction(interaction)
             
@@ -249,10 +249,6 @@ class DiscordBot(commands.Bot):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
                 ephemeral=True)
-            return
-        elif isinstance(err, FeatureDisabled):
-            if err.send_error: await ctx.response.send_message(
-                embed=Embed.Error("This Feature is disabled","Feature Disabled",), ephemeral=True)
             return
         elif isinstance(err, MissingPermissions):
             missing = ", ".join(err.missing_permissions)

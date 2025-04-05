@@ -7,10 +7,9 @@ import nest_asyncio
 nest_asyncio.apply()
 
 
-from nexon import UserManager, UserData, Feature, ScopeType
+from nexon import MemberData, UserData, Feature, ScopeType
 from .DiscordConfig import *
 from .utils import extract_emojis, get_by_percent, remove_numbers, emoji, IDManager
-from .settings import FeatureManager, FeatureDisabled
 
 
 import logging

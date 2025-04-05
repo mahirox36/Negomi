@@ -99,9 +99,57 @@ async def get_user(request: Request):
             content={"detail": str(e.detail)}
         )
 
+@router.get("/user/dashboard")
+async def get_user_dashboard(request: Request):
+    """Get user dashboard information"""
+    backend: DashboardCog = request.app.state.backend
+    try:
+        access_token = await backend.verify_auth(request)
+        
+        # Fetch user data
+        if access_token not in backend.user_cache:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+        
+        # Fetch user's guilds
+        session = await backend.get_session()
+        async with session.get(
+            "https://discord.com/api/users/@me/guilds",
+            headers={"Authorization": f"Bearer {access_token}"}
+        ) as response:
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=response.status,
+                    detail="Failed to fetch guild information"
+                )
+            
+            guilds = await response.json()
+        
+        user = await backend.get_user(backend.user_cache[access_token]["id"])
+        userData = await user.get_data()
+        # Prepare dashboard data
+        # Total Message, Commands Used, and Guilds Count
+        dashboard_data = {
+            "guildsCount": len(guilds),
+            "totalMessages": userData.total_messages,
+            "commandsUsed": userData.commands_used_count,
+        }
+        
+        return JSONResponse(dashboard_data)
+    
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"detail": str(e.detail)}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An error occurred while fetching dashboard information"}
+        )
+
 @router.get("/user/guilds")
 async def get_user_guilds(request: Request):
-    """Get user's guilds"""
+    """Get user's guilds where the user is an admin"""
     backend: DashboardCog = request.app.state.backend
     try:
         access_token = await backend.verify_auth(request)
@@ -118,7 +166,13 @@ async def get_user_guilds(request: Request):
                 )
                 
             guilds = await response.json()
-            return {"guilds": guilds}
+            
+            # Filter guilds where the user is an admin
+            admin_guilds = [
+                guild for guild in guilds if (int(guild["permissions"]) & 0x8) == 0x8
+            ]
+            
+            return {"guilds": admin_guilds}
             
     except HTTPException as e:
         return JSONResponse(

@@ -1,6 +1,7 @@
 from datetime import datetime
 import platform
-from fastapi import APIRouter, Request, UploadFile, File
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 import psutil
 from typing import TYPE_CHECKING
 from modules.DiscordConfig import overwriteOwner
@@ -16,6 +17,24 @@ async def get_users(request: Request):
     if backend:
         return {"message": f"Bot is running as {backend.client.user}"}
     return {"error": "Client not available"}
+
+@router.get("/health")
+async def health_check(request: Request):
+    """Check if the bot is online and ready"""
+    try:
+        backend = request.app.state.backend
+        if not backend or not backend.client:
+            raise HTTPException(status_code=503, detail="Bot is not ready")
+            
+        return JSONResponse({
+            "status": "healthy",
+            "ready": True
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
 
 @router.get("/commands")
 async def get_commands(request: Request):
@@ -68,6 +87,7 @@ async def get_terms_and_services(request: Request):
         with open("Terms of Service.md", "r") as file:
             backend.terms_and_services = file.read()
         return backend.terms_and_services
+
 @router.get("/privacy-policy")
 async def get_privacy_policy(request: Request):
     """Get privacy policy"""
@@ -98,19 +118,27 @@ async def get_owner_pfp_url(request: Request):
         return {"url": None}
 
 @router.get("/pfp_url")
-async def get_bot_pfp_url(request: Request):
+async def get_bot_pfp(request: Request):
     """Get the bot's profile picture URL"""
-    backend: DashboardCog = request.app.state.backend
     try:
-        bot = backend.client.user
-        if not bot:
-            return {"url": None}
-        if bot.avatar:
-            return {"url": str(bot.avatar.url)}
-        else:
-            return {"url": None}
+        backend = request.app.state.backend
+        if not backend or not backend.client:
+            raise HTTPException(status_code=503, detail="Bot is not ready")
+        
+        bot_user = backend.client.user
+        if not bot_user:
+            raise HTTPException(status_code=503, detail="Bot user not available")
+
+        avatar_url = str(bot_user.avatar.url) if bot_user.avatar else None
+        
+        return JSONResponse({
+            "pfp_url": avatar_url
+        })
     except Exception as e:
-        return {"url": None}
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
 
 @router.post("/upload")
 async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):

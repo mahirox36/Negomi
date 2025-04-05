@@ -149,6 +149,42 @@ pages: Dict[str, List] = {
             ]
         }
     ],
+    "auto-role": [
+        {
+            "type": Types.header,
+            "text": "Auto Role",
+            "subtext": "Configure roles that are automatically assigned to new members",
+            "icon": "fa-solid fa-user-tag"
+        },
+        {
+            "type": Types.panel,
+            "text": "Member Auto Roles",
+            "subtext": "Roles that will be automatically assigned to new members when they join",
+            "icon": "fa-solid fa-users",
+            "settings": [
+                {
+                    "name": "userRoles",
+                    "type": "select",
+                    "multiple": True,
+                    "searchable": True
+                }
+            ]
+        },
+        {
+            "type": Types.panel,
+            "text": "Bot Auto Roles",
+            "subtext": "Roles that will be automatically assigned to new bots when they are added",
+            "icon": "fa-solid fa-robot",
+            "settings": [
+                {
+                    "name": "botRoles",
+                    "type": "select",
+                    "multiple": True,
+                    "searchable": True
+                }
+            ]
+        }
+    ]
 }
 
 @router.get("/settings/sidebar")
