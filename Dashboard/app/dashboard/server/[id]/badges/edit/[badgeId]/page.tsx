@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useParams } from "next/navigation";
 import { BadgeForm } from "@/app/components/badge/BadgeForm";
-import SettingsLayout from "@/app/components/ServerLayout";
+import { themeConfig } from "@/app/lib/theme";
 
 export default function EditServerBadgePage() {
   const params = useParams();
@@ -69,14 +69,13 @@ export default function EditServerBadgePage() {
   }
 
   return (
-    <SettingsLayout serverId={params.id as string}>
       <div className="container mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
         >
-          <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className={`text-4xl font-bold mb-8 bg-gradient-to-r ${themeConfig.purple.gradient} bg-clip-text text-transparent`}>
             Edit Server Badge
           </h1>
 
@@ -88,6 +87,5 @@ export default function EditServerBadgePage() {
           />
         </motion.div>
       </div>
-    </SettingsLayout>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useUser } from "../contexts/UserContext";
+import { useBackendCheck } from "../hooks/useBackendCheck";
 
 interface User {
   id: string;
@@ -15,6 +16,7 @@ interface User {
 
 export default function Navbar() {
   const { user } = useUser();
+  const { error: backendError } = useBackendCheck();
   const [isOwner, setIsOwner] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function Navbar() {
     { path: "/statistics", label: "Statistics" },
   ];
 
-  const navItems = isOwner
+  const navItems = (!backendError && isOwner)
     ? [...baseNavItems, { path: "/admin", label: "Admin" }]
     : baseNavItems;
 
@@ -103,16 +105,8 @@ export default function Navbar() {
   // Check owner status
   useEffect(() => {
     const checkOwnerStatus = async () => {
-      if (!user) {
+      if (!user || backendError) {
         setIsOwner(false);
-        return;
-      }
-
-      // Try to get from localStorage first
-      const cachedStatus = localStorage.getItem("isOwner");
-
-      if (cachedStatus !== null) {
-        setIsOwner(cachedStatus === "true");
         return;
       }
 
@@ -134,7 +128,7 @@ export default function Navbar() {
     };
 
     checkOwnerStatus();
-  }, [user]);
+  }, [user, backendError]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -158,8 +152,9 @@ export default function Navbar() {
 
   // Get avatar URL
   const getAvatarUrl = (user: User) => {
+    if (backendError) return "/default-avatar.png";
     const format = user.avatar?.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}`;
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}?size=1024`;
   };
 
   return (
@@ -260,7 +255,6 @@ export default function Navbar() {
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="flex items-center space-x-2">
-                    <span className="text-white hidden md:inline text-sm"></span>
                     <motion.svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -277,13 +271,20 @@ export default function Navbar() {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </motion.svg>
+                    <span className="text-white hidden md:inline text-sm">
+                      {user.global_name || user.username}
+                    </span>
                   </div>
                   <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all">
-                    <img
-                      src={getAvatarUrl(user)}
-                      alt="Avatar"
-                      className="h-full w-full object-cover"
-                    />
+                    {backendError ? (
+                      <div className="bg-gray-600 w-full h-full" />
+                    ) : (
+                      <img
+                        src={getAvatarUrl(user)}
+                        alt="Avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
                   </div>
                 </motion.div>
 
@@ -317,12 +318,29 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             ) : (
-              <Link
-                href="/api/v1/auth/discord/login"
-                className="text-white hover:text-gray-200 text-sm md:text-base font-medium transition-colors"
-              >
-                Login
-              </Link>
+              <div className="relative group">
+                <Link
+                  href={backendError ? "#" : "/api/v1/auth/discord/login"}
+                  className={`text-sm md:text-base font-medium transition-colors ${
+                    backendError
+                      ? "text-gray-500 cursor-not-allowed"
+                      : "text-white hover:text-gray-200"
+                  }`}
+                  onClick={(e) => backendError && e.preventDefault()}
+                >
+                  Login
+                </Link>
+                {backendError && (
+                  <div
+                    className="absolute -top-1 left-1/2 transform -translate-x-1/2 -translate-y-full 
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                  >
+                    <div className="bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                      Login unavailable - Bot is offline
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Mobile Menu Button */}

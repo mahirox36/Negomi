@@ -1,12 +1,18 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useColorPickerRefs } from "@/hooks/useColorPickerRefs";
 import ColorPicker from "@/app/components/ColorPicker";
+import ToggleSwitch from "@/app/components/form/ToggleSwitch";
+import DiscordSelect from "@/app/components/form/DiscordSelect";
+import TextInput from "@/app/components/form/TextInput";
+import Textarea from "@/app/components/form/Textarea";
+import SearchInput from "@/app/components/form/SearchInput";
+import MultiSelect from "@/app/components/form/MultiSelect";
 import toast from "react-hot-toast";
 import axios from "axios";
-import SettingsLayout from "../../../../components/ServerLayout";
+import { useLayout } from "@/app/contexts/LayoutContext";
 
 type Setting = {
   name: string;
@@ -17,6 +23,9 @@ type Setting = {
   min?: number;
   max?: number;
   step?: number;
+  multiline?: boolean;
+  placeholder?: string;
+  icon?: string;
 };
 
 type LayoutItem = {
@@ -29,13 +38,79 @@ type LayoutItem = {
 
 export default function BasicSettings() {
   const params = useParams();
+  const serverId = params.id;
+  const { setHasChanges } = useLayout();
   const [pageLayout, setPageLayout] = useState<LayoutItem[]>([]);
   const [currentValues, setCurrentValues] = useState<any>(null);
   const [originalValues, setOriginalValues] = useState<any>(null);
-  const [hasChanges, setHasChanges] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const { getRef } = useColorPickerRefs();
   const isLoading = useRef(false);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const settingsRes = await axios.get(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
+        withCredentials: true,
+      });
+
+      if (settingsRes.data?.settings) {
+        setCurrentValues(settingsRes.data.settings);
+        setOriginalValues(settingsRes.data.settings);
+        setHasChanges(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  }, [serverId, setHasChanges]);
+
+  const handleSave = useCallback(async (e?: CustomEvent) => {
+    e?.stopPropagation();
+
+    if (!currentValues) return;
+
+    try {
+      await axios.post(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
+        settings: currentValues,
+        withCredentials: true,
+      });
+      setOriginalValues(currentValues);
+      setHasChanges(false);
+      toast.success("Changes saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save changes");
+    }
+  }, [currentValues, serverId, setHasChanges]);
+
+  const handleRevert = useCallback((e?: CustomEvent) => {
+    e?.stopPropagation();
+
+    setCurrentValues(originalValues);
+    setHasChanges(false);
+  }, [originalValues, setHasChanges]);
+
+  useEffect(() => {
+    const saveHandler = (e: Event) => handleSave(e as CustomEvent);
+    const revertHandler = (e: Event) => handleRevert(e as CustomEvent);
+
+    window.addEventListener("saveChanges", saveHandler, { once: true });
+    window.addEventListener("revertChanges", revertHandler, { once: true });
+
+    return () => {
+      window.removeEventListener("saveChanges", saveHandler);
+      window.removeEventListener("revertChanges", revertHandler);
+    };
+  }, [handleSave, handleRevert]);
+
+  useEffect(() => {
+    const handleSettingsReset = () => {
+      fetchSettings();
+    };
+
+    window.addEventListener('settingsReset', handleSettingsReset);
+    return () => {
+      window.removeEventListener('settingsReset', handleSettingsReset);
+    };
+  }, [fetchSettings]);
 
   useEffect(() => {
     if (isLoading.current) return;
@@ -45,7 +120,7 @@ export default function BasicSettings() {
       try {
         const [layoutRes, settingsRes] = await Promise.all([
           fetch(`/api/v1/layout/settings/server/basic-settings`),
-          axios.get(`/api/v1/guilds/${params.id}/settings/basic-settings`, {
+          axios.get(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
             withCredentials: true,
           }),
         ]);
@@ -68,58 +143,26 @@ export default function BasicSettings() {
     };
 
     fetchPageLayout();
-  }, [params.id]);
+  }, [serverId]);
 
-  const handleValueChange = (settingId: string, value: any) => {
-    setCurrentValues((prev: any) => {
-      const newValues = { ...prev, [settingId]: value };
-      const changed = !isEqual(newValues, originalValues);
-      setHasChanges(changed);
-      return newValues;
-    });
-  };
-
-  const handleSave = async () => {
-    try {
-      await axios.post(`/api/v1/guilds/${params.id}/settings/basic-settings`, {
-        settings: currentValues,
-        withCredentials: true,
-      });
-      setOriginalValues(currentValues);
-      setHasChanges(false);
-      toast.success("Changes saved successfully!");
-    } catch (error) {
-      toast.error("Failed to save changes");
-    }
-  };
-
-  const handleRevert = () => {
-    setCurrentValues(originalValues);
-    setHasChanges(false);
-  };
+  const handleValueChange = useCallback((settingId: string, value: any) => {
+    const newValues = { ...currentValues, [settingId]: value };
+    const changed = !isEqual(newValues, originalValues);
+    setCurrentValues(newValues);
+    setHasChanges(changed);
+  }, [currentValues, originalValues, setHasChanges]);
 
   const handleReset = async () => {
     try {
-      await axios.delete(
-        `/api/v1/guilds/${params.id}/settings/basic-settings`,
-        {
-          withCredentials: true,
-        }
-      );
+      await axios.delete(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
+        withCredentials: true,
+      });
 
-      const newDefaults = pageLayout.reduce((acc: any, section) => {
-        if (section.type === "panel" && section.settings) {
-          section.settings.forEach((setting) => {
-            acc[setting.name] = setting.value;
-          });
-        }
-        return acc;
-      }, {});
-
-      setCurrentValues(newDefaults);
-      setOriginalValues(newDefaults);
-      setHasChanges(false);
+      // Refetch the settings after reset
+      fetchSettings();
+      toast.success("Settings have been reset to defaults!");
     } catch (error) {
+      toast.error("Failed to reset settings");
       throw error;
     }
   };
@@ -165,25 +208,36 @@ export default function BasicSettings() {
       }
       case "toggle":
         return (
-          <div
-            onClick={() =>
-              handleValueChange(setting.name, !currentValues?.[setting.name])
-            }
-            className={`w-14 h-8 rounded-full transition-colors duration-200 cursor-pointer relative ${
-              currentValues?.[setting.name] ? "bg-emerald-500" : "bg-white/20"
-            }`}
-          >
-            <div
-              className={`absolute w-6 h-6 rounded-full bg-white top-1 transition-transform duration-200 ${
-                currentValues?.[setting.name]
-                  ? "translate-x-7"
-                  : "translate-x-1"
-              }`}
-            />
-          </div>
+          <ToggleSwitch
+            enabled={currentValues?.[setting.name] || false}
+            onChange={(value) => handleValueChange(setting.name, value)}
+            size="md"
+          />
         );
 
       case "select":
+        if (setting.name.toLowerCase().includes('channel')) {
+          return (
+            <DiscordSelect
+              type="channel"
+              guildId={serverId as string}
+              value={currentValues?.[setting.name] || ''}
+              onChange={(value) => handleValueChange(setting.name, value)}
+              placeholder="Select channel..."
+            />
+          );
+        }
+        if (setting.name.toLowerCase().includes('role')) {
+          return (
+            <DiscordSelect
+              type="role"
+              guildId={serverId as string}
+              value={currentValues?.[setting.name] || ''}
+              onChange={(value) => handleValueChange(setting.name, value)}
+              placeholder="Select role..."
+            />
+          );
+        }
         return (
           <select
             value={currentValues?.[setting.name] || setting.value}
@@ -213,6 +267,26 @@ export default function BasicSettings() {
           />
         );
 
+      case "text":
+        if (setting.multiline) {
+          return (
+            <Textarea
+              value={currentValues?.[setting.name] || setting.value}
+              onChange={(e) => handleValueChange(setting.name, e.target.value)}
+              placeholder={setting.placeholder}
+            />
+          );
+        }
+        return (
+          <TextInput
+            value={currentValues?.[setting.name] || setting.value}
+            onChange={(e) => handleValueChange(setting.name, e.target.value)}
+            placeholder={setting.placeholder}
+            icon={setting.icon}
+            variant="glass"
+          />
+        );
+
       default:
         return (
           <input
@@ -226,96 +300,88 @@ export default function BasicSettings() {
   };
 
   return (
-    <SettingsLayout
-      serverId={params.id as string}
-      hasChanges={hasChanges}
-      onSave={handleSave}
-      onRevert={handleRevert}
-      onReset={handleReset}
-    >
-      <div className="space-y-6">
-        {pageLayout?.map((item, index) => {
-          switch (item.type) {
-            case "header":
-              return (
-                <div
-                  key={index}
-                  className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
-                >
+    <div className="space-y-6">
+      {pageLayout?.map((item, index) => {
+        switch (item.type) {
+          case "header":
+            return (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
+              >
+                <div className="flex items-center gap-4">
+                  {item.icon && (
+                    <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
+                      <i
+                        className={`${item.icon} text-2xl text-white/90`}
+                      ></i>
+                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                      {item.text}
+                    </h1>
+                    <p className="text-lg text-white/70 mt-1">
+                      {item.subtext}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          case "panel":
+            return (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-6 mb-6 border border-white/10"
+              >
+                <div className="flex items-center justify-between gap-4 mb-4">
                   <div className="flex items-center gap-4">
                     {item.icon && (
-                      <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
+                      <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
                         <i
-                          className={`${item.icon} text-2xl text-white/90`}
+                          className={`${item.icon} text-xl text-white/90`}
                         ></i>
                       </div>
                     )}
                     <div>
-                      <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                      <h2 className="text-xl font-semibold text-white">
                         {item.text}
-                      </h1>
-                      <p className="text-lg text-white/70 mt-1">
+                      </h2>
+                      <p className="text-sm text-white/70 mt-1">
                         {item.subtext}
                       </p>
                     </div>
                   </div>
                 </div>
-              );
-            case "panel":
-              return (
-                <div
-                  key={index}
-                  className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-6 mb-6 border border-white/10"
-                >
-                  <div className="flex items-center justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-4">
-                      {item.icon && (
-                        <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
-                          <i
-                            className={`${item.icon} text-xl text-white/90`}
-                          ></i>
-                        </div>
-                      )}
-                      <div>
-                        <h2 className="text-xl font-semibold text-white">
-                          {item.text}
-                        </h2>
-                        <p className="text-sm text-white/70 mt-1">
-                          {item.subtext}
-                        </p>
+                <div className="space-y-3">
+                  {item.settings?.map((setting, settingIndex) => (
+                    <div
+                      key={settingIndex}
+                      className="flex items-start justify-between group relative p-3 rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                      <div className="flex flex-col flex-grow mr-4">
+                        <span className="text-white font-medium">
+                          {setting.name}
+                        </span>
+                        {setting.description && (
+                          <span className="text-sm text-white/50 mt-1">
+                            {setting.description}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {renderSettingInput(setting)}
                       </div>
                     </div>
-                  </div>
-                  <div className="space-y-3">
-                    {item.settings?.map((setting, settingIndex) => (
-                      <div
-                        key={settingIndex}
-                        className="flex items-start justify-between group relative p-3 rounded-lg hover:bg-white/5 transition-colors"
-                      >
-                        <div className="flex flex-col flex-grow mr-4">
-                          <span className="text-white font-medium">
-                            {setting.name}
-                          </span>
-                          {setting.description && (
-                            <span className="text-sm text-white/50 mt-1">
-                              {setting.description}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {renderSettingInput(setting)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              );
-            default:
-              return null;
-          }
-        })}
-      </div>
-    </SettingsLayout>
+              </div>
+            );
+          default:
+            return null;
+        }
+      })}
+    </div>
   );
 }
 

@@ -2,8 +2,12 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useBackendCheck } from "../hooks/useBackendCheck";
+import { themeConfig } from "../lib/theme";
 
 export default function AdminPage() {
+  const { loading, error } = useBackendCheck(true);
+
   const [stats, setStats] = useState({
     totalBadges: 0,
     totalServers: 0,
@@ -26,6 +30,14 @@ export default function AdminPage() {
     fetchStats();
   }, []);
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return null;
+  }
+
   return (
     <div className="container mx-auto">
       <motion.div
@@ -33,7 +45,7 @@ export default function AdminPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-slate-900/50 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-slate-800"
       >
-        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className={`text-4xl font-bold mb-8 ${themeConfig.blue.gradient} bg-clip-text text-transparent`}>
           Admin Dashboard
         </h1>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { themeConfig } from "@/app/lib/theme";
 
 interface Badge {
   id: string;
@@ -67,7 +68,7 @@ export default function BadgesPage() {
         className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
       >
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className={`text-4xl font-bold ${themeConfig.blue.gradient} bg-clip-text text-transparent`}>
             Manage Badges
           </h1>
           <Link

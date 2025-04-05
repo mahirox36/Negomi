@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { BadgeForm } from "@/app/components/badge/BadgeForm";
+import { themeConfig } from "@/app/lib/theme";
 
 export default function EditBadgePage({
   params,
@@ -72,7 +73,7 @@ export default function EditBadgePage({
         animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
       >
-        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className={`text-4xl font-bold mb-8 ${themeConfig.blue.gradient} bg-clip-text text-transparent`}>
           Edit Badge
         </h1>
 

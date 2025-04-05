@@ -3,7 +3,6 @@
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { BadgeForm } from "../../../../../components/badge/BadgeForm";
-import SettingsLayout from "@/app/components/ServerLayout";
 import { ThemeType, themeConfig } from '@/app/lib/theme';
 
 export default function CreateServerBadgePage() {
@@ -44,7 +43,6 @@ export default function CreateServerBadgePage() {
   };
 
   return (
-    <SettingsLayout serverId={params.id as string}>
       <div className="container mx-auto p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -57,6 +55,5 @@ export default function CreateServerBadgePage() {
           <BadgeForm onSubmit={handleSubmit} theme="purple"/>
         </motion.div>
       </div>
-    </SettingsLayout>
   );
 }

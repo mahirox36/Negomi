@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import SettingsLayout from "@/app/components/ServerLayout";
 
 interface Badge {
   id: string;
@@ -76,7 +75,6 @@ export default function ServerBadgesPage() {
   }, [previewBadge]);
 
   return (
-    <SettingsLayout serverId={params.id as string}>
       <div className="container mx-auto min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -294,6 +292,5 @@ export default function ServerBadgesPage() {
           </AnimatePresence>
         </motion.div>
       </div>
-    </SettingsLayout>
   );
 }

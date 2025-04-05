@@ -3,16 +3,20 @@
 import axios from "axios";
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
+import { useBackendCheck } from "../hooks/useBackendCheck";
 
 export default function Footer() {
+  const { error: backendError } = useBackendCheck();
   const [ownerPfp, setOwnerPfp] = useState("");
 
   useEffect(() => {
-    axios.get('/api/v1/bot/pfp_url', {withCredentials: true})
-      .then(res => res.data)
-      .then(data => setOwnerPfp(data.url))
-      .catch(err => console.error('Failed to load owner pfp:', err));
-  }, []);
+    if (!backendError) {
+      axios.get('/api/v1/bot/pfp_url', {withCredentials: true})
+        .then(res => res.data)
+        .then(data => setOwnerPfp(data.pfp_url || ''))
+        .catch(err => console.error('Failed to load bot pfp:', err));
+    }
+  }, [backendError]);
 
   const fadeInUpVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -54,10 +58,10 @@ export default function Footer() {
             >
               <div className="flex items-center mb-4">
                 <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
-                  {ownerPfp ? (
+                  {!backendError && ownerPfp ? (
                     <img src={ownerPfp} alt="Owner" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="bg-indigo-500 w-full h-full animate-pulse" />
+                    <div className="bg-indigo-500 w-full h-full" />
                   )}
                 </div>
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-300">

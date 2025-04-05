@@ -58,9 +58,9 @@ export default function ServerSidebar({
       layout
       layoutRoot
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="w-64 bg-white/5 backdrop-blur-lg fixed left-0 top-16 bottom-0 px-4 py-6 border-r border-white/5"
+      className="fixed left-0 top-16 bottom-0 w-64 bg-white/5 backdrop-blur-lg border-r border-white/5"
     >
-      <div className="h-full overflow-y-auto overflow-x-hidden pr-2">
+      <div className="h-full overflow-y-auto px-4 py-6">
         <Link
           href="/dashboard"
           className="flex items-center mb-8 px-2 py-2 rounded-lg text-white/60 hover:text-white transition-colors group"
@@ -76,7 +76,7 @@ export default function ServerSidebar({
           </motion.div>
         </Link>
 
-        <div className="space-y-8 min-w-0">
+        <div className="space-y-8">
           {Object.entries(serverSidebar).map(([section, items]) => (
             <motion.div key={section}>
               <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">

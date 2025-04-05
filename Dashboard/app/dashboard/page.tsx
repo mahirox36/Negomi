@@ -1,24 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBackendCheck } from "../hooks/useBackendCheck";
 import DashboardLayout from "../components/DashboardLayout";
 import { User, Guild } from "../types/discord";
+import { UserDataDashboard } from "../types/UserData";
 import LoadingScreen from "../components/LoadingScreen";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
+  const { loading: backendLoading, error: backendError } = useBackendCheck();
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [userData, setUserData] = useState<UserDataDashboard | undefined>(undefined);
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // Don't fetch if backend is offline
+      if (backendError) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const userResponse = await fetch("/api/v1/auth/user", {
           credentials: "include",
         });
-        
+
         if (!userResponse.ok) {
           if (userResponse.status === 401 || userResponse.status === 403) {
             router.push("/api/v1/auth/discord/login");
@@ -29,18 +39,30 @@ export default function Dashboard() {
 
         const userData = await userResponse.json();
         setUser(userData.user);
-        
+
         // Only fetch guild data if we have a valid user
         const guildResponse = await fetch("/api/v1/auth/user/guilds", {
           credentials: "include",
         });
-        
+
         if (!guildResponse.ok) {
           throw new Error("Failed to fetch guild data");
         }
 
         const guildData = await guildResponse.json();
         setGuilds(guildData.guilds);
+
+        // Fetch user data for dashboard
+        const userDataResponse = await fetch("/api/v1/auth/user/dashboard", {
+          credentials: "include",
+        });
+
+        if (!userDataResponse.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const userDataData = await userDataResponse.json();
+        setUserData(userDataData);
       } catch (error) {
         console.error("Error:", error);
         router.push("/api/v1/auth/discord/login");
@@ -49,17 +71,18 @@ export default function Dashboard() {
       }
     };
 
-    fetchUserData();
-  }, [router]);
+    if (!backendLoading) {
+      fetchUserData();
+    }
+  }, [router, backendLoading, backendError]);
 
-  // Redirect if not authenticated and not loading
-  if (!loading && !user) {
-    router.push("/api/v1/auth/discord/login");
-    return null;
+  if (backendLoading || loading) {
+    return <LoadingScreen />;
   }
 
-  if (loading) {
-    return <LoadingScreen />;
+  if (backendError) {
+    router.push("/error");
+    return null;
   }
 
   // Only render dashboard if we have a user
@@ -83,7 +106,9 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               {user?.avatar && (
                 <img
-                  src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar?.startsWith("a_") ? "gif" : "png"}`}
+                  src={`https://cdn.discordapp.com/avatars/${user.id}/${
+                    user.avatar
+                  }.${user.avatar?.startsWith("a_") ? "gif" : "png"}`}
                   alt={user.username}
                   className="w-16 h-16 rounded-full"
                 />
@@ -104,19 +129,19 @@ export default function Dashboard() {
             <h3 className="text-white text-lg font-semibold mb-2">
               Total Servers
             </h3>
-            <p className="text-3xl text-white font-bold">{guilds.length}</p>
+            <p className="text-3xl text-white font-bold">{userData?.guildsCount}</p>
           </div>
           <div className="bg-white/5 rounded-lg p-4">
             <h3 className="text-white text-lg font-semibold mb-2">
-              Total Users
+              Total Messages
             </h3>
-            <p className="text-3xl text-white font-bold">0</p>
+            <p className="text-3xl text-white font-bold">{userData?.totalMessages}</p>
           </div>
           <div className="bg-white/5 rounded-lg p-4">
             <h3 className="text-white text-lg font-semibold mb-2">
               Commands Used
             </h3>
-            <p className="text-3xl text-white font-bold">0</p>
+            <p className="text-3xl text-white font-bold">{userData?.commandsUsed}</p>
           </div>
         </div>
       </div>
