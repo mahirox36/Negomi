@@ -65,7 +65,7 @@ export default function Dashboard() {
         setUserData(userDataData);
       } catch (error) {
         console.error("Error:", error);
-        router.push("/api/v1/auth/discord/login");
+        // router.push("/api/v1/auth/discord/login");
       } finally {
         setLoading(false);
       }

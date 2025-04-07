@@ -27,7 +27,9 @@ export default function AutoRole() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/v1/guilds/${serverId}/settings/auto-role`);
+      const response = await axios.get(
+        `/api/v1/guilds/${serverId}/settings/auto-role`
+      );
       if (response.data) {
         setSettings(response.data);
         setOriginalSettings(response.data);
@@ -43,7 +45,7 @@ export default function AutoRole() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const handleChange = (type: 'userRoles' | 'botRoles', value: string[]) => {
+  const handleChange = (type: "userRoles" | "botRoles", value: string[]) => {
     const newSettings = { ...settings, [type]: value };
     setSettings(newSettings);
     setHasChanges(true);
@@ -51,9 +53,13 @@ export default function AutoRole() {
 
   const handleSave = async (e?: CustomEvent) => {
     e?.stopPropagation();
-    
+
     try {
-      await axios.post(`/api/v1/guilds/${serverId}/settings/auto-role`, settings);
+      // Send settings directly without nesting
+      await axios.post(
+        `/api/v1/guilds/${serverId}/settings/auto-role`,
+        settings
+      );
       setOriginalSettings(settings);
       setHasChanges(false);
       toast.success("Auto-role settings saved!");
@@ -108,7 +114,9 @@ export default function AutoRole() {
             <i className="fas fa-users text-xl text-white/90"></i>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">Member Auto Roles</h2>
+            <h2 className="text-xl font-semibold text-white">
+              Member Auto Roles
+            </h2>
             <p className="text-sm text-white/70 mt-1">
               Roles that will be automatically assigned to new members when they join
             </p>
@@ -118,7 +126,7 @@ export default function AutoRole() {
           type="role"
           guildId={serverId as string}
           value={settings.userRoles}
-          onChange={(value) => handleChange('userRoles', value as string[])}
+          onChange={(value) => handleChange("userRoles", value as string[])}
           placeholder="Select roles..."
           multiple
           searchable
@@ -142,7 +150,7 @@ export default function AutoRole() {
           type="role"
           guildId={serverId as string}
           value={settings.botRoles}
-          onChange={(value) => handleChange('botRoles', value as string[])}
+          onChange={(value) => handleChange("botRoles", value as string[])}
           placeholder="Select roles..."
           multiple
           searchable

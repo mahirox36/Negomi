@@ -135,13 +135,23 @@ export default function ServerLayoutClient({ children, serverId }: LayoutProps) 
         hasChanges,
         setHasChanges,
         onSave: async () => {
-          // Dispatch event only if there are changes
-          if (hasChanges) {
-            window.dispatchEvent(new CustomEvent('saveChanges'));
+          // Get current path to determine which settings to save
+          const currentPath = pathname.split("/").pop() || "";
+          
+          try {
+            await axios.post(`/api/v1/guilds/${serverId}/settings/${currentPath}`, {
+              settings: {
+                // This will be handled by each page's own save handler
+              }
+            });
+            setHasChanges(false);
+            toast.success("Settings saved successfully!");
+          } catch (error) {
+            console.error("Failed to save settings:", error);
+            toast.error("Failed to save settings");
           }
         },
         onRevert: () => {
-          // Dispatch event only if there are changes
           if (hasChanges) {
             window.dispatchEvent(new CustomEvent('revertChanges'));
           }
