@@ -7,14 +7,14 @@ from .baseModels import *
 from nexon.enums import RequirementType
 
 if TYPE_CHECKING:
-    from classes.Other.Dashboard import DashboardCog
+    from backend.apiManager import APIServer
     
 class Types(StrEnum):
     header = "header"
     cards = "cards"
     panel = "panel"
 
-router = APIRouter()
+router = APIRouter(tags=["layout"])
 
 # [GET] /settings/sidebar
 # [GET] /settings/{page}
@@ -32,27 +32,27 @@ pages: Dict[str, List] = {
             "type": Types.cards,
             "interaction": "link_button",
             "buttons": [
-                {
-                    "text": "AI",
-                    "subtext": "Configure AI settings and responses",
-                    "icon": "fa-solid fa-robot",
-                    "link": "/ai",
-                    "buttonText": "Configure AI"
-                },
+                # {
+                #     "text": "AI",
+                #     "subtext": "Configure AI settings and responses",
+                #     "icon": "fa-solid fa-robot",
+                #     "link": "/ai",
+                #     "buttonText": "Configure AI"
+                # },
                 {
                     "text": "Auto Role",
                     "subtext": "Manage automatic role assignment",
                     "icon": "fa-solid fa-user-plus",
-                    "link": "/auto_role",
+                    "link": "/auto-role",
                     "buttonText": "Configure Auto Role"
                 },
-                {
-                    "text": "Welcome",
-                    "subtext": "Customize welcome messages and images",
-                    "icon": "fa-solid fa-gift",
-                    "link": "/welcome", 
-                    "buttonText": "Configure Welcome"
-                },
+                # {
+                #     "text": "Welcome",
+                #     "subtext": "Customize welcome messages and images",
+                #     "icon": "fa-solid fa-gift",
+                #     "link": "/welcome", 
+                #     "buttonText": "Configure Welcome"
+                # },
                 {
                     "text": "Badges",
                     "subtext": "Manage achievement badges",
@@ -60,20 +60,28 @@ pages: Dict[str, List] = {
                     "link": "/badges",
                     "buttonText": "Configure Badges"
                 },
-                {
-                    "text": "Leveling",
-                    "subtext": "Configure XP and level settings",
-                    "icon": "fa-solid fa-trophy",
-                    "link": "/leveling",
-                    "buttonText": "Configure Leveling"
-                },
+                # {
+                #     "text": "Leveling",
+                #     "subtext": "Configure XP and level settings",
+                #     "icon": "fa-solid fa-trophy",
+                #     "link": "/leveling",
+                #     "buttonText": "Configure Leveling"
+                # },
                 {
                     "text": "Temp Channels",
                     "subtext": "Manage temporary voice channels",
                     "icon": "fa-solid fa-headset",
                     "link": "/temp-voice",
                     "buttonText": "Configure Temp Channels"
-                }
+                },
+                {
+                    "text": "Custom Roles",
+                    "subtext": "Manage custom roles",
+                    "icon": "fa-solid fa-user-tag",
+                    "link": "/custom-role",
+                    "buttonText": "Configure Auto Role"
+                },
+                
             ]
         }
     ],
@@ -234,11 +242,11 @@ async def get_server_sidebar():
                     "link": "auto-role",
                     "icon": "fa-solid fa-user-plus"
                 },
-                {
-                    "name": "Backup",
-                    "link": "backup",
-                    "icon": "fa-solid fa-hdd"
-                },
+                # {
+                #     "name": "Backup",
+                #     "link": "backup",
+                #     "icon": "fa-solid fa-hdd"
+                # },
                 {
                     "name": "Custom Roles",
                     "link": "custom-roles",
@@ -249,16 +257,16 @@ async def get_server_sidebar():
                     "link": "temp-voice",
                     "icon": "fa-solid fa-headset"
                 },
-                {
-                    "name": "Welcome",
-                    "link": "welcome",
-                    "icon": "fa-solid fa-gift"
-                },
-                {
-                    "name": "Leveling",
-                    "link": "leveling",
-                    "icon": "fa-solid fa-trophy"
-                },
+                # {
+                #     "name": "Welcome",
+                #     "link": "welcome",
+                #     "icon": "fa-solid fa-gift"
+                # },
+                # {
+                #     "name": "Leveling",
+                #     "link": "leveling",
+                #     "icon": "fa-solid fa-trophy"
+                # },
                 {
                     "name": "Badges",
                     "link": "badges",

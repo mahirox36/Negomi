@@ -20,7 +20,7 @@ class Request(View):
             return
             
         feature = await Feature.get_guild_feature(self.guild_id, "Roles")
-        data: dict = feature.get_setting("MembersRoles", {})
+        data: dict = feature.get_global("MembersRoles", {})
         if not (user_data := data.get(str(self.fromUser.id))):
             return
             
@@ -81,7 +81,7 @@ class Roles(commands.Cog):
             
         # Check role creation mode
         feature = await Feature.get_guild_feature(ctx.guild.id, "Roles")
-        data: dict = feature.get_setting("Settings", {})
+        data: dict = feature.get_setting()
         mode = data.get("creation_mode", "everyone")
 
         # Check if user is booster when required
@@ -106,11 +106,11 @@ class Roles(commands.Cog):
 
         guild = ctx.guild
         feature = await Feature.get_guild_feature(ctx.guild.id, "Roles")
-        data: dict = feature.get_setting("Settings", {})
+        data: dict = feature.get_setting()
         if data.get(str(ctx.user.id)):
             await ctx.send(embed=Embed.Error("You already have a role"),ephemeral=True)
             return
-        if name.lower() in self.notAllowed: #TODO: use a library instead
+        if name.lower() in self.notAllowed: #TODO: use a library instead to censor words
             await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
             return
         role = await guild.create_role(reason=f"{ctx.user.name}/{ctx.user.id} Created a role",
@@ -137,7 +137,7 @@ class Roles(commands.Cog):
             color = self.colors.get(color.capitalize(), Color("#FFFFFF")).hex
             colorInt = self.colors.get(color.capitalize(), Color("#FFFFFF")).value
         feature = await Feature.get_guild_feature(guild.id, "Roles")
-        data: dict = feature.get_setting("MembersRoles", {})
+        data: dict = feature.get_global("MembersRoles", {})
         try:
             user = data.get(str(ctx.user.id))
             if user == None:

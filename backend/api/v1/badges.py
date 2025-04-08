@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Optional
 from nexon import ComparisonType, Rarity, RequirementType
 from nexon.ext.commands import Bot
 import nexon
-from api.v1.auth import check_owner
+from .auth import check_owner
 from modules.Nexon import download_image_to_bytes
 from .baseModels import *
 from nexon.badge import BadgeManager
 import logging
 
 if TYPE_CHECKING:
-    from classes.Other.Dashboard import DashboardCog
+    from backend.apiManager import APIServer
     
 async def getGuild(client: Bot, id: Optional[int]):
     guild = client.get_guild(1262297191884521514) if not id else client.get_guild(id)
@@ -31,9 +31,9 @@ async def check_guild(guild_id: int):
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("bot")
 
-async def createBadge(request: Request, badge_request: CreateBadgeRequest, guild_id: Optional[int] = None):
+async def createBadge(request: Request, badge_request: CreateBadgeRequest, guild_id: Optional[int] = None) -> Dict[str, bool]:
     """Create a new badge"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     try:
         # Convert dictionary requirements to BadgeRequirement objects
         if guild_id:
@@ -93,7 +93,8 @@ async def getBadges(request: Request, guild_id: Optional[int] = None):
         badge_manager = BadgeManager(guild_id)
         badges = await badge_manager.get_all_badges()
         # Convert badges to a list of dictionaries, handling each badge individually
-        badge_list = []
+        badge_list: List[Dict[str, str | int | bool | List[Dict[str, str]]]] \
+            = []
         for badge in badges:
             try:
                 badge_dict = await badge.to_dict()
@@ -119,10 +120,10 @@ async def getBadges(request: Request, guild_id: Optional[int] = None):
         )
 
 
-async def editBadge(badge_id: int, request: Request, request_badge: CreateBadgeRequest, guild_id: Optional[int] = None):
+async def editBadge(badge_id: int, request: Request, request_badge: CreateBadgeRequest, guild_id: Optional[int] = None) -> Dict[str, bool]:
     """Edit an existing badge"""
     try:
-        backend: DashboardCog = request.app.state.backend
+        backend: APIServer = request.app.state.backend
         if not guild_id:
             await check_owner(request)
         
@@ -147,7 +148,7 @@ async def editBadge(badge_id: int, request: Request, request_badge: CreateBadgeR
             guild = await getGuild(backend.client, guild_id)
             
             # Delete old image and emoji
-            backend.delete_image(existing_badge.icon_url.split("/")[-1])
+            await backend.storage.delete_file(existing_badge.icon_url.split("/")[-1])
             emoji_id = re.search(r"<:\w+:(\d+)>", existing_badge.emoji)
             if emoji_id:
                 emoji_id = int(emoji_id.group(1))
@@ -197,9 +198,9 @@ async def editBadge(badge_id: int, request: Request, request_badge: CreateBadgeR
         )
 
 
-async def deleteBadge(badge_id: int, request: Request, guild_id: Optional[int] = None):
+async def deleteBadge(badge_id: int, request: Request, guild_id: Optional[int] = None) -> Dict[str, bool]:
     """Delete a badge"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     try:
         if not guild_id:
             await check_owner(request)
@@ -207,7 +208,7 @@ async def deleteBadge(badge_id: int, request: Request, guild_id: Optional[int] =
         badge = await badgeManager.get_badge(badge_id)
         if not badge:
             raise HTTPException(status_code=404, detail=f"No Badge with the ID {badge_id} found.")
-        backend.delete_image(badge.icon_url.split("/")[-1])
+        await backend.storage.delete_file(badge.icon_url.split("/")[-1])
         guild = await getGuild(backend.client, guild_id)
         emoji_id = re.search(r"<:\w+:(\d+)>", badge.emoji)
         if not emoji_id:

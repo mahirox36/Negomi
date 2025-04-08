@@ -40,9 +40,8 @@ class Welcome(commands.Cog):
 
     async def save_welcome_config(self, guild_id: int, config: dict):
         """Save welcome configuration and invalidate caches"""
-        file = DataManager("Welcome", guild_id)
-        file.data = config
-        file.save()
+        feature = await Feature.get_guild_feature(guild_id, "Welcome")
+        await feature.set_setting("welcome_config", config)
         self.invalidate_caches(guild_id)  # Clear caches when config changes
         self.welcome_cache[guild_id] = config  # Update with new config
 

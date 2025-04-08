@@ -3,17 +3,20 @@ import platform
 from fastapi import APIRouter, Request, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import psutil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from modules.DiscordConfig import overwriteOwner
 
 if TYPE_CHECKING:
-    from ...classes.Other.Dashboard import DashboardCog
+    from backend.apiManager import APIServer
 
-router = APIRouter()
+router = APIRouter(tags=["bot"])
+
+terms_and_services: Optional[str] = ""
+privacy_policy: Optional[str] = ""
 
 @router.get("/")
 async def get_users(request: Request):
-    backend: DashboardCog = request.app.state.backend  # Retrieve client from FastAPI state
+    backend: APIServer = request.app.state.backend  # Retrieve client from FastAPI state
     if backend:
         return {"message": f"Bot is running as {backend.client.user}"}
     return {"error": "Client not available"}
@@ -39,14 +42,14 @@ async def health_check(request: Request):
 @router.get("/commands")
 async def get_commands(request: Request):
     """Get all bot commands"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     
-    return {"commands": backend.get_commands_func()}
+    return await backend.get_commands_of_bot()
 
 @router.get("/stats")
 async def get_stats(request: Request):
     """Get detailed bot and system statistics"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     process = psutil.Process()
     return {
         "system": {
@@ -65,8 +68,8 @@ async def get_stats(request: Request):
             "channel_count": sum(len(g.channels) for g in backend.client.guilds),
             "voice_connections": len(backend.client.voice_clients),
             "latency": round(backend.client.latency * 1000),
-            "uptime": (datetime.now() - backend.startTime).total_seconds(),
-            "command_count": len(backend.get_commands_func()),
+            "uptime": (datetime.now() - backend.start_time).total_seconds(),
+            "command_count": len(await backend.get_commands_of_bot()),
             "cogs_loaded": len(backend.client.cogs),
             "current_shard": getattr(backend.client, "shard_id", 0),
             "messages_sent": 0,
@@ -80,29 +83,29 @@ async def get_stats(request: Request):
 @router.get("/terms-and-service")
 async def get_terms_and_services(request: Request):
     """Get terms and services"""
-    backend: DashboardCog = request.app.state.backend
-    if backend.terms_and_services:
-        return backend.terms_and_services
+    global terms_and_services
+    if terms_and_services:
+        return terms_and_services
     else:
         with open("Terms of Service.md", "r") as file:
-            backend.terms_and_services = file.read()
-        return backend.terms_and_services
+            terms_and_services = file.read()
+        return terms_and_services
 
 @router.get("/privacy-policy")
 async def get_privacy_policy(request: Request):
     """Get privacy policy"""
-    backend: DashboardCog = request.app.state.backend
-    if backend.privacy_policy:
-        return backend.privacy_policy
+    global privacy_policy
+    if privacy_policy:
+        return privacy_policy
     else:
         with open("Privacy Policy.md", "r") as file:
-            backend.privacy_policy = file.read()
-        return backend.privacy_policy
+            privacy_policy = file.read()
+        return privacy_policy
 
 @router.get("/owner_pfp_url")
 async def get_owner_pfp_url(request: Request):
     """Get the bot owner's profile picture URL"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     try:
         ownerID = overwriteOwner or backend.client.owner_id
         if not isinstance(ownerID, int):
@@ -143,7 +146,7 @@ async def get_bot_pfp(request: Request):
 @router.post("/upload")
 async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
     """Upload an image file and return its URL"""
-    backend: DashboardCog = request.app.state.backend
+    backend: APIServer = request.app.state.backend
     
     # Validate file type
     if not file.content_type or not file.content_type.startswith('image/'):
@@ -161,7 +164,7 @@ async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
         await file.seek(0)
         # Upload file using the provided function
         filename = file.filename or "uploaded_file"
-        url, _ = backend.upload_image(file, filename)
+        url, _ = await backend.storage.upload_file(file, filename)
         return {"url": url, "status": 200}
     except Exception as e:
         return {"error": str(e), "status": 500}, 500

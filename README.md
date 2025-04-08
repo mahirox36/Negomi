@@ -22,7 +22,7 @@ To add the bot to your server, click the link below:
 
 ### Version 0.9
 
-- Overall Progress: █░░░░░░░░░░░░░░░░░░░ 3% (1/31)
+- Overall Progress: ██░░░░░░░░░░░░░░░░░░ 9% (3/31)
 - Currently Working On:
   - Nextcord Forked Library called [Nexon](https://github.com/mahirox36/Nexon)
   - Database
@@ -77,14 +77,14 @@ To add the bot to your server, click the link below:
 
 #### Custom Achievement Framework
 
-- Guild Achievement System: [███░░░░░░░] 25% (1/4)
-  - [ ] Dashboard Achievement Creation Interface:
+- Guild Achievement System: [█████████░░] 75% (3/4)
+  - [x] Dashboard Achievement Creation Interface:
     - Achievement editor with fields for title, description, image, and points
-  - [ ] Achievement Management Dashboard:
-    - [ ] Edit panel - Modify existing achievements
-    - [ ] List view - Browse all achievements
-    - [ ] Delete functionality - Remove achievements
-    - [ ] Preview mode - Test achievement appearance
+  - [x] Achievement Management Dashboard:
+    - [x] Edit panel - Modify existing achievements
+    - [x] List view - Browse all achievements
+    - [x] Delete functionality - Remove achievements
+    - [x] Preview mode - Test achievement appearance
   - [x] Achievement Notification System
   - [ ] Achievement Statistics and Analytics
 

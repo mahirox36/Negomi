@@ -155,7 +155,8 @@ class DiscordBot(commands.Bot):
                 except Exception as e:
                     self.logger.error(f"Failed to load extension {ext_path.name}: {str(e)}")
                     self.logger.error(f"Traceback: {traceback.format_exc()}")
-
+            
+            self.load_extension("backend.core")
             self.logger.info(f"Extension loading complete. Loaded {len(loaded_extensions)} extensions")
 
         except Exception as e:

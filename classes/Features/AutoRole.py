@@ -9,11 +9,9 @@ class AutoRole(commands.Cog):
     async def on_member_join(self, member:Member):
         guild = member.guild
         try:
-            data = await Feature.get_or_none(
-                name="Auto Role",
-                scope_type=ScopeType.GUILD,
-                scope_id=guild.id,
-                defaults={'settings': {}}
+            data = await Feature.get_guild_feature(
+                feature_name="auto_role",
+                guild_id=guild.id,
             )
             if not data:
                 return

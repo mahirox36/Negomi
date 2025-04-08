@@ -12,12 +12,12 @@ class ModeratorManager(commands.Cog):
         return better_id.generate()
 
     
-    @slash_command(name="mod",default_member_permissions=Permissions(administrator=True))
-    async def moded(self, ctx:init):
-        pass
-    @moded.subcommand(name="manager")
-    async def manager(self, ctx:init):
-        pass
+    # @slash_command(name="mod",default_member_permissions=Permissions(administrator=True))
+    # async def moded(self, ctx:init):
+    #     pass
+    # @moded.subcommand(name="manager")
+    # async def manager(self, ctx:init):
+    #     pass
     
 
 def setup(client):
