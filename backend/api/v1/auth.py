@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from modules.DiscordConfig import overwriteOwner, config
@@ -122,7 +123,7 @@ async def get_user(request: Request):
 
 @router.get("/user/dashboard")
 async def get_user_dashboard(request: Request):
-    """Get user dashboard information"""
+    """Get comprehensive user dashboard information"""
     backend: APIServer = request.app.state.backend
     try:
         access_token = await backend.verify_auth(request)
@@ -135,15 +136,59 @@ async def get_user_dashboard(request: Request):
         
         # Get guilds
         guilds = await session.fetch_guilds()
+        admin_guilds = [g for g in guilds if (int(g["permissions"]) & 0x8) == 0x8]
         
         # Get user data from bot
         bot_user = await backend.client.fetch_user(int(user["id"]))
         user_data = await bot_user.get_data()
         
+        # Calculate activity metrics
+        now = datetime.now(user_data.created_at.tzinfo)
+        recent_messages = user_data.total_messages
+        avg_daily_messages = recent_messages / max(1, (now - user_data.created_at).days)
+        
         dashboard_data = {
             "guildsCount": len(guilds),
+            "adminGuildsCount": len(admin_guilds),
             "totalMessages": user_data.total_messages,
             "commandsUsed": user_data.commands_used_count,
+            "level": user_data.level,
+            "xp": user_data.xp,
+            "activityStreak": user_data.activity_streak,
+            "longestStreak": user_data.longest_streak,
+            "messageStats": {
+                "totalCharacters": user_data.character_count,
+                "totalWords": user_data.word_count,
+                "totalAttachments": user_data.attachment_count,
+                "totalMentions": user_data.mention_count,
+                "totalEmojis": user_data.emoji_count + user_data.custom_emoji_count,
+                "totalReplies": user_data.replies_count,
+                "averageDailyMessages": round(avg_daily_messages, 2),
+            },
+            "attachmentStats": {
+                "images": user_data.attachment_image_count,
+                "videos": user_data.attachment_video_count,
+                "audio": user_data.attachment_audio_count,
+                "other": user_data.attachment_other_count
+            },
+            "commandStats": {
+                "totalCommands": user_data.commands_used_count,
+                "favoriteCommands": sorted(
+                    user_data.favorites_commands.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:5]
+            },
+            "reactionStats": {
+                "given": user_data.reactions_given_count,
+                "received": user_data.reactions_received_count
+            },
+            "milestoneProgress": {
+                "currentLevel": user_data.level,
+                "xpToNextLevel": (((user_data.level + 1) * ((user_data.level + 1) + 1)) * 50) - user_data.xp,
+                "totalXpGained": user_data.total_xp_gained,
+                "achievements": list(user_data.milestone_rewards.keys())
+            }
         }
         
         return JSONResponse(dashboard_data)

@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import psutil
 from typing import TYPE_CHECKING, Optional
 from modules.DiscordConfig import overwriteOwner
+from nexon.data.models import MetricsCollector
 
 if TYPE_CHECKING:
     from backend.apiManager import APIServer
@@ -51,6 +52,10 @@ async def get_stats(request: Request):
     """Get detailed bot and system statistics"""
     backend: APIServer = request.app.state.backend
     process = psutil.Process()
+
+    # Get real historical data from MetricsCollector
+    historical_data = await MetricsCollector.get_historical_data(hours=24)
+
     return {
         "system": {
             "cpu_usage": round(psutil.cpu_percent(), 2),
@@ -60,7 +65,9 @@ async def get_stats(request: Request):
             "os": f"{platform.system()} {platform.release()}",
             "uptime": round(process.create_time(), 2),
             "thread_count": process.num_threads(),
-            "disk_usage": round(psutil.disk_usage('/').percent, 2)
+            "disk_usage": round(psutil.disk_usage('/').percent, 2),
+            "historical_cpu": historical_data['cpu_usage'][-10:],  # Last 10 data points
+            "historical_memory": historical_data['memory_usage'][-10:]  # Last 10 data points
         },
         "bot": {
             "guild_count": len(backend.client.guilds),
@@ -72,10 +79,17 @@ async def get_stats(request: Request):
             "command_count": len(await backend.get_commands_of_bot()),
             "cogs_loaded": len(backend.client.cogs),
             "current_shard": getattr(backend.client, "shard_id", 0),
-            "messages_sent": 0,
-            "commands_processed": 0,
+            "messages_sent": historical_data['messages_sent'][-1] if historical_data['messages_sent'] else 0,
+            "commands_processed": historical_data['commands_processed'][-1] if historical_data['commands_processed'] else 0,
             "errors_encountered": 0,
             "shard_count": backend.client.shard_count or 1,
+            "historical_stats": {
+                "timestamps": historical_data['timestamps'][-10:],
+                "messages": historical_data['messages_sent'][-10:],
+                "commands": historical_data['commands_processed'][-10:],
+                "users": historical_data['user_count'][-10:],
+                "latency": historical_data['bot_latency'][-10:]
+            }
         },
         "timestamp": datetime.now().timestamp()
     }
@@ -168,3 +182,59 @@ async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
         return {"url": url, "status": 200}
     except Exception as e:
         return {"error": str(e), "status": 500}, 500
+
+@router.get("/command-stats")
+async def get_command_stats(request: Request):
+    """Get command usage statistics"""
+    backend: APIServer = request.app.state.backend
+    stats = {}
+    
+    # Get all users' command usage data
+    from nexon.data.models import UserData
+    users = await UserData.all()
+    
+    # Aggregate command usage across all users
+    for user in users:
+        for cmd, count in user.favorites_commands.items():
+            if cmd not in stats:
+                stats[cmd] = 0
+            stats[cmd] += count
+            
+            # Add timestamp of last use if available
+            if user.last_command_use and user.last_command_use.get(cmd):
+                stats[f"{cmd}_last_used"] = user.last_command_use[cmd]
+    
+    return stats
+
+@router.post("/track-command")
+async def track_command_usage(request: Request):
+    """Track command usage"""
+    backend: APIServer = request.app.state.backend
+    data = await request.json()
+    
+    command_name = data.get('command')
+    user_id = data.get('user_id')
+    
+    if not command_name or not user_id:
+        raise HTTPException(status_code=400, detail="Missing command or user_id")
+        
+    try:
+        from nexon.data.models import UserData
+        user = await UserData.get(id=user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        # Update command usage
+        if not hasattr(user, 'favorites_commands'):
+            user.favorites_commands = {}
+        if not hasattr(user, 'last_command_use'):
+            user.last_command_use = {}
+            
+        user.favorites_commands[command_name] = user.favorites_commands.get(command_name, 0) + 1
+        user.last_command_use[command_name] = datetime.now().timestamp()
+        
+        await user.save()
+        return {"success": True}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

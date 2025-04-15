@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING
 from nexon import ChannelType
+from nexon.channel import CategoryChannel
 
 from .badges import *
 from .baseModels import *
@@ -43,11 +44,12 @@ async def get_guilds(request: Request):
 
 @router.get("/{guild_id}")
 async def get_guild(guild_id: int, request: Request):
-    """Get detailed information about a specific guild"""
+    """Get detailed information about a specific guild including statistics"""
     backend: APIServer = request.app.state.backend
     guild = await backend.fetch_guild(guild_id)
     
-    return {
+    # Fetch basic guild data
+    guild_data = {
         "id": guild.id,
         "name": guild.name,
         "member_count": guild.member_count,
@@ -56,12 +58,45 @@ async def get_guild(guild_id: int, request: Request):
         "emoji_count": len(guild.emojis),
         "features": guild.features,
         "created_at": guild.created_at.timestamp(),
-        "icon_url": str(guild.icon.url) if guild.icon else None,
+        "icon_url": str(guild.icon.with_size(4096).url.replace(".png", ".gif") if \
+                            guild.icon.is_animated() else \
+                                guild.icon.with_size(4096).url) if \
+                                    guild.icon else None,
         "boost_level": guild.premium_tier,
         "boost_count": guild.premium_subscription_count,
         "verification_level": str(guild.verification_level),
-        "owner_id": guild.owner_id
+        "owner_id": guild.owner_id,
     }
+    
+    # Fetch member statistics from the database
+    from nexon.data.models import MemberData
+    members_data = await MemberData.filter(guild_id=guild_id)
+    
+    total_messages = sum(member.total_messages for member in members_data)
+    total_commands = sum(member.commands_used_count for member in members_data)
+    total_chars = sum(member.character_count for member in members_data)
+    total_attachments = sum(member.attachment_count for member in members_data)
+    
+    # Get command usage breakdown
+    command_usage = {}
+    for member in members_data:
+        for cmd, count in member.favorites_commands.items():
+            command_usage[cmd] = command_usage.get(cmd, 0) + count
+    
+    # Add statistics to response
+    guild_data.update({
+        "statistics": {
+            "total_messages": total_messages,
+            "total_commands_used": total_commands,
+            "total_characters": total_chars,
+            "total_attachments": total_attachments,
+            "command_usage": command_usage,
+            "active_members": len(members_data),
+            "average_messages_per_member": total_messages / len(members_data) if members_data else 0
+        }
+    })
+    
+    return guild_data
 
 @router.post("/{guild_id}/is_admin")
 async def is_admin(guild_id: int, request: Request):
@@ -201,15 +236,15 @@ async def get_guild_categories(guild_id: int, request: Request):
     backend: APIServer = request.app.state.backend
     try:
         guild = await backend.fetch_guild(guild_id)
-        categories = []
-        
-        for channel in guild.channels:
-            if channel.type == ChannelType.category:
-                categories.append({
-                    "id": str(channel.id),
-                    "name": channel.name,
-                    "position": channel.position
-                })
+        categories = [
+            {
+                "id": str(channel.id),
+                "name": channel.name,
+                "position": channel.position
+            }
+            for channel in guild.channels
+            if channel.type == ChannelType.category
+        ]
         
         # Sort categories by position and name
         categories.sort(key=lambda x: (x["position"], x["name"]))
@@ -369,3 +404,108 @@ async def delete_badge(guild_id: int, badge_id: int, request: Request):
 async def get_badge(guild_id: int, badge_id: int, request:Request):
     """Get detailed information about a specific badge"""
     return await getBadge(badge_id, request, guild_id) # type: ignore
+
+
+@router.post("/{guild_id}/temp-voice")
+async def create_temp_voice_channel(guild_id: int, request: Request, channel_id: ChannelID):
+    """Create a temporary voice channel category setup"""
+    backend: APIServer = request.app.state.backend
+    try:
+        # Verify user has manage channel permissions
+        access_token = await backend.verify_auth(request)
+        if access_token is None:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        
+        session = backend.oauth_sessions[access_token]
+        user = await session.fetch_user()
+        guild = await backend.fetch_guild(guild_id)
+        member = guild.get_member(int(user["id"]))
+        
+        if not member:
+            raise HTTPException(status_code=403, detail="You are not a member of this server")
+        
+        if not member.guild_permissions.manage_channels:
+            raise HTTPException(status_code=403, detail="You need Manage Channels permission to configure temporary voice")
+        
+        feature = await Feature.get_guild_feature(guild_id, "temp_voice")
+        categoryID = channel_id.channel_id
+        
+        # Clean up old create channel if it exists
+        if await feature.get_setting("CreateChannel"):
+            try:
+                old_channel = guild.get_channel(int(await feature.get_setting("CreateChannel")))
+                if old_channel:
+                    await old_channel.delete(reason="Old temporary voice channel deleted")
+            except Exception as e:
+                backend.logger.warning(f"Failed to delete old temp voice channel: {str(e)}")
+        
+        if not categoryID:
+            raise HTTPException(status_code=400, detail="Category ID is required")
+            
+        # Verify category exists and is valid
+        category = guild.get_channel(int(categoryID))
+        if not category:
+            try:
+                category = await guild.fetch_channel(int(categoryID))
+            except:
+                raise HTTPException(status_code=404, detail="Category not found")
+                
+        if not isinstance(category, CategoryChannel):
+            raise HTTPException(status_code=400, detail="Selected channel must be a category")
+            
+        # Create the channel with proper permissions
+        overwrites = {
+            guild.default_role: nexon.PermissionOverwrite(
+                connect=True,
+                speak=False,
+                send_messages=False
+            ),
+            guild.me: nexon.PermissionOverwrite(
+                manage_channels=True,
+                move_members=True,
+                manage_permissions=True
+            )
+        }
+        
+        channel = await guild.create_voice_channel(
+            name="➕ Create Voice Channel",
+            category=category,
+            reason="Temporary voice channel system setup",
+            overwrites=overwrites,
+            user_limit=1  # Prevents users from joining directly
+        )
+        
+        # Save settings
+        await feature.set_setting("CategoryChannel", int(categoryID))
+        await feature.set_setting("CreateChannel", channel.id)
+        await feature.enable()
+        
+        return {
+            "success": True,
+            "message": "Temporary voice system configured successfully",
+            "channelId": str(channel.id)
+        }
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        backend.logger.error(f"Error configuring temp voice: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to configure temporary voice system")
+
+@router.get("/{guild_id}/temp-voice")
+async def get_temp_voice_channel(guild_id: int, request: Request):
+    """Get the temporary voice channel"""
+    # backend: APIServer = request.app.state.backend
+    feature = await Feature.get_guild_feature(guild_id, "temp_voice")
+    return str(feature.get_setting("CategoryChannel"))
+    # guild = await backend.fetch_guild(guild_id)
+    # channel_id = await feature.get_setting("CreateChannel")
+    # if channel_id:
+    #     channel = guild.get_channel(int(channel_id))
+    #     if channel:
+    #         return {
+    #             "id": str(channel.id),
+    #             "name": channel.name,
+    #             "category": str(channel.category_id) if channel.category_id else None
+    #         }
+    raise HTTPException(status_code=404, detail="Temporary voice channel not found")

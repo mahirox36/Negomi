@@ -19,6 +19,7 @@ from nexon import (
 
 from .features.cache import CacheManager
 from .features.storage import StorageManager
+from .tasks import start_tasks
 
 class APIConfig:
     def __init__(
@@ -104,6 +105,7 @@ class APIServer:
 
     async def start(self) -> None:
         """Start the FastAPI server"""
+        await start_tasks(self)
         config = uvicorn.Config(
             app=self.app,
             host=self.config.host,

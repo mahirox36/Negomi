@@ -1,6 +1,9 @@
 from typing import Dict, List, Union
 from pydantic import BaseModel, Field
 
+class ChannelID(BaseModel):
+    channel_id: str
+
 class OwnerCheckRequest(BaseModel):
     user_id: str
 
