@@ -326,22 +326,23 @@ class Welcome(commands.Cog):
         if guild_id in self.welcome_cache:
             return self.welcome_cache[guild_id]
             
-        file = DataManager("Welcome", guild_id)
-        if not file.data:
+        feature = await Feature.get_guild_feature(guild_id, "Welcome")
+        config = feature.get_setting("welcome_config")
+        if not config:
             return None
             
         # Merge with defaults to ensure all fields exist
-        config = self.get_default_settings()
-        config.update(file.data)
+        defaults = self.get_default_settings()
+        defaults.update(config)
         
         # Convert lists back to tuples for image processing
-        img_settings = config["image_settings"]
+        img_settings = defaults["image_settings"]
         img_settings["avatar_size"] = tuple(img_settings["avatar_size"])
         img_settings["avatar_position"] = tuple(img_settings["avatar_position"])
         img_settings["text_position"] = tuple(img_settings["text_position"])
         
-        self.welcome_cache[guild_id] = config
-        return config
+        self.welcome_cache[guild_id] = defaults
+        return defaults
     
     @slash_command(name="welcome",default_member_permissions=Permissions(administrator=True))
     async def welcome(self, ctx:init):
@@ -396,20 +397,17 @@ class Welcome(commands.Cog):
                 return
 
             # Save configuration
-            welcome_file = DataManager("Welcome", ctx.guild_id)
             settings = self.get_default_settings()
             settings["message"] = message
             settings["channel_id"] = channel.id
-            welcome_file.data = settings
-            welcome_file.save()
+            await self.save_welcome_config(ctx.guild.id, settings)
 
             # Update cache
             self.welcome_cache[ctx.guild.id] = settings
 
             # Save current members
-            member_file = DataManager("Welcome", ctx.guild_id, file_name="Members")
-            member_file.data = [m.id for m in ctx.guild.members]
-            member_file.save()
+            feature = await Feature.get_guild_feature(ctx.guild.id, "Welcome")
+            await feature.set_setting("members", [m.id for m in ctx.guild.members])
 
             # Send confirmation with preview
             embed = Embed.Info(
@@ -479,17 +477,20 @@ class Welcome(commands.Cog):
         await ctx.send(embed=embed, view=WelcomeCustomizer(config), ephemeral=True)
 
     @welcome.subcommand("style", "Change welcome message style")
+    @guild_only()
     async def style(self, ctx: init, style: str = SlashOption(
         name="style",
         choices={"Image with Text": "image", "Text Only": "text", "Embed": "embed"}
     )):
-        welcome_file = DataManager("Welcome", ctx.guild_id)
-        if not welcome_file.data:
+        feature = await Feature.get_guild_feature(ctx.guild.id, "Welcome") # type: ignore
+        config = feature.get_setting("welcome_config")
+        
+        if not config:
             await ctx.send("Please set up welcome message first using /welcome setup", ephemeral=True)
             return
 
-        welcome_file.data["style"] = style
-        welcome_file.save()
+        config["style"] = style
+        await self.save_welcome_config(ctx.guild.id, config) # type: ignore
         await ctx.send(f"Welcome message style updated to: {style}", ephemeral=True)
         
     @commands.Cog.listener()
@@ -510,7 +511,7 @@ class Welcome(commands.Cog):
                 return
             channel = member.guild.get_channel(channel_id)
             if not channel:
-                logger.warning(f"Welcome channel {config.get("channel_id")} not found in {member.guild.id}")
+                logger.warning(f"Welcome channel {config.get('channel_id')} not found in {member.guild.id}")
                 return
 
             # Send welcome message with proper rate limiting
@@ -520,9 +521,10 @@ class Welcome(commands.Cog):
                 await self.send_welcome_message(member, channel, config)
 
             # Update member cache
-            member_file = DataManager("Welcome", member.guild.id, file_name="Members")
-            member_file.data = list(set(member_file.data + [member.id]))
-            member_file.save()
+            feature = await Feature.get_guild_feature(member.guild.id, "Welcome")
+            members = feature.get_setting("members", [])
+            members.append(member.id)
+            await feature.set_setting("members", list(set(members)))
 
         except Exception as e:
             logger.error(f"Welcome error in {member.guild.id} for {member.id}: {e}")
@@ -531,10 +533,11 @@ class Welcome(commands.Cog):
     async def on_member_remove(self, member: Member):
         """Track member leaves with optimized caching."""
         try:
-            member_file = DataManager("Welcome", member.guild.id, file_name="Members")
-            if member.id in member_file.data:
-                member_file.data.remove(member.id)
-                member_file.save()
+            feature = await Feature.get_guild_feature(member.guild.id, "Welcome")
+            members = feature.get_setting("members", [])
+            if member.id in members:
+                members.remove(member.id)
+                await feature.set_setting("members", members)
 
         except Exception as e:
             logger.error(f"Member remove error in {member.guild.id}: {e}")
@@ -544,8 +547,8 @@ class Welcome(commands.Cog):
         """Process missed welcomes with smart batching and rate limiting."""
         try:
             # Get active welcome guilds
-            global_file = DataManager("Welcome", file_name="Guilds", default=[])
-            active_guilds = set(global_file.data)
+            feature = await Feature.get_global_feature("Welcome")
+            active_guilds = set(feature.get_global("guilds", []))
             if not active_guilds:
                 return
 
@@ -566,8 +569,8 @@ class Welcome(commands.Cog):
                         continue
 
                     # Process new members in batches
-                    members_file = DataManager("Welcome", guild_id, file_name="Members")
-                    old_members = set(members_file.data or [])
+                    feature = await Feature.get_guild_feature(guild_id, "Welcome")
+                    old_members = set(feature.get_setting("members", []))
                     current_members = {m.id for m in guild.members}
                     
                     new_members = current_members - old_members
@@ -583,8 +586,7 @@ class Welcome(commands.Cog):
                             await asyncio.sleep(5)  # Batch cooldown
 
                     # Update member cache
-                    members_file.data = list(current_members)
-                    members_file.save()
+                    await feature.set_setting("members", list(current_members))
 
                 except Exception as e:
                     logger.error(f"Welcome ready error in guild {guild_id}: {e}")
@@ -739,13 +741,17 @@ class WelcomeCustomizer(ui.View):
 
     async def update_config(self, interaction: Interaction, key: str, value: Any):
         """Update config with cache invalidation"""
-        welcome_file = DataManager("Welcome", interaction.guild_id)
+        if not interaction.guild:
+            await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
+            return
+        feature = await Feature.get_guild_feature(interaction.guild.id, "Welcome")
+        config = feature.get_setting("welcome_config")
         if key.startswith("image_settings."):
             _, setting = key.split(".")
-            welcome_file.data["image_settings"][setting] = value
+            config["image_settings"][setting] = value
         else:
-            welcome_file.data[key] = value
-        welcome_file.save()
+            config[key] = value
+        await feature.set_setting("welcome_config", config)
         
         # Invalidate caches through the cog
         cog = interaction.client.get_cog("Welcome")

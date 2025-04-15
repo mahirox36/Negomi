@@ -243,12 +243,12 @@ class DiscordBot(commands.Bot):
         #     return
         elif isinstance(err, ApplicationNoPrivateMessage):
             await ctx.response.send_message(
-                embed=Embed.Error(f"You can't Use this command in DM", "DM not Allowed"),
+                embed=Embed.Error(f"You can't use this command in DM", "DM not Allowed"),
                 ephemeral=True)
             return
         elif isinstance(err, ApplicationPrivateMessageOnly):
             await ctx.response.send_message(
-                embed=Embed.Error(f"You Only Can Do this Command in DM", "DM Only"),
+                embed=Embed.Error(f"You only can do this command in DM", "DM Only"),
                 ephemeral=True)
             return
         elif isinstance(err, MissingPermissions):

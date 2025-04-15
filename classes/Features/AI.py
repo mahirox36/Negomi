@@ -77,6 +77,17 @@ class AI(commands.Cog):
         self.settings: Feature
         self.ready = False
         self.gemini: Optional[genai.Client] = genai.Client(api_key=Gemini_API) if Gemini_API else None
+        self.personality_state = {
+            'core_traits': {
+                'openness': 0.85,
+                'conscientiousness': 0.9,
+                'extraversion': 0.75,
+                'agreeableness': 0.85,
+                'stability': 0.8
+            },
+            'learned_preferences': {},
+            'relationship_dynamics': {}
+        }
         self.emote_mapping = {
             'happy': ['(＾▽＾)', '(◕‿◕)', '(*^▽^*)', '(｡♥‿♥｡)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧'],
             'sad': ['(╥_╥)', '(；ω；)', '(っ˘̩╭╮˘̩)っ', '( ╥ω╥ )', '(｡•́︿•̀｡)'],
@@ -85,7 +96,11 @@ class AI(commands.Cog):
             'love': ['(♡˙︶˙♡)', '(◍•ᴗ•◍)❤', '(´｡• ᵕ •｡`)', '(◕‿◕)♡', '(◡‿◡✿)'],
             'sleepy': ['(￣～￣;)', '(´ぅω・｀)', '(∪｡∪)｡｡｡zzz', '(。-ω-)zzz', '(⊃｡•́‿•̀｡)⊃'],
             'relaxed': ['(￣▽￣*)ゞ', '(◡ ‿ ◡ ✿)', '(｡◕‿◕｡)', '(ᵔᴥᵔ)', '(◠‿◠)'],
-            'energetic': ['ヽ(´▽`)/', '(＊≧∀≦)', '╰(✧∇✧)╯', '(✿◕‿◕)', '\\(^ω^)/']
+            'energetic': ['ヽ(´▽`)/', '(＊≧∀≦)', '╰(✧∇✧)╯', '(✿◕‿◕)', '\\(^ω^)/'],
+            'thoughtful': ['(˘⌣˘)', '(◔‿◔)', '(¬‿¬)', '(▰˘◡˘▰)'],
+            'caring': ['(｡♥‿♥｡)', '(◕‿◕)♡', '(◍•ᴗ•◍)❤'],
+            'curious': ['(・・ ) ?', '(◎_◎;)', '(⊙_⊙)?', '(°ロ°) !'],
+            'mischievous': ['(¬‿¬)', '(￣ω￣;)', '(∩｀-´)⊃━☆ﾟ.*･｡ﾟ']
         }
         self._last_emote = {}  # Track last used emote per channel
     
@@ -161,13 +176,20 @@ class AI(commands.Cog):
                     'channel': message.channel.name
                 }
 
-            # Get AI response
+            # Enhanced context analysis
+            context = self.analyze_message_context(message)
+            
+            # Dynamic personality adjustment
+            self.adjust_personality_state(context)
+            
+            # Get emotionally appropriate response
             response = self.conversation_manager.get_response(
-                str(message.channel.id), 
-                name, 
-                content, 
-                type,
-                guild_info
+                str(message.channel.id),
+                name,
+                content,
+                type=type,
+                guild_info=guild_info,
+                personality_state=self.personality_state
             )
 
             if response is not offline:
@@ -193,37 +215,13 @@ class AI(commands.Cog):
                 await message.reply(str(response))
                 return
 
-            # Add time-based mood detection
-            current_hour = datetime.now().hour
-            if 21 <= current_hour or current_hour <= 4:
-                base_mood = 'sleepy'
-            elif 5 <= current_hour <= 11:
-                base_mood = 'energetic'
-            else:
-                base_mood = 'relaxed'
-
-            # Combine time-based mood with response sentiment
-            if any(word in str(response).lower() for word in ['happy', 'joy', 'excited', 'yay']):
-                mood = 'happy' if current_hour not in range(21, 5) else 'sleepy'
-            elif any(word in str(response).lower() for word in ['sad', 'sorry', 'upset']):
-                mood = 'sad'
-            else:
-                mood = base_mood
+            # Enhanced emotion selection
+            mood = self.select_emotional_response(response, context)
             
-            if mood in self.emote_mapping:
-                # Get channel ID for tracking
-                channel_id = str(message.channel.id)
-                
-                # Get available emotes for this mood
-                available_emotes = self.emote_mapping[mood].copy()
-                
-                # Remove last used emote if possible
-                if channel_id in self._last_emote and self._last_emote[channel_id] in available_emotes:
-                    available_emotes.remove(self._last_emote[channel_id])
-                
-                # Select new emote
-                emote = random.choice(available_emotes)
-                self._last_emote[channel_id] = emote
+            # Dynamic emote selection
+            emote = self.get_contextual_emote(mood, context)
+            
+            if response and emote:
                 response = f"{response} {emote}"
 
             await message.reply(str(response))
@@ -231,6 +229,132 @@ class AI(commands.Cog):
         except Exception as e:
             logger.error(f"AI Response Error: {e}")
             await message.reply(embed=Embed.Error("Something went wrong!"))
+
+    def analyze_message_context(self, message: Message) -> dict:
+        """Analyze message context for better response generation"""
+        context = {
+            'time_of_day': datetime.now().hour,
+            'is_direct_mention': self.client.user and self.client.user.mentioned_in(message),
+            'message_type': 'dm' if isinstance(message.channel, DMChannel) else 'guild',
+            'emotional_indicators': self.detect_emotional_indicators(message.content),
+            'user_history': self.get_user_history(str(message.author.id))
+        }
+        
+        return context
+
+    def detect_emotional_indicators(self, content: str) -> dict:
+        """Detect emotional indicators in message content"""
+        indicators = {
+            'sentiment': 0,
+            'intensity': 0,
+            'emotions': set()
+        }
+        
+        # Emotion detection patterns
+        emotion_patterns = {
+            'joy': ['happy', 'joy', 'yay', 'wonderful', '😊', '😃'],
+            'sadness': ['sad', 'sorry', 'miss', 'lonely', '😢', '😭'],
+            'anger': ['angry', 'mad', 'hate', 'upset', '😠', '😡'],
+            'fear': ['scared', 'afraid', 'worried', 'anxiety', '😨', '😰'],
+            'love': ['love', 'adore', 'cherish', 'care', '❤️', '🥰'],
+            'surprise': ['wow', 'omg', 'whoa', 'amazing', '😮', '😲']
+        }
+        
+        content_lower = content.lower()
+        
+        for emotion, patterns in emotion_patterns.items():
+            if any(pattern in content_lower for pattern in patterns):
+                indicators['emotions'].add(emotion)
+                # Adjust sentiment based on emotion
+                if emotion in {'joy', 'love'}:
+                    indicators['sentiment'] += 1
+                elif emotion in {'sadness', 'anger'}:
+                    indicators['sentiment'] -= 1
+                
+                # Count emotion words for intensity
+                indicators['intensity'] += sum(
+                    content_lower.count(pattern) 
+                    for pattern in patterns
+                )
+        
+        return indicators
+
+    def get_contextual_emote(self, mood: str, context: dict) -> str:
+        """Select appropriate emote based on mood and context"""
+        if mood not in self.emote_mapping:
+            return ""
+            
+        available_emotes = self.emote_mapping[mood].copy()
+        channel_id = str(context.get('channel_id', ''))
+        
+        # Remove recently used emotes for this channel
+        if channel_id in self._last_emote:
+            recent_emote = self._last_emote[channel_id]
+            if recent_emote in available_emotes:
+                available_emotes.remove(recent_emote)
+        
+        # Select emote based on context
+        selected_emote = random.choice(available_emotes)
+        self._last_emote[channel_id] = selected_emote
+        
+        return selected_emote
+
+    def adjust_personality_state(self, context: dict):
+        """Dynamically adjust personality state based on context"""
+        # Update learned preferences
+        user_id = str(context.get('user_id', ''))
+        if user_id:
+            if user_id not in self.personality_state['learned_preferences']:
+                self.personality_state['learned_preferences'][user_id] = {
+                    'topics': set(),
+                    'interaction_style': 'neutral',
+                    'emotional_history': []
+                }
+            
+            # Update relationship dynamics
+            if user_id not in self.personality_state['relationship_dynamics']:
+                self.personality_state['relationship_dynamics'][user_id] = {
+                    'familiarity': 0.1,
+                    'trust': 0.5,
+                    'last_interaction': None
+                }
+            
+            # Adjust relationship metrics
+            dynamics = self.personality_state['relationship_dynamics'][user_id]
+            dynamics['familiarity'] = min(1.0, dynamics['familiarity'] + 0.01)
+            dynamics['last_interaction'] = datetime.now()
+
+    def select_emotional_response(self, response: str, context: dict) -> str:
+        """Select appropriate emotional tone based on context and response"""
+        emotions = context.get('emotional_indicators', {}).get('emotions', set())
+        
+        if 'joy' in emotions or 'love' in emotions:
+            return 'happy' if context['time_of_day'] not in range(21, 5) else 'relaxed'
+        elif 'sadness' in emotions:
+            return 'caring'
+        elif 'surprise' in emotions:
+            return 'curious'
+        elif 'anger' in emotions:
+            return 'thoughtful'
+        
+        # Default to time-based mood
+        hour = context['time_of_day']
+        if 5 <= hour <= 11:
+            return 'energetic'
+        elif 12 <= hour <= 16:
+            return 'relaxed'
+        elif 17 <= hour <= 20:
+            return 'thoughtful'
+        else:
+            return 'sleepy'
+
+    def get_user_history(self, user_id: str) -> dict:
+        """Get user interaction history"""
+        return {
+            'familiarity': self.personality_state['relationship_dynamics'].get(str(user_id), {}).get('familiarity', 0),
+            'trust': self.personality_state['relationship_dynamics'].get(str(user_id), {}).get('trust', 0.5),
+            'preferences': self.personality_state['learned_preferences'].get(str(user_id), {})
+        }
 
     @slash_command(name="ai")
     async def ai(self, ctx:init):

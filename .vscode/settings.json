@@ -59,7 +59,7 @@
     "**/logs": true,
     "**/.next": true,
     "**/node_modules": true,
-    "migrations/": true,
+    "migrations/": false,
     "Data/": true,
     "pyproject.toml": true,
     ".gitmodules": true,
