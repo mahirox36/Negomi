@@ -14,7 +14,7 @@ interface DiscordOption {
 }
 
 interface DiscordSelectProps {
-  type: 'channel' | 'role';
+  type: 'channel' | 'role' | 'category';
   guildId: string;
   value: string | string[];
   onChange: (value: string | string[]) => void;
@@ -74,7 +74,8 @@ export default function DiscordSelect({
       
       setIsLoading(true);
       try {
-        const response = await axios.get(`/api/v1/guilds/${guildId}/${type}s`);
+        const endpoint = type === 'category' ? 'categories' : `${type}s`;
+        const response = await axios.get(`/api/v1/guilds/${guildId}/${endpoint}`);
         const items = response.data?.filter((item: any) => item?.id && item?.name) || [];
         setOptions(items);
         
@@ -224,6 +225,7 @@ export default function DiscordSelect({
   // Get appropriate icon based on option type and name
   const getOptionIcon = (option: DiscordOption): string => {
     if (type === 'channel') return 'fa-solid fa-hashtag';
+    if (type === 'category') return 'fa-solid fa-folder';
     
     // For roles, match name patterns
     const name = option.name.toLowerCase();
@@ -422,7 +424,7 @@ export default function DiscordSelect({
               return (
                 <div
                   key={option.id}
-                  className={`px-4 py-2.5 group ${!isDisabled ? `${themeStyles.hoverItem} cursor-pointer` : 'cursor-not-allowed'}
+                  className={`px-4 py-2.5 group ${!isDisabled ? `${themeStyles.hoverItem} cursor-pointer text-sky-100` : 'cursor-not-allowed'}
                     transition-colors flex items-center gap-3 relative`}
                   onClick={() => !isDisabled && handleSelect(option.id)}
                   role="option"

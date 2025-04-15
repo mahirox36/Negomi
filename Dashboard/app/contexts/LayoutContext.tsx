@@ -2,7 +2,7 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 
-interface LayoutContextType {
+export interface LayoutContextType {
   hasChanges: boolean;
   setHasChanges: (value: boolean) => void;
   onSave?: () => Promise<void>;
@@ -10,7 +10,7 @@ interface LayoutContextType {
   onReset?: () => Promise<void>;
 }
 
-const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
+export const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export const useLayout = () => {
   const context = useContext(LayoutContext);

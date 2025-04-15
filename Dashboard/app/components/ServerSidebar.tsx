@@ -20,9 +20,27 @@ export default function ServerSidebar({
 }: ServerSidebarProps) {
   const pathname = usePathname();
   const [hasInitiallyAnimated, setHasInitiallyAnimated] = useState(false);
+  const [serverInfo, setServerInfo] = useState<{ name: string; icon_url: string | null } | null>(null);
   const router = useRouter();
   const { serverSidebar, fetchServerSidebar } = useLayout();
   const isFetching = useRef(false);
+
+  useEffect(() => {
+    const fetchServerInfo = async () => {
+      try {
+        const response = await fetch(`/api/v1/guilds/${serverId}`);
+        const data = await response.json();
+        setServerInfo({
+          name: data.name,
+          icon_url: data.icon_url
+        });
+      } catch (error) {
+        console.error('Failed to fetch server info:', error);
+      }
+    };
+
+    fetchServerInfo();
+  }, [serverId]);
 
   useEffect(() => {
     if (isFetching.current) return;
@@ -60,23 +78,45 @@ export default function ServerSidebar({
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="fixed left-0 top-16 bottom-0 w-64 bg-white/5 backdrop-blur-lg border-r border-white/5"
     >
-      <div className="h-full overflow-y-auto px-4 py-6">
-        <Link
-          href="/dashboard"
-          className="flex items-center mb-8 px-2 py-2 rounded-lg text-white/60 hover:text-white transition-colors group"
-        >
-          <motion.div
-            whileHover={{ x: 4 }}
-            className="flex items-center w-full"
-          >
-            <div className="w-5 flex items-center justify-center mr-3">
-              <i className="fa-solid fa-arrow-left group-hover:transform group-hover:-translate-x-1 transition-transform" />
+      <div className="h-full overflow-y-auto">
+        {/* Server Info Header */}
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center gap-3 mb-4">
+            {serverInfo?.icon_url ? (
+              <img
+                src={serverInfo.icon_url}
+                alt={serverInfo.name}
+                className="w-12 h-12 rounded-xl"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                <i className="fas fa-server text-xl text-white/50" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-medium truncate">{serverInfo?.name}</h2>
+              <p className="text-white/60 text-sm">Server Settings</p>
             </div>
-            <span className="font-medium">Back to Dashboard</span>
-          </motion.div>
-        </Link>
+          </div>
+          
+          <Link
+            href="/dashboard"
+            className="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white transition-colors group bg-white/5 hover:bg-white/10"
+          >
+            <motion.div
+              whileHover={{ x: -4 }}
+              className="flex items-center w-full"
+            >
+              <div className="w-5 flex items-center justify-center mr-3">
+                <i className="fa-solid fa-arrow-left group-hover:transform group-hover:-translate-x-1 transition-transform" />
+              </div>
+              <span className="font-medium">Back to Dashboard</span>
+            </motion.div>
+          </Link>
+        </div>
 
-        <div className="space-y-8">
+        {/* Navigation Items */}
+        <div className="p-4 space-y-8">
           {Object.entries(serverSidebar).map(([section, items]) => (
             <motion.div key={section}>
               <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">

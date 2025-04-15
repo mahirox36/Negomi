@@ -135,17 +135,20 @@ export default function ServerLayoutClient({ children, serverId }: LayoutProps) 
         hasChanges,
         setHasChanges,
         onSave: async () => {
-          // Get current path to determine which settings to save
           const currentPath = pathname.split("/").pop() || "";
-          
           try {
-            await axios.post(`/api/v1/guilds/${serverId}/settings/${currentPath}`, {
-              settings: {
-                // This will be handled by each page's own save handler
-              }
-            });
+            const settings = localStorage.getItem(`settings_${currentPath}`);
+            if (!settings) {
+              throw new Error("No settings to save");
+            }
+
+            await axios.post(`/api/v1/guilds/${serverId}/settings/${currentPath}`, JSON.parse(settings));
+            localStorage.removeItem(`settings_${currentPath}`);
             setHasChanges(false);
             toast.success("Settings saved successfully!");
+            
+            // Notify components that settings were saved
+            window.dispatchEvent(new CustomEvent('settingsSaved'));
           } catch (error) {
             console.error("Failed to save settings:", error);
             toast.error("Failed to save settings");
