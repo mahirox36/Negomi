@@ -2,19 +2,73 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Line } from "react-chartjs-2";
 import {
-  BiServer,
-  BiUser,
-  BiMessageDetail,
-  BiCommand,
-  BiError,
-} from "react-icons/bi";
-import { FiCpu, FiHardDrive, FiClock, FiActivity } from "react-icons/fi";
-import Link from "next/link";
-import PageWrapper from "../components/PageWrapper";
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import axios from "axios";
+import PageWrapper from "../components/PageWrapper";
 
-// Update the type to match the API response structure
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  height: 300,
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      position: 'top' as const,
+      labels: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        font: {
+          size: 12
+        }
+      }
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+  },
+  scales: {
+    y: {
+      grid: {
+        color: 'rgba(255, 255, 255, 0.1)',
+      },
+      ticks: {
+        color: 'rgba(255, 255, 255, 0.7)',
+      }
+    },
+    x: {
+      grid: {
+        color: 'rgba(255, 255, 255, 0.1)',
+      },
+      ticks: {
+        color: 'rgba(255, 255, 255, 0.7)',
+      }
+    }
+  }
+};
+
 type DetailedStats = {
   system: {
     cpu_usage: number;
@@ -25,6 +79,8 @@ type DetailedStats = {
     uptime: number;
     thread_count: number;
     disk_usage: number;
+    historical_cpu: number[];
+    historical_memory: number[];
   };
   bot: {
     guild_count: number;
@@ -40,24 +96,16 @@ type DetailedStats = {
     commands_processed: number;
     errors_encountered: number;
     shard_count: number;
+    historical_stats: {
+      timestamps: number[];
+      latency: number[];
+      messages: number[];
+      commands: number[];
+    };
   };
-  // guilds: Array<{
-  //   id: string
-  //   name: string
-  //   member_count: number
-  //   channel_count: number
-  //   role_count: number
-  //   emoji_count: number
-  //   features: string[]
-  //   created_at: number
-  //   icon_url: string | null
-  //   boost_level: number
-  //   boost_count: number
-  //   verification_level: string
-  //   owner_id: string
-  // }>
   timestamp: number;
 };
+
 type Guild = {
   id: number;
   name: string;
@@ -81,82 +129,26 @@ export default function StatisticsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const apiUrl = "/api/v1/bot/stats";
-
-        const response = await axios.get(apiUrl, {withCredentials: true});
-        const data = await response.data;
-
-        const processedData = {
-          system: {
-            cpu_usage: data.system?.cpu_usage ?? 0,
-            memory_usage: data.system?.memory_usage ?? 0,
-            memory_total: data.system?.memory_total ?? 0,
-            python_version: data.system?.python_version ?? "N/A",
-            os: data.system?.os ?? "N/A",
-            uptime: data.system?.uptime ?? 0,
-            thread_count: data.system?.thread_count ?? 0,
-            disk_usage: data.system?.disk_usage ?? 0,
-          },
-          bot: {
-            guild_count: data.bot?.guild_count ?? 0,
-            user_count: data.bot?.user_count ?? 0,
-            channel_count: data.bot?.channel_count ?? 0,
-            voice_connections: data.bot?.voice_connections ?? 0,
-            latency: data.bot?.latency ?? 0,
-            uptime: data.bot?.uptime ?? 0,
-            command_count: data.bot?.command_count ?? 0,
-            cogs_loaded: data.bot?.cogs_loaded ?? 0,
-            shard_count: data.bot?.shard_count ?? 1,
-            current_shard: data.bot?.current_shard ?? 0,
-            messages_sent: data.bot?.messages_sent ?? 0,
-            commands_processed: data.bot?.commands_processed ?? 0,
-            errors_encountered: data.bot?.errors_encountered ?? 0,
-          },
-          timestamp: data.timestamp ?? Date.now() / 1000,
-        };
-
-        setStats(processedData);
+        const [statsRes, guildsRes] = await Promise.all([
+          axios.get("/api/v1/bot/stats", { withCredentials: true }),
+          axios.get("/api/v1/guilds", { withCredentials: true })
+        ]);
+        
+        setStats(statsRes.data);
+        setGuilds(guildsRes.data.guilds);
         setError(null);
       } catch (error) {
-        console.error("Error fetching statistics:", error);
+        console.error("Error fetching data:", error);
         setError("Failed to load statistics");
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchGuilds = async () => {
-      try {
-        const apiUrl = "/api/v1/guilds";
-
-        const response = await axios.get(apiUrl, {withCredentials: true});
-        setGuilds(response.data.guilds);
-      } catch (error) {
-        console.error("Error fetching guilds:", error);
-      }
-    };
-
-    // Set loading immediately when component mounts
-    setLoading(true);
-    fetchStats();
-    fetchGuilds();
+    fetchData();
   }, []);
-
-  const formatUptime = (seconds: number) => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${days}d ${hours}h ${minutes}m`;
-  };
-
-  const formatBytes = (bytes: number) => {
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-    if (bytes === 0) return "0 Byte";
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)).toString());
-    return Math.round(bytes / Math.pow(1024, i)) + " " + sizes[i];
-  };
 
   if (error || !stats) {
     return (
@@ -165,44 +157,6 @@ export default function StatisticsPage() {
           <div className="text-white text-xl text-center">
             <p>Error loading statistics</p>
             <p className="text-sm text-red-300 mt-2">{error}</p>
-            <motion.div
-              initial="initial"
-              animate="animate"
-              variants={{
-                initial: { y: 20, opacity: 0 },
-                animate: {
-                  y: 0,
-                  opacity: 1,
-                  transition: {
-                    duration: 1,
-                    ease: "easeOut",
-                  },
-                },
-              }}
-              className="mt-8"
-            >
-              <Link href="/" className="group relative inline-block">
-                <motion.div
-                  className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 opacity-75 blur-sm"
-                  animate={{
-                    scale: [1, 1.05, 1],
-                    opacity: [0.75, 0.85, 0.75],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                  }}
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative px-8 py-4 bg-white rounded-full font-bold text-lg text-purple-600 hover:text-purple-700 transition-colors duration-200"
-                >
-                  Back to homepage
-                </motion.button>
-              </Link>
-            </motion.div>
           </div>
         </div>
       </PageWrapper>
@@ -211,133 +165,137 @@ export default function StatisticsPage() {
 
   return (
     <PageWrapper loading={loading} loadingMessage="Loading statistics...">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-white text-center mb-12"
-        >
-          Bot Statistics
-        </motion.h1>
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* System Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Quick Stats Cards */}
-          <StatsCard
-            icon={<BiServer className="w-6 h-6" />}
-            title="Servers"
-            value={stats.bot.guild_count.toLocaleString()}
+          <StatCard
+            title="CPU Usage"
+            value={`${stats.system.cpu_usage}%`}
+            icon="fas fa-microchip"
+            trend={calculateTrend(stats.system.historical_cpu)}
           />
-          <StatsCard
-            icon={<BiUser className="w-6 h-6" />}
-            title="Users"
-            value={stats.bot.user_count.toLocaleString()}
+          <StatCard
+            title="Memory Usage"
+            value={`${stats.system.memory_usage}%`}
+            icon="fas fa-memory"
+            trend={calculateTrend(stats.system.historical_memory)}
           />
-          <StatsCard
-            icon={<BiMessageDetail className="w-6 h-6" />}
-            title="Messages Sent"
-            value={stats.bot.messages_sent.toLocaleString()}
+          <StatCard
+            title="Bot Uptime"
+            value={formatUptime(stats.bot.uptime)}
+            icon="fas fa-clock"
           />
-          <StatsCard
-            icon={<BiCommand className="w-6 h-6" />}
-            title="Commands"
-            value={stats.bot.command_count.toLocaleString()}
-          />
-          <StatsCard
-            icon={<BiMessageDetail className="w-6 h-6" />}
-            title="Messages Sent"
-            value={stats.bot.messages_sent.toLocaleString()}
-          />
-          <StatsCard
-            icon={<BiCommand className="w-6 h-6" />}
-            title="Commands Processed"
-            value={stats.bot.commands_processed.toLocaleString()}
-          />
-          <StatsCard
-            icon={<BiError className="w-6 h-6" />}
-            title="Errors"
-            value={stats.bot.errors_encountered.toLocaleString()}
-            className="text-red-400"
+          <StatCard
+            title="Latency"
+            value={`${stats.bot.latency}ms`}
+            icon="fas fa-bolt"
+            trend={calculateTrend(stats.bot.historical_stats.latency)}
           />
         </div>
 
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* System Stats */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6"
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">
-              System Status
-            </h2>
-            <div className="space-y-4">
-              <ProgressBar
-                label="CPU Usage"
-                value={stats.system.cpu_usage}
-                icon={<FiCpu />}
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">System Performance</h2>
+            <div className="h-[300px]">
+              <Line
+                data={{
+                  labels: stats.bot.historical_stats.timestamps.map(ts => 
+                    new Date(ts * 1000).toLocaleTimeString()
+                  ),
+                  datasets: [
+                    {
+                      label: 'CPU Usage',
+                      data: stats.system.historical_cpu,
+                      borderColor: '#3B82F6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      fill: true,
+                    },
+                    {
+                      label: 'Memory Usage',
+                      data: stats.system.historical_memory,
+                      borderColor: '#10B981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      fill: true,
+                    }
+                  ]
+                }}
+                options={chartOptions}
               />
-              <ProgressBar
-                label="Memory Usage"
-                value={stats.system.memory_usage}
-                icon={<FiHardDrive />}
-              />
-              <ProgressBar
-                label="Disk Usage"
-                value={stats.system.disk_usage}
-                icon={<FiHardDrive />}
-              />
-              <div className="text-white/80">
-                <p>OS: {stats.system.os}</p>
-                <p>Python: {stats.system.python_version}</p>
-                <p>Threads: {stats.system.thread_count}</p>
-                <p>Memory Total: {formatBytes(stats.system.memory_total)}</p>
-              </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Bot Stats */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6"
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">Bot Status</h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <StatusItem
-                  icon={<FiClock />}
-                  label="Uptime"
-                  value={formatUptime(stats.bot.uptime)}
-                />
-                <StatusItem
-                  icon={<FiActivity />}
-                  label="Latency"
-                  value={`${stats.bot.latency}ms`}
-                />
-              </div>
-              <div className="text-white/80">
-                <p>
-                  Shards: {stats.bot.current_shard + 1}/{stats.bot.shard_count}
-                </p>
-                <p>Voice Connections: {stats.bot.voice_connections}</p>
-                <p>Channels: {stats.bot.channel_count.toLocaleString()}</p>
-                <p>Classes Loaded: {stats.bot.cogs_loaded}</p>
-              </div>
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Bot Activity</h2>
+            <div className="h-[300px]">
+              <Line
+                data={{
+                  labels: stats.bot.historical_stats.timestamps.map(ts => 
+                    new Date(ts * 1000).toLocaleTimeString()
+                  ),
+                  datasets: [
+                    {
+                      label: 'Messages',
+                      data: stats.bot.historical_stats.messages,
+                      borderColor: '#F59E0B',
+                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                      fill: true,
+                    },
+                    {
+                      label: 'Commands',
+                      data: stats.bot.historical_stats.commands,
+                      borderColor: '#EC4899',
+                      backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                      fill: true,
+                    }
+                  ]
+                }}
+                options={chartOptions}
+              />
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Server List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-lg rounded-xl p-6"
-        >
-          <h2 className="text-2xl font-bold text-white mb-4">Top Servers</h2>
+        {/* Bot Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Bot Overview</h3>
+            <div className="space-y-4">
+              <StatRow icon="fa-server" label="Total Servers" value={stats.bot.guild_count} />
+              <StatRow icon="fa-users" label="Total Users" value={stats.bot.user_count} />
+              <StatRow icon="fa-hashtag" label="Total Channels" value={stats.bot.channel_count} />
+              <StatRow icon="fa-terminal" label="Commands" value={stats.bot.command_count} />
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Activity Stats</h3>
+            <div className="space-y-4">
+              <StatRow icon="fa-message" label="Messages Sent" value={stats.bot.messages_sent} />
+              <StatRow icon="fa-code" label="Commands Used" value={stats.bot.commands_processed} />
+              <StatRow icon="fa-microphone" label="Voice Connections" value={stats.bot.voice_connections} />
+              <StatRow icon="fa-triangle-exclamation" label="Errors" value={stats.bot.errors_encountered} />
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">System Info</h3>
+            <div className="space-y-4">
+              <StatRow icon="fa-memory" label="Total Memory" value={formatBytes(stats.system.memory_total)} />
+              <StatRow icon="fa-microchip" label="Threads" value={stats.system.thread_count} />
+              <StatRow icon="fa-code-branch" label="Python" value={stats.system.python_version} />
+              <StatRow icon="fa-desktop" label="OS" value={stats.system.os} />
+            </div>
+          </div>
+        </div>
+
+        {/* Top Servers */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+          <h3 className="text-xl font-semibold text-white mb-6">Top Servers</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {guilds
               .sort((a, b) => b.member_count - a.member_count)
-              .slice(0, 9)
+              .slice(0, 6)
               .map((guild) => (
                 <motion.div
                   key={guild.id}
@@ -345,99 +303,97 @@ export default function StatisticsPage() {
                   className="bg-white/5 rounded-lg p-4"
                 >
                   <div className="flex items-center space-x-3">
-                    {guild.icon_url && (
+                    {guild.icon_url ? (
                       <img
                         src={guild.icon_url}
                         alt={guild.name}
                         className="w-12 h-12 rounded-full"
                       />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                        <i className="fas fa-server text-white/50" />
+                      </div>
                     )}
                     <div>
-                      <h3 className="text-white font-semibold">{guild.name}</h3>
-                      <p className="text-white/60 text-sm">
-                        {guild.member_count.toLocaleString()} members
-                      </p>
+                      <h4 className="text-white font-medium">{guild.name}</h4>
+                      <div className="flex items-center gap-2 text-white/60 text-sm">
+                        <i className="fas fa-users" />
+                        <span>{formatNumber(guild.member_count)}</span>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
           </div>
-        </motion.div>
+        </div>
       </main>
     </PageWrapper>
   );
 }
 
-const StatsCard = ({
-  icon,
-  title,
-  value,
-  className = "",
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  className?: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ scale: 1.02 }}
-    className="bg-white/10 backdrop-blur-lg rounded-xl p-6"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="text-white/80">{icon}</div>
-      <div>
-        <p className="text-white/60">{title}</p>
-        <p className={`text-2xl font-bold ${className || "text-white"}`}>
-          {value}
-        </p>
+function StatCard({ title, value, icon, trend }: { title: string; value: string; icon: string; trend?: number }) {
+  return (
+    <motion.div
+      whileHover={{ y: -2 }}
+      className="bg-white/10 backdrop-blur-lg rounded-xl p-6"
+    >
+      <div className="flex items-center justify-between">
+        <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
+          <i className={`${icon} text-xl text-white/90`} />
+        </div>
+        {trend !== undefined && (
+          <div className={`flex items-center gap-1 ${trend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <i className={`fas fa-${trend >= 0 ? 'arrow-up' : 'arrow-down'}`} />
+            <span className="text-sm">{Math.abs(trend)}%</span>
+          </div>
+        )}
       </div>
-    </div>
-  </motion.div>
-);
-
-const ProgressBar = ({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-}) => (
-  <div>
-    <div className="flex items-center justify-between mb-1">
-      <div className="flex items-center space-x-2">
-        <span className="text-white/80">{icon}</span>
-        <span className="text-white/80">{label}</span>
+      <div className="mt-4">
+        <h3 className="text-sm font-medium text-white/70">{title}</h3>
+        <p className="text-2xl font-semibold text-white mt-1">{value}</p>
       </div>
-      <span className="text-white/80">{value}%</span>
-    </div>
-    <div className="w-full bg-white/10 rounded-full h-2">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${value}%` }}
-        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
-      />
-    </div>
-  </div>
-);
+    </motion.div>
+  );
+}
 
-const StatusItem = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) => (
-  <div className="flex items-center space-x-3">
-    <div className="text-white/80">{icon}</div>
-    <div>
-      <p className="text-white/60">{label}</p>
-      <p className="text-white font-semibold">{value}</p>
+function StatRow({ icon, label, value }: { icon: string; label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+          <i className={`fas ${icon} text-white/90`} />
+        </div>
+        <span className="text-white/70">{label}</span>
+      </div>
+      <span className="text-white font-medium">{value}</span>
     </div>
-  </div>
-);
+  );
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${days}d ${hours}h ${minutes}m`;
+}
+
+function formatBytes(bytes: number): string {
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 B';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+}
+
+function formatNumber(num: number): string {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+}
+
+function calculateTrend(data: number[]): number {
+  if (!data || data.length < 2) return 0;
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
+  if (prev === 0) return 0;
+  return Number(((last - prev) / prev * 100).toFixed(1));
+}
