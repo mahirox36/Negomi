@@ -5,8 +5,8 @@ from cryptography.fernet import Fernet
 import base64
 import os
 import uuid
-__version__ = 2.4
-__VersionsSupported__ = [2.2, 2.3, 2.4]
+__version__ = 2.5
+__VersionsSupported__ = [2.2, 2.3, 2.4, 2.5]
 
 
 class ChannelTypeError(Exception):
@@ -24,32 +24,19 @@ class ChannelCreationError(Exception):
 class Backup(commands.Cog):
     def __init__(self, client: Client):
         self.client = client
-        self.key = os.getenv('BACKUP_KEY', Fernet.generate_key())
-        # Generate key based on MAC address
-        def get_mac_based_key():
-            mac = uuid.getnode()
-            mac_bytes = mac.to_bytes(6, 'big')
-            # Extend to 32 bytes for Fernet key
-            extended = mac_bytes * 6  # 36 bytes
-            return base64.urlsafe_b64encode(extended[:32])
 
-        self.key = get_mac_based_key()
-        self.cipher = Fernet(self.key)
-
-    
     @slash_command(name="backup", 
                   default_member_permissions=Permissions(administrator=True))
     async def backup(self, ctx:init):
         pass
-    
-    
+
     @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
     @cooldown(15)
-    async def export(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
+    async def export(self, ctx: init, encrypt: bool = False, encryption_key: Optional[str] = None, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
-        await self.exportFunction(ctx, encrypt, include_assets, creator_only)
+        await self.exportFunction(ctx, encrypt, encryption_key, include_assets, creator_only)
 
-    async def exportFunction(self, ctx: init, encrypt: bool = False, include_assets: bool = False, creator_only: bool = False):
+    async def exportFunction(self, ctx: init, encrypt: bool = False, encryption_key: Optional[str] = None, include_assets: bool = False, creator_only: bool = False):
         if not ctx.guild or not ctx.user:
             await ctx.send(embed=Embed.Error("This command can only be used in a server.", "Invalid Command"))
             return
@@ -121,7 +108,15 @@ class Backup(commands.Cog):
         try:
             json_data = json.dumps(data, indent=2, ensure_ascii=False)
             if encrypt:
-                encrypted_data = self.cipher.encrypt(json_data.encode())
+                # Genrate a random encryption key if not provided
+                if not encryption_key:
+                    encryption_key = str(uuid.uuid4())
+                key_bytes = encryption_key.encode()
+                if len(key_bytes) < 32:
+                    key_bytes = key_bytes.ljust(32, b'0')
+                key = base64.urlsafe_b64encode(key_bytes[:32])
+                cipher = Fernet(key)
+                encrypted_data = cipher.encrypt(json_data.encode())
                 file_data.write(base64.b64encode(encrypted_data).decode())
                 ext = ".negomi"
             else:
@@ -131,7 +126,8 @@ class Backup(commands.Cog):
             file_data.seek(0)
             filename = f"backup-v{__version__}-{ctx.guild.name}-{ctx.created_at.strftime('%Y-%m-%d_%H-%M-%S')}{ext}"
             discord_file = File(fp=io.BytesIO(file_data.getvalue().encode()), filename=filename)
-            await ctx.send(file=discord_file)
+            message = f"Backup file created successfully! Encryption key: ||`{encryption_key}`||" if encrypt else "Backup file created successfully!"
+            await ctx.send(file=discord_file, embed=Embed.Info(message, "Backup Created"))
         finally:
             file_data.close()
 
@@ -204,9 +200,8 @@ class Backup(commands.Cog):
             }
         return overwrites_data
 
-    @backup.subcommand(name="import",
-                  description="Import server configuration from a backup file")
-    async def imported(self, ctx: init, file: Attachment):
+    @backup.subcommand(name="import", description="Import server configuration from a backup file")
+    async def imported(self, ctx: init, file: Attachment, encryption_key: Optional[str] = None):
         if not ctx.guild or not ctx.user or not ctx.channel:
             await ctx.send(embed=Embed.Error("This command can only be used in a server.", "Invalid Command"))
             return
@@ -224,13 +219,23 @@ class Backup(commands.Cog):
         file_content = await file.read()
         try:
             content_str = file_content.decode()
-            try:
-                # Try to decode as base64 and decrypt
-                encrypted_data = base64.b64decode(content_str)
-                decrypted_data = self.cipher.decrypt(encrypted_data)
-                data = json.loads(decrypted_data)
-            except:
-                # If decryption fails, try parsing as plain JSON
+            if file.filename.endswith(".negomi"):
+                if not encryption_key:
+                    await ctx.send(embed=Embed.Error("Encryption key is required for encrypted backup files", "Missing Key"))
+                    return
+                try:
+                    key_bytes = encryption_key.encode()
+                    if len(key_bytes) < 32:
+                        key_bytes = key_bytes.ljust(32, b'0')
+                    key = base64.urlsafe_b64encode(key_bytes[:32])
+                    cipher = Fernet(key)
+                    encrypted_data = base64.b64decode(content_str)
+                    decrypted_data = cipher.decrypt(encrypted_data)
+                    data = json.loads(decrypted_data)
+                except Exception as e:
+                    await ctx.send(embed=Embed.Error("Failed to decrypt backup file. Invalid encryption key.", "Decryption Error"))
+                    return
+            else:
                 data = json.loads(content_str)
         except Exception as e:
             await ctx.send(embed=Embed.Error(f"Failed to parse backup file: {str(e)}", "Parse Error"))

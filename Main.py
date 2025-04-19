@@ -219,7 +219,6 @@ class DiscordBot(commands.Bot):
             err = error.original
         else:
             err = error
-        logger.info(str(type(err)))
         if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
