@@ -1,18 +1,16 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useColorPickerRefs } from "@/hooks/useColorPickerRefs";
 import ColorPicker from "@/app/components/ColorPicker";
 import ToggleSwitch from "@/app/components/form/ToggleSwitch";
 import DiscordSelect from "@/app/components/form/DiscordSelect";
 import TextInput from "@/app/components/form/TextInput";
 import Textarea from "@/app/components/form/Textarea";
-import SearchInput from "@/app/components/form/SearchInput";
-import MultiSelect from "@/app/components/form/MultiSelect";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { useLayout } from "@/app/contexts/LayoutContext";
+import { useLayout } from "@/providers/LayoutProvider";
 
 type Setting = {
   name: string;
@@ -39,15 +37,18 @@ type LayoutItem = {
 export default function BasicSettings() {
   const params = useParams();
   const serverId = params.id;
-  const { setHasChanges } = useLayout();
-  const [pageLayout, setPageLayout] = useState<LayoutItem[]>([]);
+  const { setHasChanges, isLoading: layoutLoading, pageLayout, fetchPageLayout } = useLayout();
   const [currentValues, setCurrentValues] = useState<any>(null);
   const [originalValues, setOriginalValues] = useState<any>(null);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const { getRef } = useColorPickerRefs();
-  const isLoading = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const hasInitialFetch = useRef(false);
 
   const fetchSettings = useCallback(async () => {
+    if (!serverId || hasInitialFetch.current) return;
+    
+    setIsLoading(true);
     try {
       const settingsRes = await axios.get(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
         withCredentials: true,
@@ -58,51 +59,18 @@ export default function BasicSettings() {
         setOriginalValues(settingsRes.data.settings);
         setHasChanges(false);
       }
+      hasInitialFetch.current = true;
     } catch (error) {
       console.error("Failed to fetch settings:", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setIsLoading(false);
     }
   }, [serverId, setHasChanges]);
 
-  const handleSave = useCallback(async (e?: CustomEvent) => {
-    e?.stopPropagation();
-
-    if (!currentValues) return;
-
-    try {
-      await axios.post(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
-        settings: currentValues,
-        withCredentials: true,
-      });
-      setOriginalValues(currentValues);
-      setHasChanges(false);
-      toast.success("Changes saved successfully!");
-    } catch (error) {
-      toast.error("Failed to save changes");
-    }
-  }, [currentValues, serverId, setHasChanges]);
-
-  const handleRevert = useCallback((e?: CustomEvent) => {
-    e?.stopPropagation();
-
-    setCurrentValues(originalValues);
-    setHasChanges(false);
-  }, [originalValues, setHasChanges]);
-
-  useEffect(() => {
-    const saveHandler = (e: Event) => handleSave(e as CustomEvent);
-    const revertHandler = (e: Event) => handleRevert(e as CustomEvent);
-
-    window.addEventListener("saveChanges", saveHandler, { once: true });
-    window.addEventListener("revertChanges", revertHandler, { once: true });
-
-    return () => {
-      window.removeEventListener("saveChanges", saveHandler);
-      window.removeEventListener("revertChanges", revertHandler);
-    };
-  }, [handleSave, handleRevert]);
-
   useEffect(() => {
     const handleSettingsReset = () => {
+      hasInitialFetch.current = false;
       fetchSettings();
     };
 
@@ -113,37 +81,27 @@ export default function BasicSettings() {
   }, [fetchSettings]);
 
   useEffect(() => {
-    if (isLoading.current) return;
-    isLoading.current = true;
+    if (!serverId || hasInitialFetch.current) return;
 
-    const fetchPageLayout = async () => {
+    const loadData = async () => {
       try {
-        const [layoutRes, settingsRes] = await Promise.all([
-          fetch(`/api/v1/layout/settings/server/basic-settings`),
-          axios.get(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
-            withCredentials: true,
-          }),
+        await Promise.all([
+          fetchPageLayout('basic-settings'),
+          fetchSettings()
         ]);
-
-        const layoutData = await layoutRes.json();
-        setPageLayout(
-          Array.isArray(layoutData) ? layoutData : layoutData.layout || []
-        );
-
-        if (settingsRes.data?.settings) {
-          setCurrentValues(settingsRes.data.settings);
-          setOriginalValues(settingsRes.data.settings);
-        }
       } catch (error) {
-        console.error("Failed to fetch layout or settings:", error);
-        setPageLayout([]);
-      } finally {
-        isLoading.current = false;
+        console.error('Failed to fetch data:', error);
+        toast.error('Failed to load settings');
       }
     };
 
-    fetchPageLayout();
-  }, [serverId]);
+    loadData();
+
+    // Cleanup on unmount
+    return () => {
+      hasInitialFetch.current = false;
+    };
+  }, [serverId, fetchSettings, fetchPageLayout]);
 
   const handleValueChange = useCallback((settingId: string, value: any) => {
     const newValues = { ...currentValues, [settingId]: value };
@@ -151,21 +109,6 @@ export default function BasicSettings() {
     setCurrentValues(newValues);
     setHasChanges(changed);
   }, [currentValues, originalValues, setHasChanges]);
-
-  const handleReset = async () => {
-    try {
-      await axios.delete(`/api/v1/guilds/${serverId}/settings/basic-settings`, {
-        withCredentials: true,
-      });
-
-      // Refetch the settings after reset
-      fetchSettings();
-      toast.success("Settings have been reset to defaults!");
-    } catch (error) {
-      toast.error("Failed to reset settings");
-      throw error;
-    }
-  };
 
   const renderSettingInput = (setting: Setting) => {
     switch (setting.type) {
@@ -299,6 +242,21 @@ export default function BasicSettings() {
     }
   };
 
+  if (isLoading || layoutLoading) {
+    return (
+      <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 flex flex-col items-center">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-[spin_3s_linear_infinite]"></div>
+          <div className="absolute inset-2 rounded-full border-4 border-t-white/80 border-white/20 animate-[spin_2s_linear_infinite]"></div>
+          <div className="absolute inset-[38%] rounded-full bg-white/80 animate-pulse"></div>
+        </div>
+        <p className="text-white text-base mt-4 font-medium animate-pulse">
+          Loading...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {pageLayout?.map((item, index) => {
@@ -312,18 +270,14 @@ export default function BasicSettings() {
                 <div className="flex items-center gap-4">
                   {item.icon && (
                     <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
-                      <i
-                        className={`${item.icon} text-2xl text-white/90`}
-                      ></i>
+                      <i className={`${item.icon} text-2xl text-white/90`}></i>
                     </div>
                   )}
                   <div>
                     <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                       {item.text}
                     </h1>
-                    <p className="text-lg text-white/70 mt-1">
-                      {item.subtext}
-                    </p>
+                    <p className="text-lg text-white/70 mt-1">{item.subtext}</p>
                   </div>
                 </div>
               </div>
@@ -338,18 +292,14 @@ export default function BasicSettings() {
                   <div className="flex items-center gap-4">
                     {item.icon && (
                       <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
-                        <i
-                          className={`${item.icon} text-xl text-white/90`}
-                        ></i>
+                        <i className={`${item.icon} text-xl text-white/90`}></i>
                       </div>
                     )}
                     <div>
                       <h2 className="text-xl font-semibold text-white">
                         {item.text}
                       </h2>
-                      <p className="text-sm text-white/70 mt-1">
-                        {item.subtext}
-                      </p>
+                      <p className="text-sm text-white/70 mt-1">{item.subtext}</p>
                     </div>
                   </div>
                 </div>
@@ -370,7 +320,7 @@ export default function BasicSettings() {
                         )}
                       </div>
                       <div className="flex items-center gap-3">
-                        {renderSettingInput(setting)}
+                        {renderSettingInput(setting as Setting)}
                       </div>
                     </div>
                   ))}

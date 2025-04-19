@@ -59,9 +59,17 @@ export default function Dashboard() {
         setUser(userData.user);
 
         // Only fetch guild data if we have a valid user
-        const guildResponse = await fetch("/api/v1/auth/user/guilds", {
+        const guildPromise = fetch("/api/v1/auth/user/guilds", {
           credentials: "include",
         });
+
+        // Fetch user data for dashboard
+        const userDataPromise = fetch("/api/v1/auth/user/dashboard", {
+          credentials: "include",
+        });
+
+        // Wait for both fetches to complete
+        const [guildResponse, userDataResponse] = await Promise.all([guildPromise, userDataPromise]);
 
         if (!guildResponse.ok) {
           throw new Error("Failed to fetch guild data");
@@ -70,10 +78,6 @@ export default function Dashboard() {
         const guildData = await guildResponse.json();
         setGuilds(guildData.guilds);
 
-        // Fetch user data for dashboard
-        const userDataResponse = await fetch("/api/v1/auth/user/dashboard", {
-          credentials: "include",
-        });
 
         if (!userDataResponse.ok) {
           throw new Error("Failed to fetch user data");

@@ -4,13 +4,19 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useLayout } from "@/providers/LayoutProvider";
+import { useLayout } from "@/lib/contexts/LayoutContext";
 import toast from "react-hot-toast";
+
+interface SidebarItem {
+  name: string;
+  link: string;
+  icon?: string;
+}
 
 interface ServerSidebarProps {
   serverId: string;
   hasUnsavedChanges?: boolean;
-  onNavigationAttempt?: () => void;
+  onNavigationAttempt?: () => boolean;
 }
 
 export default function ServerSidebar({
@@ -22,8 +28,7 @@ export default function ServerSidebar({
   const [hasInitiallyAnimated, setHasInitiallyAnimated] = useState(false);
   const [serverInfo, setServerInfo] = useState<{ name: string; icon_url: string | null } | null>(null);
   const router = useRouter();
-  const { serverSidebar, fetchServerSidebar } = useLayout();
-  const isFetching = useRef(false);
+  const { serverSidebar, fetchServerSidebar, isLoading } = useLayout();
 
   useEffect(() => {
     const fetchServerInfo = async () => {
@@ -36,6 +41,7 @@ export default function ServerSidebar({
         });
       } catch (error) {
         console.error('Failed to fetch server info:', error);
+        toast.error('Failed to load server information');
       }
     };
 
@@ -43,15 +49,7 @@ export default function ServerSidebar({
   }, [serverId]);
 
   useEffect(() => {
-    if (isFetching.current) return;
-    isFetching.current = true;
-
-    const initSidebar = async () => {
-      await fetchServerSidebar();
-      isFetching.current = false;
-    };
-
-    initSidebar();
+    fetchServerSidebar();
   }, [fetchServerSidebar]);
 
   useEffect(() => {
@@ -59,15 +57,38 @@ export default function ServerSidebar({
   }, []);
 
   const handleNavigation = (e: React.MouseEvent, href: string) => {
-    if (hasUnsavedChanges) {
+    if (hasUnsavedChanges && onNavigationAttempt?.()) {
       e.preventDefault();
-      onNavigationAttempt?.();
       return;
     }
     router.push(href);
   };
 
-  if (!serverSidebar) return null;
+  if (isLoading || !serverSidebar) {
+    return (
+      <div className="fixed left-0 top-16 bottom-0 w-64 bg-white/5 backdrop-blur-lg border-r border-white/5 animate-pulse">
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-white/10"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-white/10 rounded w-3/4"></div>
+              <div className="h-3 bg-white/10 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 bg-white/10 rounded w-1/3"></div>
+              {[1, 2, 3].map((j) => (
+                <div key={j} className="h-8 bg-white/5 rounded-lg"></div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -117,7 +138,7 @@ export default function ServerSidebar({
 
         {/* Navigation Items */}
         <div className="p-4 space-y-8">
-          {Object.entries(serverSidebar).map(([section, items]) => (
+          {Object.entries(serverSidebar as Record<string, SidebarItem[]>).map(([section, items]) => (
             <motion.div key={section}>
               <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">
                 {section}

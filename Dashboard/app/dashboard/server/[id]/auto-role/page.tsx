@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import DiscordSelect from "@/app/components/form/DiscordSelect";
-import { LayoutContext } from "@/app/contexts/LayoutContext";
+import { useLayout } from "@/providers/LayoutProvider";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -15,6 +15,7 @@ interface AutoRoleSettings {
 export default function AutoRole() {
   const params = useParams();
   const serverId = params.id;
+  const { setHasChanges, isLoading: layoutLoading, pageLayout, fetchPageLayout } = useLayout();
   const [settings, setSettings] = useState<AutoRoleSettings>({
     userRoles: [],
     botRoles: [],
@@ -25,16 +26,21 @@ export default function AutoRole() {
   });
   const [isEnabled, setIsEnabled] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const layoutContext = useContext(LayoutContext);
-  const setHasChanges = layoutContext?.setHasChanges || (() => {});
+  const [isLoading, setIsLoading] = useState(false);
+  const hasInitialFetch = useRef(false);
 
   const fetchSettings = useCallback(async () => {
-    setIsFetching(true);
+    if (!serverId || hasInitialFetch.current) return;
+    
+    setIsLoading(true);
     try {
       const [settingsRes, statusRes] = await Promise.all([
-        axios.get(`/api/v1/guilds/${serverId}/settings/auto-role`),
-        axios.get(`/api/v1/guilds/${serverId}/features/auto_role/status`)
+        axios.get(`/api/v1/guilds/${serverId}/settings/auto-role`, {
+          withCredentials: true
+        }),
+        axios.get(`/api/v1/guilds/${serverId}/features/auto_role/status`, {
+          withCredentials: true
+        })
       ]);
       
       if (settingsRes.data) {
@@ -43,49 +49,65 @@ export default function AutoRole() {
         setHasChanges(false);
       }
       setIsEnabled(statusRes.data.enabled);
+      hasInitialFetch.current = true;
     } catch (error) {
       console.error("Failed to fetch auto-role settings:", error);
       toast.error("Failed to load settings");
     } finally {
-      setIsFetching(false);
+      setIsLoading(false);
     }
   }, [serverId, setHasChanges]);
 
   useEffect(() => {
-    fetchSettings();
+    const handleSettingsReset = () => {
+      hasInitialFetch.current = false;
+      fetchSettings();
+    };
+
+    window.addEventListener('settingsReset', handleSettingsReset);
+    return () => {
+      window.removeEventListener('settingsReset', handleSettingsReset);
+    };
   }, [fetchSettings]);
+
+  useEffect(() => {
+    if (!serverId || hasInitialFetch.current) return;
+
+    const loadData = async () => {
+      try {
+        await Promise.all([
+          fetchPageLayout('auto-role'),
+          fetchSettings()
+        ]);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        toast.error('Failed to load settings');
+      }
+    };
+
+    loadData();
+
+    // Cleanup on unmount
+    return () => {
+      hasInitialFetch.current = false;
+    };
+  }, [serverId, fetchSettings, fetchPageLayout]);
 
   const handleChange = (type: "userRoles" | "botRoles", value: string[]) => {
     const newSettings = { ...settings, [type]: value };
     setSettings(newSettings);
-    setHasChanges(true);
-  };
-
-  const handleSave = async (e?: CustomEvent) => {
-    e?.stopPropagation();
-
-    try {
-      await axios.post(`/api/v1/guilds/${serverId}/settings/auto-role`, settings);
-      setOriginalSettings(settings);
-      setHasChanges(false);
-      toast.success("Auto-role settings saved!");
-    } catch (error) {
-      console.error("Failed to save auto-role settings:", error);
-      toast.error("Failed to save settings");
-    }
-  };
-
-  const handleRevert = (e?: CustomEvent) => {
-    e?.stopPropagation();
-    setSettings(originalSettings);
-    setHasChanges(false);
+    setHasChanges(JSON.stringify(newSettings) !== JSON.stringify(originalSettings));
   };
 
   const toggleFeature = async () => {
+    if (isToggling) return;
+    
     setIsToggling(true);
     try {
       const endpoint = isEnabled ? 'disable' : 'enable';
-      await axios.post(`/api/v1/guilds/${serverId}/features/auto_role/${endpoint}`);
+      await axios.post(`/api/v1/guilds/${serverId}/features/auto_role/${endpoint}`, {}, {
+        withCredentials: true
+      });
       setIsEnabled(!isEnabled);
       toast.success(`Auto role ${isEnabled ? 'disabled' : 'enabled'}`);
     } catch (error) {
@@ -96,18 +118,20 @@ export default function AutoRole() {
     }
   };
 
-  useEffect(() => {
-    const saveHandler = (e: Event) => handleSave(e as CustomEvent);
-    const revertHandler = (e: Event) => handleRevert(e as CustomEvent);
-
-    window.addEventListener("saveChanges", saveHandler);
-    window.addEventListener("revertChanges", revertHandler);
-
-    return () => {
-      window.removeEventListener("saveChanges", saveHandler);
-      window.removeEventListener("revertChanges", revertHandler);
-    };
-  }, [settings, originalSettings]);
+  if (isLoading || layoutLoading) {
+    return (
+      <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 flex flex-col items-center">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-[spin_3s_linear_infinite]"></div>
+          <div className="absolute inset-2 rounded-full border-4 border-t-white/80 border-white/20 animate-[spin_2s_linear_infinite]"></div>
+          <div className="absolute inset-[38%] rounded-full bg-white/80 animate-pulse"></div>
+        </div>
+        <p className="text-white text-base mt-4 font-medium animate-pulse">
+          Loading...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,15 +163,8 @@ export default function AutoRole() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isFetching && (
-              <div className="flex items-center gap-2">
-                <i className="fas fa-spinner-third animate-spin text-purple-400"></i>
-                <span className="text-sm text-white/70">Loading settings...</span>
-              </div>
-            )}
-            
-            <div className="flex items-center gap-3 ml-4">
+          <div className="flex items-center gap-3">            
+            <div className="flex items-center gap-3">
               <span className="text-sm text-white/70">
                 {isEnabled ? 'Enabled' : 'Disabled'}
               </span>

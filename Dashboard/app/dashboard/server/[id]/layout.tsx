@@ -1,6 +1,7 @@
 import { ReactNode, Suspense } from "react";
 import ServerLayoutClient from "./layout-client";
 import { Metadata } from "next";
+import { LayoutProvider } from "@/providers/LayoutProvider";
 
 interface Params {
   id: string;
@@ -22,7 +23,9 @@ export default function ServerLayout({ children, params }: LayoutProps) {
   return (
     <div className="min-h-screen relative">
       <Suspense fallback={null}>
-        <ServerLayoutClient serverId={serverId}>{children}</ServerLayoutClient>
+        <LayoutProvider>
+          <ServerLayoutClient serverId={serverId}>{children}</ServerLayoutClient>
+        </LayoutProvider>
       </Suspense>
     </div>
   );

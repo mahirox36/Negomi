@@ -1,54 +1,69 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { SidebarLayout, LayoutItem } from '../types/layout';
+import { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
 import toast from 'react-hot-toast';
 
-interface LayoutState {
-  sidebar: SidebarLayout | null;
-  serverSidebar: SidebarLayout | null;
-  pageLayout: LayoutItem[] | null;
-  isLoading: boolean;
+export interface LayoutState {
+  pageLayout: any[] | null;
+  sidebar: any | null;
+  serverSidebar: any | null;
   hasChanges: boolean;
+  isLoading: boolean;
   currentPath: string | null;
   serverId: string | null;
 }
 
-interface LayoutContextType extends LayoutState {
+export interface LayoutActions {
   setHasChanges: (value: boolean) => void;
+  setPageLayout: (layout: any[]) => void;
+  setSidebar: (sidebar: any) => void;
+  setServerSidebar: (sidebar: any) => void;
   setCurrentPath: (path: string) => void;
   setServerId: (id: string) => void;
+  fetchPageLayout: (page: string) => Promise<void>;
   fetchSidebar: () => Promise<void>;
   fetchServerSidebar: () => Promise<void>;
-  fetchPageLayout: (page: string) => Promise<void>;
   saveChanges: () => Promise<void>;
   revertChanges: () => void;
   resetToDefaults: () => Promise<void>;
 }
 
-const LayoutContext = createContext<LayoutContextType | null>(null);
+export interface LayoutContextValue extends LayoutState, LayoutActions {}
 
-interface FetchState {
+const LayoutContext = createContext<LayoutContextValue | undefined>(undefined);
+
+interface FetchStates {
   [key: string]: boolean;
 }
 
-export function LayoutProvider({ children }: { children: React.ReactNode }) {
+export function LayoutProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LayoutState>({
+    pageLayout: null,
     sidebar: null,
     serverSidebar: null,
-    pageLayout: null,
-    isLoading: false,
     hasChanges: false,
+    isLoading: false,
     currentPath: null,
     serverId: null
   });
 
-  // Use ref to track ongoing fetches to prevent duplicate requests
-  const fetchingRef = useRef<FetchState>({});
-  const layoutCacheRef = useRef<{[key: string]: LayoutItem[]}>({});
+  // Use refs to track ongoing fetches
+  const fetchingRef = useRef<FetchStates>({});
 
   const setHasChanges = useCallback((value: boolean) => {
     setState(prev => ({ ...prev, hasChanges: value }));
+  }, []);
+
+  const setPageLayout = useCallback((layout: any[]) => {
+    setState(prev => ({ ...prev, pageLayout: layout }));
+  }, []);
+
+  const setSidebar = useCallback((sidebar: any) => {
+    setState(prev => ({ ...prev, sidebar }));
+  }, []);
+
+  const setServerSidebar = useCallback((serverSidebar: any) => {
+    setState(prev => ({ ...prev, serverSidebar }));
   }, []);
 
   const setCurrentPath = useCallback((path: string) => {
@@ -59,49 +74,8 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, serverId: id }));
   }, []);
 
-  const fetchSidebar = useCallback(async () => {
-    if (state.sidebar || fetchingRef.current.sidebar) return;
-    
-    try {
-      fetchingRef.current.sidebar = true;
-      const response = await fetch('/api/v1/layout/settings/sidebar');
-      if (!response.ok) throw new Error('Failed to fetch sidebar');
-      const data = await response.json();
-      setState(prev => ({ ...prev, sidebar: data }));
-    } catch (error) {
-      console.error('Error fetching sidebar:', error);
-      toast.error('Failed to load sidebar');
-    } finally {
-      fetchingRef.current.sidebar = false;
-    }
-  }, [state.sidebar]);
-
-  const fetchServerSidebar = useCallback(async () => {
-    if (state.serverSidebar || fetchingRef.current.serverSidebar) return;
-    
-    try {
-      fetchingRef.current.serverSidebar = true;
-      const response = await fetch('/api/v1/layout/settings/server/sidebar');
-      if (!response.ok) throw new Error('Failed to fetch server sidebar');
-      const data = await response.json();
-      setState(prev => ({ ...prev, serverSidebar: data }));
-    } catch (error) {
-      console.error('Error fetching server sidebar:', error);
-      toast.error('Failed to load server sidebar');
-    } finally {
-      fetchingRef.current.serverSidebar = false;
-    }
-  }, [state.serverSidebar]);
-
   const fetchPageLayout = useCallback(async (page: string) => {
     const fetchKey = `page_${page}`;
-    
-    // Return cached layout if available
-    if (layoutCacheRef.current[page]) {
-      setState(prev => ({ ...prev, pageLayout: layoutCacheRef.current[page] }));
-      return;
-    }
-
     if (fetchingRef.current[fetchKey]) return;
     
     try {
@@ -111,22 +85,50 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(`/api/v1/layout/settings/server/${page}`);
       if (!response.ok) throw new Error('Failed to fetch page layout');
       const data = await response.json();
-      
-      // Cache the layout
-      layoutCacheRef.current[page] = data;
-      setState(prev => ({ 
-        ...prev, 
-        pageLayout: data,
-        isLoading: false 
-      }));
+      setPageLayout(data);
     } catch (error) {
       console.error('Error fetching page layout:', error);
-      setState(prev => ({ ...prev, pageLayout: null, isLoading: false }));
+      setPageLayout([]);
       toast.error('Failed to load page layout');
     } finally {
       fetchingRef.current[fetchKey] = false;
+      setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, []);
+  }, [setPageLayout]);
+
+  const fetchSidebar = useCallback(async () => {
+    if (state.sidebar || fetchingRef.current.sidebar) return;
+    
+    try {
+      fetchingRef.current.sidebar = true;
+      const response = await fetch('/api/v1/layout/settings/sidebar');
+      if (!response.ok) throw new Error('Failed to fetch sidebar');
+      const data = await response.json();
+      setSidebar(data);
+    } catch (error) {
+      console.error('Error fetching sidebar:', error);
+      toast.error('Failed to load sidebar');
+    } finally {
+      fetchingRef.current.sidebar = false;
+    }
+  }, [state.sidebar, setSidebar]);
+
+  const fetchServerSidebar = useCallback(async () => {
+    if (state.serverSidebar || fetchingRef.current.serverSidebar) return;
+    
+    try {
+      fetchingRef.current.serverSidebar = true;
+      const response = await fetch('/api/v1/layout/settings/server/sidebar');
+      if (!response.ok) throw new Error('Failed to fetch server sidebar');
+      const data = await response.json();
+      setServerSidebar(data);
+    } catch (error) {
+      console.error('Error fetching server sidebar:', error);
+      toast.error('Failed to load server sidebar');
+    } finally {
+      fetchingRef.current.serverSidebar = false;
+    }
+  }, [state.serverSidebar, setServerSidebar]);
 
   const saveChanges = useCallback(async () => {
     if (!state.hasChanges || !state.serverId || !state.currentPath) return;
@@ -143,6 +145,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error saving changes:', error);
       toast.error('Failed to save changes');
+      throw error;
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
@@ -170,26 +173,30 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error resetting settings:', error);
       toast.error('Failed to reset settings');
+      throw error;
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, [state.serverId, state.currentPath]);
 
+  const value: LayoutContextValue = {
+    ...state,
+    setHasChanges,
+    setPageLayout,
+    setSidebar,
+    setServerSidebar,
+    setCurrentPath,
+    setServerId,
+    fetchPageLayout,
+    fetchSidebar,
+    fetchServerSidebar,
+    saveChanges,
+    revertChanges,
+    resetToDefaults
+  };
+
   return (
-    <LayoutContext.Provider 
-      value={{ 
-        ...state,
-        setHasChanges,
-        setCurrentPath,
-        setServerId,
-        fetchSidebar,
-        fetchServerSidebar,
-        fetchPageLayout,
-        saveChanges,
-        revertChanges,
-        resetToDefaults
-      }}
-    >
+    <LayoutContext.Provider value={value}>
       {children}
     </LayoutContext.Provider>
   );
