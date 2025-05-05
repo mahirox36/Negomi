@@ -78,7 +78,7 @@ class AI(commands.Cog):
         self.settings: Feature
         self.ready = False
         self.gemini: Optional[genai.Client] = (
-            genai.Client(api_key=Gemini_API) if Gemini_API else None
+            genai.Client(api_key="") if "" else None
         )
         self.personality_state = {
             "core_traits": {

@@ -1,3 +1,4 @@
+import time
 from rich.traceback import install
 
 from nexon import BadgeManager
@@ -298,7 +299,59 @@ class DiscordBot(commands.Bot):
 
             if send_to_owner_enabled:
                 await self._send_startup_message()
+            
+            bot_announce_channel = self.get_channel(1338953197280034867)
+            if not bot_announce_channel:
+                bot_announce_channel = await self.fetch_channel(1338953197280034867)
+            self.logger.info(f"Bot announce channel: {bot_announce_channel} ({type(bot_announce_channel)})")
+            failed_channels = []
+            success_channels = []
+            if os.path.exists("logs/followed_channels.json"):
+                with open("logs/followed_channels.json", "r") as f:
+                    followed_channels = json.load(f)
+            else:
+                followed_channels = []
+            if isinstance(bot_announce_channel, nexon.TextChannel):
+                self.logger.info("Following bot announce channel")
+                # instead of guild.system_channel make it the 
+                for guild in self.guilds:
+                    if guild.id in followed_channels:
+                        self.logger.info(f"Already following {guild.name} ({guild.id})")
+                        continue
+                    self.logger.info(f"Following {guild.name} ({guild.id})")
+                    try:
+                        if not guild.public_updates_channel:
+                            failed_channels.append(guild.id)
+                            continue
+                        await bot_announce_channel.follow(destination=guild.public_updates_channel)
+                        success_channels.append(guild.id)
+                    except Exception as e:
+                        failed_channels.append(guild.id)
+                        self.logger.warning(f"Failed to follow channel: {str(e)}")
+            with open("logs/followed_channels.json", "w") as f:
+                json.dump(success_channels, f)
+            with open("logs/failed_channels.json", "w") as f:
+                json.dump(failed_channels, f)
 
+
+    
+    async def on_guild_join(self, guild: nexon.Guild) -> None:
+        """Handler for when the bot joins a new guild."""
+        self.logger.debug(f"Joined new guild: {guild.name} ({guild.id})")
+        if not guild.public_updates_channel:
+            return
+        self.logger.debug(f"Following {guild.name} ({guild.id})")
+        try:
+            bot_announce_channel = self.get_channel(1338953197280034867)
+            if not bot_announce_channel:
+                bot_announce_channel = await self.fetch_channel(1338953197280034867)
+            if not isinstance(bot_announce_channel, nexon.TextChannel):
+                return
+            
+            await bot_announce_channel.follow(destination=guild.public_updates_channel)
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to follow channel: {str(e)}")
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
         try:
@@ -442,7 +495,13 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Bot stopped by user")
+    while True:
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logger.info("Bot stopped by user")
+            break
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            logger.error(traceback.format_exc())
+            time.sleep(5)

@@ -8,8 +8,7 @@ from nexon.ext import commands
 from .apiManager import APIServer, APIConfig
 from .features.cache import CacheManager
 from .features.storage import StorageManager, StorageConfig
-from .features.process import ProcessManager
-from modules.Nexon import config, debug, split_frontend
+from modules.Nexon import config, debug
 
 class DashboardCog(commands.Cog):
     def __init__(self, client: commands.Bot) -> None:
@@ -21,7 +20,6 @@ class DashboardCog(commands.Cog):
         # Initialize managers with enhanced error handling
         try:
             self.cache = CacheManager()
-            self.process = ProcessManager(debug=debug)
             
             storage_config = StorageConfig(
                 endpoint=config.cloudflare.endpoint,
@@ -59,9 +57,6 @@ class DashboardCog(commands.Cog):
             # Register cleanup handlers
             await self._exit_stack.enter_async_context(self.cache)
             await self._exit_stack.enter_async_context(self.storage)
-            
-            if not split_frontend:
-                await self.process.start_frontend()
                 
         except Exception as e:
             self.logger.error(f"Failed to load dashboard components: {str(e)}")
@@ -78,7 +73,6 @@ class DashboardCog(commands.Cog):
         try:
             if hasattr(self, 'api'):
                 await self.api.shutdown()
-            await self.process.cleanup()
             await self._exit_stack.aclose()
             
         except Exception as e:

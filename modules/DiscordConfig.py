@@ -1,10 +1,10 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from modules.config import Config, Color as color
 
-VERSION = "0.44"
+VERSION = "0.45"
 
 @dataclass
 class Database:
@@ -53,20 +53,57 @@ class BotConfig:
     send_to_online_owner: bool = True
     logger_level: str = "INFO"
     debug: bool = False
-    split_frontend: bool = False
     colors: Colors = field(default_factory=Colors)
     database: Database = field(default_factory=Database)
     cloudflare: Cloudflare = field(default_factory=Cloudflare)
     oauth: OAuthSettings = field(default_factory=OAuthSettings)
     ai_enabled: bool = False
     ai_ip: str = "127.0.0.1"
-    gemini_api: str = ""
     testing_guilds: List[int] = field(default_factory=lambda: [12341234, 43214321])
     version: str = VERSION
+
+    def _validate_config(self, config_path: str) -> None:
+        default_config = BotConfig()
+        cfg = Config(config_path)
+        cfg.load()
+
+        # Check for missing sections and fields
+        for section, values in self.__dict__.items():
+            if isinstance(values, (Database, Cloudflare, Colors, OAuthSettings)):
+                if section not in cfg.data:
+                    print(f"Adding missing section: {section}")
+                    cfg.data[section] = {}
+                for field in values.__dict__:
+                    if field not in cfg.data[section]:
+                        print(f"Adding missing field: {section}.{field}")
+                        cfg.data[section][field] = getattr(default_config.__dict__[section], field) # type: ignore
+
+        # Remove deprecated sections and fields
+        sections_to_remove = []
+        for section in cfg.data:
+            if section not in self.__dict__:
+                sections_to_remove.append(section)
+                continue
+            if isinstance(self.__dict__[section], (Database, Cloudflare, Colors, OAuthSettings)):
+                fields_to_remove = []
+                for field in cfg.data[section]:
+                    if field not in self.__dict__[section].__dict__:
+                        fields_to_remove.append(field)
+                for field in fields_to_remove:
+                    print(f"Removing deprecated field: {section}.{field}")
+                    del cfg.data[section][field]
+
+        for section in sections_to_remove:
+            print(f"Removing deprecated section: {section}")
+            del cfg.data[section]
+
+        cfg.save()
 
     def save(self, config_path: str = ".secrets/config.ini"):
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         cfg = Config(config_path)
+        if os.path.exists(config_path):
+            cfg.load()
         
         # Convert colors to string format
         color_data = {}
@@ -83,7 +120,6 @@ class BotConfig:
                 "send_to_online_owner": self.send_to_online_owner,
                 "logger_level": self.logger_level,
                 "debug": self.debug,
-                "split_frontend": self.split_frontend,
                 "version": self.version
             },
             "OAuth": {
@@ -99,10 +135,14 @@ class BotConfig:
             "AI": {
                 "enabled": self.ai_enabled,
                 "ip": self.ai_ip,
-                "gemini_api": self.gemini_api
             },
             "TestingGuilds": self.testing_guilds
         }
+        
+        # Remove any sections that are no longer in use
+        for section in list(cfg.data.keys()):
+            if section not in data:
+                cfg.remove_section(section)
         
         cfg.set_layout(["Bot", "OAuth", "Database", "Cloudflare", "Colors", "AI", "TestingGuilds"])
         cfg.data = data
@@ -122,12 +162,12 @@ class BotConfig:
             cfg.load()
             
             # Load existing data
-            bot_data = cfg.data.get("Bot", {})
-            oauth_data = cfg.data.get("OAuth", {})
-            database_data = cfg.data.get("Database", {})
-            cloudflare_data = cfg.data.get("Cloudflare", {})
-            colors_data = cfg.data.get("Colors", {})
-            ai_data = cfg.data.get("AI", {})
+            bot_data: Dict[str, Any] = cfg.data.get("Bot", {}) # type: ignore
+            oauth_data: Dict[str, Any] = cfg.data.get("OAuth", {}) # type: ignore
+            database_data: Dict[str, Any] = cfg.data.get("Database", {}) # type: ignore
+            cloudflare_data: Dict[str, Any] = cfg.data.get("Cloudflare", {}) # type: ignore
+            colors_data: Dict[str, Any] = cfg.data.get("Colors", {}) # type: ignore
+            ai_data: Dict[str, Any] = cfg.data.get("AI", {}) # type: ignore
             
             # Convert color values properly
             colors = Colors()
@@ -162,7 +202,6 @@ class BotConfig:
                 send_to_online_owner=bool(bot_data.get("send_to_online_owner", default_config.send_to_online_owner)),
                 logger_level=str(bot_data.get("logger_level", default_config.logger_level)),
                 debug=bool(bot_data.get("debug", default_config.debug)),
-                split_frontend=bool(bot_data.get("split_frontend", default_config.split_frontend)),
                 colors=colors,
                 oauth=OAuthSettings(
                     token=str(oauth_data.get("token", default_config.oauth.token)),
@@ -188,7 +227,6 @@ class BotConfig:
                 ),
                 ai_enabled=bool(ai_data.get("enabled", default_config.ai_enabled)),
                 ai_ip=str(ai_data.get("ip", default_config.ai_ip)),
-                gemini_api=str(ai_data.get("gemini_api", default_config.gemini_api)),
                 testing_guilds=testing_guilds,
                 version=str(bot_data.get("version", "0.0"))
             )
@@ -218,10 +256,8 @@ overwriteOwner = config.owner_id
 send_to_owner_enabled = config.send_to_online_owner
 logger_level = config.logger_level
 debug = config.debug
-split_frontend = config.split_frontend
 colors = config.colors
 colours = config.colors
 enableAI = config.ai_enabled
 ip = config.ai_ip
-Gemini_API = config.gemini_api
 TESTING_GUILD_ID = config.testing_guilds
