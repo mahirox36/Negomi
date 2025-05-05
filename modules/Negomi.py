@@ -6,7 +6,7 @@ import ollama
 from rich import print
 from json import dumps, loads
 import logging
-logger = logging.getLogger("bot")
+logger = logging.getLogger(__name__)
 
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 from .DiscordConfig import ip

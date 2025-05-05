@@ -1,6 +1,8 @@
 from rich.traceback import install
 
 from nexon import BadgeManager
+from nexon.enums import Rarity
+
 install()
 
 import traceback
@@ -12,6 +14,9 @@ import nexon
 from nexon.ext.commands import MissingPermissions
 from modules.Nexon import *
 
+logger = logging.getLogger("Negomi")
+
+
 class DiscordBot(commands.Bot):
     def __init__(self):
         intents = nexon.Intents.all()
@@ -22,42 +27,126 @@ class DiscordBot(commands.Bot):
             owner_id=overwriteOwner if overwriteOwner else None,
             help_command=None,
             logger_level=Level,
-            enable_user_data=True
+            enable_user_data=True,
         )
-        
+
         self.start_time = datetime.now()
-        
+
         self._cleanup_done = asyncio.Event()
-        
+
         # Setup logging
         self.logger = logger
-        
+
         BadgeManager().set_badge_earned_callback(self.onBadgeEarned)
-        
+
         self.setup_hook()
-    
+
     async def onBadgeEarned(self, user: nexon.User, badge: nexon.Badge):
-        embed = Embed.Info(
-            title=f"🏆 New Badge Earned: {badge.name}!",
-            description=badge.description
+        """Handle badge earning notifications with rich embeds and fallback mechanisms."""
+        now = datetime.now()
+
+        # Create a visually appealing embed with badge details
+        title = (
+            f"🏆 Badge Unlocked: {badge.name}"
+            if not badge.hidden
+            else f"🏆 Hidden Badge Unlocked: {badge.name}"
         )
-        
+        embed = nexon.Embed(
+            title=title,
+            description=badge.description,
+            color=await self._get_rarity_color(badge.rarity, badge.guild_id),
+            timestamp=now,
+        )
+
+        # Add badge visual elements
         if badge.icon_url:
             embed.set_thumbnail(url=badge.icon_url)
-            
+
+        # Add badge metadata
         embed.add_field(
-            name="Unlocked",
-            value=f"<t:{int(datetime.now().timestamp())}:R>",
-            inline=False
+            name="Unlocked", value=f"<t:{int(now.timestamp())}:R>", inline=True
         )
-        
-        # Try to DM the user
+
+        if badge.rarity:
+            embed.add_field(
+                name="Rarity",
+                value=f"{badge.emoji or '✨'} {badge.rarity.name.title()}",
+                inline=True,
+            )
+
+        if not badge.hidden and badge.id:
+            embed.add_field(name="Badge ID", value=f"`{badge.id}`", inline=True)
+        if badge.guild_id:
+            guild = self.get_guild(badge.guild_id)
+            if guild:
+                embed.add_field(
+                    name="Server", value=f"{guild.name} ({guild.id})", inline=True
+                )
+
+        # Add footer with collection hint
+        embed.set_footer(text="Check your profile to see your badge collection!")
+
+        # Try to DM the user with graceful fallback
         try:
             await user.send(embed=embed)
-        except: pass
-    
+            self.logger.info(
+                f"Badge notification sent to {user.display_name} ({user.id}) for badge: {badge.name}"
+            )
+        except Exception as e:
+            self.logger.debug(
+                f"Could not send badge notification to {user.id}: {str(e)}"
+            )
+
+            # If guild-specific, try to notify in guild if DM fails
+            if badge.guild_id and user.mutual_guilds:
+                for guild in user.mutual_guilds:
+                    if guild.id == badge.guild_id:
+                        try:
+                            # Try to find a suitable channel for notification
+                            for channel in guild.text_channels:
+                                if channel.permissions_for(guild.me).send_messages:
+                                    await channel.send(
+                                        content=f"{user.mention}, you earned a new badge!",
+                                        embed=embed,
+                                    )
+                                    break
+                        except:
+                            pass
+                        break
+
+    async def _get_rarity_color(self, rarity: Rarity, guild_id: int) -> int:
+        """Return color based on badge rarity."""
+        if not rarity:
+            return 0x7289DA  # Discord Blurple default
+        settings = await Feature.get_guild_feature(guild_id, "basic_settings")
+        print(settings.settings)
+        colors = {
+            "common": settings.get_setting("commonColor", 0xFF1493),
+            "uncommon": settings.get_setting("uncommonColor", 0x00FFB9),
+            "rare": settings.get_setting("rareColor", 0xFF4500),
+            "epic": settings.get_setting("epicColor", 0x32CD32),
+            "legendary": settings.get_setting("legendaryColor", 0x9400D3),
+            "mythic": settings.get_setting("mythicColor", 0x00FFFF),
+            "unique": settings.get_setting("uniqueColor", 0x8B0000),
+        }
+        print(colors)
+
+        # Convert any hex string colors to integers
+        for key, value in colors.items():
+            if isinstance(value, str) and value.startswith("#"):
+                try:
+                    colors[key] = int(value.lstrip("#"), 16)
+                except ValueError:
+                    # Keep default if conversion fails
+                    pass
+
+        return colors.get(rarity.name.lower(), 0xFF1493)
+
     async def on_interaction(self, interaction: Interaction) -> None:
-        if interaction.type == InteractionType.application_command and interaction.data is not None:
+        if (
+            interaction.type == InteractionType.application_command
+            and interaction.data is not None
+        ):
             command_id = interaction.data.get("id")
             if command_id is not None:
                 command = self.get_application_command(int(command_id))
@@ -73,23 +162,26 @@ class DiscordBot(commands.Bot):
         #         embed=Embed.Error("This Feature is disabled", "Feature Disabled"),ephemeral=True
         #     )
         #     return
-            
+
         await super().on_interaction(interaction)
-            
-    
+
     async def cleanup(self):
         """Cleanup bot resources including IPC"""
         if self._cleanup_done.is_set():
             return
 
         self.logger.info("Starting cleanup process...")
-        
-        for vc in self.voice_clients:
-            try: await vc.disconnect(force=True)
-            except: pass
 
-        try: await self.close()
-        except: pass
+        for vc in self.voice_clients:
+            try:
+                await vc.disconnect(force=True)
+            except:
+                pass
+
+        try:
+            await self.close()
+        except:
+            pass
 
         self._cleanup_done.set()
         self.logger.info("Cleanup completed")
@@ -98,8 +190,10 @@ class DiscordBot(commands.Bot):
         """Setup hook with IPC initialization"""
         extensions = self._load_extensions(get=True)
         data = [i for i in extensions] if extensions is not None else []
-    
-    def _load_extensions(self, get: bool = False) -> Union[None, Generator[Path, Path, Path]]:
+
+    def _load_extensions(
+        self, get: bool = False
+    ) -> Union[None, Generator[Path, Path, Path]]:
         """Load all extension modules with executable-aware path handling."""
         self.logger.info("Starting extension loading process")
 
@@ -110,7 +204,9 @@ class DiscordBot(commands.Bot):
 
             # Verify extensions directory exists
             if not extensions_path.exists():
-                self.logger.error(f"Extensions directory not found at: {extensions_path.resolve()}")
+                self.logger.error(
+                    f"Extensions directory not found at: {extensions_path.resolve()}"
+                )
                 if get:
                     return []
                 return None
@@ -128,22 +224,28 @@ class DiscordBot(commands.Bot):
                     "Working on Progress" in str(ext_path),
                     "Arc" in str(ext_path),
                     "." in ext_path.stem,
-                    not enableAI and ext_path.stem == "AI"
+                    not enableAI and ext_path.stem == "AI",
+                    "components" in str(ext_path),
+                    "Views" in str(ext_path),
                 ]
 
                 # Skip if any condition is met
                 if any(skip_conditions):
                     self.logger.debug(f"Skipping {ext_path.stem}")
                     continue
-                
-                if enableAI and ext_path.stem == "AI": 
+
+                if enableAI and ext_path.stem == "AI":
                     if isClientOnline() is offline:
                         continue
-                
+
                 try:
                     # Construct module name relative to the classes directory
                     rel_path = ext_path.relative_to(extensions_path.parent)
-                    ext_name = str(rel_path.with_suffix('')).replace('\\', '.').replace('/', '.')
+                    ext_name = (
+                        str(rel_path.with_suffix(""))
+                        .replace("\\", ".")
+                        .replace("/", ".")
+                    )
 
                     self.load_extension(ext_name)
                     self.logger.info(f"Successfully loaded extension: {ext_name}")
@@ -153,11 +255,15 @@ class DiscordBot(commands.Bot):
                         yield ext_path
 
                 except Exception as e:
-                    self.logger.error(f"Failed to load extension {ext_path.name}: {str(e)}")
+                    self.logger.error(
+                        f"Failed to load extension {ext_path.name}: {str(e)}"
+                    )
                     self.logger.error(f"Traceback: {traceback.format_exc()}")
-            
+
             self.load_extension("backend.core")
-            self.logger.info(f"Extension loading complete. Loaded {len(loaded_extensions)} extensions")
+            self.logger.info(
+                f"Extension loading complete. Loaded {len(loaded_extensions)} extensions"
+            )
 
         except Exception as e:
             self.logger.error(f"Critical error during extension loading: {str(e)}")
@@ -171,7 +277,7 @@ class DiscordBot(commands.Bot):
 
     async def on_ready(self) -> None:
         """Handler for when the bot is ready."""
-        if not hasattr(self, '_ready_called'):
+        if not hasattr(self, "_ready_called"):
             self._ready_called = True
             database_url = f"postgres://{config.database.username}:{config.database.password}@{config.database.host}:{config.database.port}/{config.database.db_name}"
             with open(".env", "w") as env_file:
@@ -179,28 +285,31 @@ class DiscordBot(commands.Bot):
             await nexon.init_db()
             await self.change_presence(
                 activity=nexon.Activity(
-                    type=nexon.ActivityType.watching,
-                    name=Presence
+                    type=nexon.ActivityType.watching, name=Presence
                 ),
-                status=nexon.Status.idle if debug else nexon.Status.online
+                status=nexon.Status.idle if debug else nexon.Status.online,
             )
-            
+
             await self.sync_application_commands()
-            
-            self.logger.info(f"{self.user.display_name if self.user else 'Bot'} is online!")
-            
+
+            self.logger.info(
+                f"{self.user.display_name if self.user else 'Bot'} is online!"
+            )
+
             if send_to_owner_enabled:
                 await self._send_startup_message()
-
 
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
         try:
-            owner = self.get_user(self.owner_id) # type: ignore
+            owner = self.get_user(self.owner_id)  # type: ignore
             if owner is None:
-                owner= await self.fetch_user(self.owner_id) # type: ignore
+                owner = await self.fetch_user(self.owner_id)  # type: ignore
             channel = await owner.create_dm()
-            author = [self.user.display_name if self.user else 'Bot', self.user.avatar.url if self.user and self.user.avatar else None]
+            author = [
+                self.user.display_name if self.user else "Bot",
+                self.user.avatar.url if self.user and self.user.avatar else None,
+            ]
             message: Message = await channel.send(
                 embed=nexon.Embed.Info(
                     title="Status Update",
@@ -208,12 +317,13 @@ class DiscordBot(commands.Bot):
                     author=author,
                 )
             )
-            self.logger.info(f"Sent to {owner.display_name} ({owner.id}) with the message ID {message.id}")
+            self.logger.info(
+                f"Sent to {owner.display_name} ({owner.id}) with the message ID {message.id}"
+            )
         except Exception as e:
             self.logger.warning(f"Failed to send startup message: {str(e)}")
-    
-    
-    #ERROR HANDLERS
+
+    # ERROR HANDLERS
     async def on_application_command_error(self, ctx: Interaction, error: Exception):
         if isinstance(error, ApplicationInvokeError):
             err = error.original
@@ -221,19 +331,25 @@ class DiscordBot(commands.Bot):
             err = error
         if isinstance(err, ApplicationOnCooldown):
             await ctx.response.send_message(
-                embed=Embed.Error(f"You're on cooldown! Try again in {err.time_left:.2f} seconds.", "Too Fast"),
-                ephemeral=True)
+                embed=Embed.Error(
+                    f"You're on cooldown! Try again in {err.time_left:.2f} seconds.",
+                    "Too Fast",
+                ),
+                ephemeral=True,
+            )
             return
         elif isinstance(err, ApplicationMissingPermissions):
             missing = ", ".join(err.missing_permissions)
             await ctx.response.send_message(
                 embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"),
-                ephemeral=True)
+                ephemeral=True,
+            )
             return
         elif isinstance(err, ApplicationNotOwner):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You are not the owner of the bot", "Not Owner"),
-                ephemeral=True)
+                ephemeral=True,
+            )
             return
         # elif isinstance(err, ApplicationNotOwnerGuild):
         #     await ctx.response.send_message(
@@ -242,73 +358,91 @@ class DiscordBot(commands.Bot):
         #     return
         elif isinstance(err, ApplicationNoPrivateMessage):
             await ctx.response.send_message(
-                embed=Embed.Error(f"You can't use this command in DM", "DM not Allowed"),
-                ephemeral=True)
+                embed=Embed.Error(
+                    f"You can't use this command in DM", "DM not Allowed"
+                ),
+                ephemeral=True,
+            )
             return
         elif isinstance(err, ApplicationPrivateMessageOnly):
             await ctx.response.send_message(
                 embed=Embed.Error(f"You only can do this command in DM", "DM Only"),
-                ephemeral=True)
+                ephemeral=True,
+            )
             return
         elif isinstance(err, MissingPermissions):
             missing = ", ".join(err.missing_permissions)
             await ctx.response.send_message(
                 embed=Embed.Error(f"You don't have {missing}", "Missing Permissions"),
-                ephemeral=True
+                ephemeral=True,
             )
             return
-        
+
         elif isinstance(err, Forbidden):
             await ctx.response.send_message(
-                embed=Embed.Error("I don't have permission to do this", "Missing Permissions"),
-                ephemeral=True
+                embed=Embed.Error(
+                    "I don't have permission to do this", "Missing Permissions"
+                ),
+                ephemeral=True,
             )
             return
         if not ctx.response.is_done():
-            await ctx.response.send_message(embed=Embed.Error(str(err), title="An unexpected error occurred"))
+            await ctx.response.send_message(
+                embed=Embed.Error(str(err), title="An unexpected error occurred")
+            )
         else:
-            await ctx.followup.send(embed=Embed.Error(str(err), title="An unexpected error occurred"))
+            await ctx.followup.send(
+                embed=Embed.Error(str(err), title="An unexpected error occurred")
+            )
         logger.error(error)
-    
+
         # Send detailed traceback to the bot owner
         tb_str = traceback.format_exception(type(error), error, error.__traceback__)
         error_details = "".join(tb_str)
-        
+
         # with open("logs/error_traceback.py", "w") as f:
         #     f.write(error_details)
         buffer = io.BytesIO()
-        buffer.write(error_details.encode('utf-8'))
+        buffer.write(error_details.encode("utf-8"))
         buffer.seek(0)
-            
+
         owner = self.get_user(self.owner_id)  # type: ignore
         if owner is None:
             owner = await self.fetch_user(self.owner_id)  # type: ignore
         channel = await owner.create_dm()
 
-        await channel.send(content="New Error Master!", file=File(buffer,"error_traceback.py"))
+        await channel.send(
+            content="New Error Master!", file=File(buffer, "error_traceback.py")
+        )
+
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
         self.logger.error(f"Traceback in {event_method}: {traceback.format_exc()}")
 
 
-
 async def main():
     bot = DiscordBot()
-    
+
     try:
         await bot.start(token)
     except nexon.LoginFailure:
-        bot.logger.error("""
+        bot.logger.error(
+            """
         Failed to login. Please check:
         1. Your token in the config file
         2. Token validity at https://discord.com/developers/applications
         3. Reset token if necessary
-        """)
+        """
+        )
+    except KeyboardInterrupt:
+        bot.logger.info("Bot stopped by user")
     except Exception as e:
         bot.logger.exception("An error occurred while running the bot")
     finally:
         await bot.cleanup()
-        input()
-    
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")

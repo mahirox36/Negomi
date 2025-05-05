@@ -1,4 +1,4 @@
-# Negomi Discord Bot 0.8.4
+# Negomi Discord Bot 0.9
 
 ## 🤖 Add Bot
 
@@ -10,32 +10,29 @@ To add the bot to your server, click the link below:
 
 - 🎭 Custom Roles - Member-created roles with full customization options
 - 🔊 Temporary Voice - Dynamic voice channels with user-controlled settings
-- 🤖 Enhanced AI Integration - Intelligent member interactions
-- 👋 Advanced Welcome System - Custom greetings with beautifully generated images
+- 🤖 Enhanced AI Integration - Intelligent member interactions with conversation memory and emotional adaptation (Currently in testing)
+- 👋 Advanced Welcome System - Custom greetings with beautifully generated images (It's being rewritten)
 - 💾 Comprehensive Backup - Complete server protection including channels, roles, and permissions
-- 🎯 Achievement System - Activity-based rewards system
-- ⏳ Time Capsule - Scheduled message storage and delivery
-- 🎛️ Web Dashboard - Real-time statistics and command management
+- 🎯 Badge System (Aka Achievement) - Activity-based rewards with dynamic badges
+- ⏳ Time Capsule - Scheduled message storage and delivery system
+- 🎛️ Web Dashboard - Real-time statistics, comprehensive feature management, and enhanced customization of bot settings
 - 🎮 Fun Commands - Engaging community interactions
 
-## 🗺️ Roadmap
+## 🗺️ Development Roadmap
 
-### Version 0.9
+### Version 0.10 - Expansion Phase
 
-- Overall Progress: ██░░░░░░░░░░░░░░░░░░ 9% (3/31)
+- Overall Progress: ███░░░░░░░░░░░░░░░░░ 12% (4/31)
 - Currently Working On:
   - Nextcord Forked Library called [Nexon](https://github.com/mahirox36/Nexon)
-  - Database
-  - Dashboard
-  - Customizable Badges
 
 #### Advanced User Profile System
 
-- Implement a Dynamic User Card System: [░░░░░░░░░░] 0% (0/7)
+- Dynamic User Card System: [░░░░░░░░░░] 0% (0/7)
   - [ ] Customizable Profile Picture with frames and effects
   - [ ] Detailed User Statistics Dashboard
-  - [ ] Interactive User Data Visualization (messages, activity, etc.)
-  - [ ] Customizable Background Themes and Animations
+  - [ ] Interactive User Data Visualization
+  - [ ] Customizable Background Themes
   - [ ] Achievement Showcase Section
   - [ ] Social Links Integration
   - [ ] Profile Badges Display Area
@@ -43,67 +40,55 @@ To add the bot to your server, click the link below:
 #### Enhanced Ticket Management
 
 - Comprehensive Ticket System: [░░░░░░░░░░] 0% (0/12)
-  - [ ] Multi-Action Ticket Controls (close, escalate, transfer, prioritize)
-  - [ ] Advanced Confirmation System with Reason Logging
-  - [ ] Rich Text Editor for Ticket Messages
-  - [ ] Ticket Analytics Dashboard for Admins
-  - [ ] Two-Type Channel System:
-    - [ ] Thread-Based Tickets
-    - [ ] Dedicated Channel Tickets
-  - [ ] Unique Ticket ID Generator with Prefix Options
-  - [ ] Custom Ticket Categories and Tags
-  - [ ] Ticket Priority Levels
-  - [ ] Auto-Assignment System
-  - [ ] Response Templates Library
-  - [ ] Time Tracking and SLA Monitoring
-  - [ ] Ticket History and Audit Log
+  - [ ] Multi-Action Ticket Controls
+  - [ ] Advanced Confirmation System
+  - [ ] Rich Text Editor Integration
+  - [ ] Analytics Dashboard
+  - [ ] Thread & Channel Support
+  - [ ] Unique ID Generator
+  - [ ] Custom Categories & Tags
+  - [ ] Priority Levels
+  - [ ] Auto-Assignment Logic
+  - [ ] Response Templates
+  - [ ] Time Tracking System
+  - [ ] Full Audit Log
 
 #### Advanced Leveling System
 
 - Dynamic Level Progression: [░░░░░░░░░░] 0% (0/8)
-  - [ ] Dashboard Level Configuration:
-    - Create, edit and delete levels with customizable names, colors, XP thresholds, roles, and icons
-  - [ ] Interactive Level Management Dashboard
-  - [ ] Flexible XP Modifiers:
-    - Voice Activity: `[Time in Voice] × [Channel Multiplier] = XP`
-    - Text Activity: `[Message Count] × [Channel Type Bonus] = XP`
-  - [ ] Activity Tracking Options:
-    - [ ] Separate Voice/Text XP Tracking
-    - [ ] Combined XP System
-  - [ ] Anti-Abuse Protection System
+  - [ ] Dashboard Level Configuration
+  - [ ] Interactive Management Panel
+  - [ ] Flexible XP Modifiers
+  - [ ] Activity Tracking Options
+  - [ ] Anti-Abuse Protection
   - [ ] Custom Level-Up Announcements
   - [ ] Role Rewards Automation
-  - [ ] XP Boosters and Events System
+  - [ ] XP Boosters System
 
 #### Custom Achievement Framework
 
-- Guild Achievement System: [█████████░░] 75% (3/4)
-  - [x] Dashboard Achievement Creation Interface:
-    - Achievement editor with fields for title, description, image, and points
-  - [x] Achievement Management Dashboard:
-    - [x] Edit panel - Modify existing achievements
-    - [x] List view - Browse all achievements
-    - [x] Delete functionality - Remove achievements
-    - [x] Preview mode - Test achievement appearance
-  - [x] Achievement Notification System
-  - [ ] Achievement Statistics and Analytics
+- Guild Achievement System: [███████████] 100% (4/4)
+  - [x] Achievement Creation Interface
+  - [x] Management Dashboard
+  - [x] Notification System
+  - [x] Statistics & Analytics
 
-### Version 0.10
+### Version 0.11 - Enhancement Phase
 
-- Develop a Server Economy with virtual currency and rewards.
-- Create engaging Custom mini games for community interaction.
-- Add a Server Page in Dashboard for admins to manage features effortlessly.
-- Expand the Level System with additional rewards and customization options.
-
-### *More in Future Updates*
-
-## 📚 Custom Libraries for This Bot
-
-- [config.py](https://github.com/mahirox36/Negomi/blob/main/modules/config.py): Configuration Management
-- [Nexon](https://github.com/mahirox36/Nexon): A Python wrapper for the Discord API forked from nextcord with additional stuff
+- Server Economy System with virtual currency and rewards
+- Engaging Custom Mini-games
+- Expanded Dashboard Management Tools
+- Enhanced Level System Features
 
 ## 💡 Got Ideas or Issues?
 
-Feel free to open a new issue on GitHub or add me on Discord!
+Feel free to:
 
-**Discord Username:** mahirox36
+- Open an issue for bugs
+- Submit feature requests
+- Contribute to development
+- Join our community server
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

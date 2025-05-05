@@ -6,11 +6,12 @@ import logging
 import subprocess
 from .utils import run_process, handle_process_output
 
-logger = logging.getLogger("bot")
+logger = logging.getLogger(__name__)
+
 
 class ProcessManager:
     """Manages frontend development server process"""
-    
+
     def __init__(self, debug: bool = False) -> None:
         self.debug = debug
         self.npm_process: Optional[subprocess.Popen] = None
@@ -24,21 +25,16 @@ class ProcessManager:
 
         try:
             self.npm_process = await run_process(
-                cmd=f"cd {frontend_dir} && {self.npm_command}",
-                cwd=None
+                cmd=f"cd {frontend_dir} && {self.npm_command}", cwd=None
             )
-            
+
             # Handle process output
             asyncio.create_task(
-                handle_process_output(
-                    self.npm_process,
-                    prefix="NPM",
-                    debug=self.debug
-                )
+                handle_process_output(self.npm_process, prefix="NPM", debug=self.debug)
             )
-            
+
             logger.info("Frontend development server started")
-            
+
         except Exception as e:
             logger.error(f"Failed to start frontend server: {str(e)}")
             if self.npm_process:

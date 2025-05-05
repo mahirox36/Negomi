@@ -2,8 +2,12 @@ from modules.Nexon import *
 
 __UserSettingsVersion__ = 2
 
+logger = logging.getLogger(__name__)
 
-async def validate_voice_channel_ownership(interaction: init, data: Dict | List) -> bool:
+
+async def validate_voice_channel_ownership(
+    interaction: init, data: Dict | List
+) -> bool:
     """
     Validates user's permissions and ownership for voice channel operations.
 
@@ -474,12 +478,19 @@ class ControlPanel(View):
 
         feature = await Feature.get_guild_feature(interaction.guild.id, "temp_voice")
         data = feature.get_global("channels")
-        channel_to_remove = next((channelData for channelData in data if list(channelData.values())[0] == channel.id), None)
+        channel_to_remove = next(
+            (
+                channelData
+                for channelData in data
+                if list(channelData.values())[0] == channel.id
+            ),
+            None,
+        )
 
         if not channel_to_remove:
             await interaction.send(
                 embed=Embed.Error(f"Failed to delete the channel: Channel not found"),
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -494,7 +505,7 @@ class ControlPanel(View):
         except Exception as e:
             await interaction.send(
                 embed=Embed.Error(f"Failed to delete the channel: {str(e)}"),
-                ephemeral=True
+                ephemeral=True,
             )
 
     async def disable(self, interaction: Interaction):
@@ -544,7 +555,10 @@ class TempVoice(commands.Cog):
             )
         elif user.id == self.client.user.id:
             return await interaction.send(
-                embed=Embed.Error("You cannot invite the bot", footer="Are you trying to invite me?"), ephemeral=True
+                embed=Embed.Error(
+                    "You cannot invite the bot", footer="Are you trying to invite me?"
+                ),
+                ephemeral=True,
             )
         elif user.bot:
             return await interaction.send(
@@ -554,10 +568,11 @@ class TempVoice(commands.Cog):
         # Get channel data and validate ownership
         feature = await Feature.get_guild_feature(interaction.guild.id, "temp_voice")
         channels = feature.get_global("channels")
-        
+
         if not await validate_voice_channel_ownership(interaction, channels):
             return await interaction.send(
-                embed=Embed.Error("You are not the owner of this channel"), ephemeral=True
+                embed=Embed.Error("You are not the owner of this channel"),
+                ephemeral=True,
             )
 
         try:
@@ -576,7 +591,11 @@ class TempVoice(commands.Cog):
                 f"[View The Channel]({channel.jump_url})",
                 title="Voice Channel Invitation",
                 footer="Click the channel link to join",
-                author=[interaction.user.display_name, interaction.user.avatar.url] if interaction.user.avatar else MISSING
+                author=(
+                    [interaction.user.display_name, interaction.user.avatar.url]
+                    if interaction.user.avatar
+                    else MISSING
+                ),
             )
 
             # Try to DM the user first
@@ -588,22 +607,25 @@ class TempVoice(commands.Cog):
 
             # If DM fails, send in channel
             if not sent_dm:
-                if not interaction.channel or isinstance(interaction.channel, (CategoryChannel, ForumChannel)):
+                if not interaction.channel or isinstance(
+                    interaction.channel, (CategoryChannel, ForumChannel)
+                ):
                     return await interaction.send(
-                        embed=Embed.Error("Cannot send invitation - no suitable channel found"),
-                        ephemeral=True
+                        embed=Embed.Error(
+                            "Cannot send invitation - no suitable channel found"
+                        ),
+                        ephemeral=True,
                     )
                 await interaction.channel.send(content=user.mention, embed=embed)
 
             return await interaction.send(
-                embed=Embed.Info("Invitation sent successfully!"), 
-                ephemeral=True
+                embed=Embed.Info("Invitation sent successfully!"), ephemeral=True
             )
 
         except Exception as e:
             return await interaction.send(
                 embed=Embed.Error(f"Failed to send invitation: {str(e)}"),
-                ephemeral=True
+                ephemeral=True,
             )
 
     async def _check_voice_permissions(
@@ -705,7 +727,9 @@ class TempVoice(commands.Cog):
         user_settings = await UserSettings(interaction.user)
 
         if target.id == interaction.user.id:
-            await interaction.send(embed=Embed.Error("You cannot ban yourself"), ephemeral=True)
+            await interaction.send(
+                embed=Embed.Error("You cannot ban yourself"), ephemeral=True
+            )
             return False
 
         if target.guild_permissions.administrator:
@@ -899,7 +923,9 @@ class TempVoice(commands.Cog):
         checks = await validate_voice_channel_ownership(interaction, channels)
         if not checks:
             return await interaction.response.send_message(
-                embed=Embed.Error("You are not the owner of this channel"), ephemeral=True)
+                embed=Embed.Error("You are not the owner of this channel"),
+                ephemeral=True,
+            )
 
         await interaction.response.send_message(
             embed=Embed.Info(title="Control Panel", description="Please Chose"),

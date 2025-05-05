@@ -30,7 +30,7 @@ match Level[0]:
     case _:
         Level = logging.INFO
 
-logger = logging.getLogger("bot")
+logger = logging.getLogger(__name__)
 
 from .Negomi import ConversationManager, generate, download_model, client as negomi, offline, online, isClientOnline
 
@@ -83,7 +83,7 @@ def download_image_to_bytes(url: str) -> Optional[bytes]:
         Optional[bytes]: The resized and compressed image data in bytes, or None if the process fails.
     """
     try:
-        response = r2quest.get(url, stream=True)
+        response = r2quest.get(url, stream=True, timeout=10)
         response.raise_for_status()
 
         # Open the image
@@ -91,39 +91,82 @@ def download_image_to_bytes(url: str) -> Optional[bytes]:
 
         img_byte_arr = BytesIO()
 
+        # Set max size and quality parameters
+        max_size = 128
+        max_file_size = 256 * 1024  # 256 KB
+        quality_level = 90
+
         if image.format == "GIF":
-            # Reduce GIF frame count (if more than 10 frames, keep every 2nd frame)
-            frames = [frame.copy().convert("P", palette=Image.Palette.ADAPTIVE, colors=128).resize((128, 128), Image.Resampling.LANCZOS)
-                      for i, frame in enumerate(ImageSequence.Iterator(image)) if i % 2 == 0]
+            # Reduce GIF frame count and size
+            frames = []
+            for i, frame in enumerate(ImageSequence.Iterator(image)):
+                if i >= 20:  # Limit to maximum 20 frames
+                    break
+                # Skip frames to reduce file size if there are too many
+                if i > 10 and i % 2 != 0:
+                    continue
+                
+                # Resize the frame and convert to adaptive palette
+                resized_frame = frame.copy()
+                if max(resized_frame.width, resized_frame.height) > max_size:
+                    ratio = max_size / max(resized_frame.width, resized_frame.height)
+                    new_size = (int(resized_frame.width * ratio), int(resized_frame.height * ratio))
+                    resized_frame = resized_frame.resize(new_size, Image.Resampling.LANCZOS)
+                
+                frames.append(resized_frame.convert("P", palette=Image.Palette.ADAPTIVE, colors=128))
 
             # Save optimized GIF
-            frames[0].save(
-                img_byte_arr,
-                format="GIF",
-                save_all=True,
-                append_images=frames[1:],
-                loop=image.info.get("loop", 0),
-                duration=image.info.get("duration", 50),
-                optimize=True
-            )
+            if frames:
+                frames[0].save(
+                    img_byte_arr,
+                    format="GIF",
+                    save_all=True,
+                    append_images=frames[1:],
+                    loop=image.info.get("loop", 0),
+                    duration=image.info.get("duration", 100),
+                    optimize=True
+                )
+            else:
+                # Fallback if no frames were processed
+                return None
 
         else:
             # Resize for static images
-            image = image.resize((128, 128), Image.Resampling.LANCZOS)
+            if max(image.width, image.height) > max_size:
+                ratio = max_size / max(image.width, image.height)
+                new_size = (int(image.width * ratio), int(image.height * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
 
             # Try PNG first
             image.save(img_byte_arr, format="PNG", optimize=True)
 
             # If PNG is too large, try JPEG with adjustable quality
-            if img_byte_arr.tell() > 256 * 1024:
+            if img_byte_arr.tell() > max_file_size:
                 img_byte_arr = BytesIO()  # Reset buffer
-                image.convert("RGB").save(img_byte_arr, format="JPEG", quality=85, optimize=True)
+                
+                # Convert to RGB (removing alpha channel if present)
+                rgb_image = image.convert("RGB")
+                
+                # Try different quality levels until we get under the size limit
+                while quality_level > 50:
+                    img_byte_arr = BytesIO()  # Reset buffer
+                    rgb_image.save(img_byte_arr, format="JPEG", quality=quality_level, optimize=True)
+                    if img_byte_arr.tell() <= max_file_size:
+                        break
+                    quality_level -= 10
 
-        # Check size limit
-        if img_byte_arr.tell() > 256 * 1024:  # 256 KB
-            logger.error(f"Image size ({img_byte_arr.tell()} bytes) exceeds Discord's 256 KB limit.")
-            return None
+        # Final size check
+        file_size = img_byte_arr.tell()
+        if file_size > max_file_size:
+            logger.warning(f"Image still too large after compression: {file_size} bytes")
+            # Last resort: if still too large, return a heavily reduced version
+            if file_size > max_file_size * 1.5:
+                img_byte_arr = BytesIO()
+                very_small = image.resize((64, 64), Image.Resampling.LANCZOS).convert("RGB")
+                very_small.save(img_byte_arr, format="JPEG", quality=60)
 
+        # Return the bytes
+        img_byte_arr.seek(0)
         return img_byte_arr.getvalue()
 
     except r2quest.RequestException as e:
