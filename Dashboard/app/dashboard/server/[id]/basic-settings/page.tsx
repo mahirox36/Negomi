@@ -131,32 +131,7 @@ export default function BasicSettings() {
 
       <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10">
         <div className="p-6 space-y-8">
-          {/* General Settings */}
-          <SettingsSection
-            title="General Settings"
-            description="Basic server configuration"
-            icon="fa-sliders-h"
-            iconBgColor="bg-purple-500/20"
-            iconColor="text-purple-300"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-white">Server Prefix</h3>
-                  <p className="text-xs text-white/50">Command prefix for the bot</p>
-                </div>
-                <TextInput
-                  value={settings.prefix || "!"}
-                  onChange={(e) => handleSettingChange("prefix", e.target.value)}
-                  placeholder="!"
-                  icon="fa-terminal"
-                  variant="glass"
-                />
-              </div>
-            </div>
-          </SettingsSection>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             {/* Badge Colors */}
             <SettingsSection
               title="Badge Rarity Colors"

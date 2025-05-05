@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { SidebarLayout, LayoutItem } from '../types/layout';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface LayoutState {
   sidebar: SidebarLayout | null;
@@ -12,6 +13,7 @@ interface LayoutState {
   hasChanges: boolean;
   currentPath: string | null;
   serverId: string | null;
+  isAdmin: boolean;
 }
 
 interface LayoutContextType extends LayoutState {
@@ -40,8 +42,11 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     isLoading: false,
     hasChanges: false,
     currentPath: null,
-    serverId: null
+    serverId: null,
+    isAdmin: false
   });
+
+  const router = useRouter();
 
   // Use ref to track ongoing fetches to prevent duplicate requests
   const fetchingRef = useRef<FetchState>({});
@@ -55,9 +60,45 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, currentPath: path }));
   }, []);
 
-  const setServerId = useCallback((id: string) => {
-    setState(prev => ({ ...prev, serverId: id }));
-  }, []);
+  const checkAdminPermission = useCallback(async (serverId: string) => {
+    try {
+      // First check if user is logged in
+      const userResponse = await fetch("/api/v1/auth/user", {
+        credentials: "include",
+      });
+      
+      if (!userResponse.ok) {
+        router.push("/api/v1/auth/discord/login");
+        return false;
+      }
+
+      // Then check admin permission
+      const response = await fetch(`/api/v1/guilds/${serverId}/is_admin`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        router.push("/dashboard");
+        setState(prev => ({ ...prev, isAdmin: false }));
+        toast.error('You need admin permissions to access this');
+        return false;
+      }
+
+      setState(prev => ({ ...prev, isAdmin: true }));
+      return true;
+    } catch (error) {
+      setState(prev => ({ ...prev, isAdmin: false }));
+      toast.error('Failed to verify permissions');
+      return false;
+    }
+  }, [router]);
+
+  const setServerId = useCallback(async (id: string) => {
+    if (await checkAdminPermission(id)) {
+      setState(prev => ({ ...prev, serverId: id }));
+    }
+  }, [checkAdminPermission]);
 
   const fetchSidebar = useCallback(async () => {
     if (state.sidebar || fetchingRef.current.sidebar) return;
@@ -77,6 +118,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   }, [state.sidebar]);
 
   const fetchServerSidebar = useCallback(async () => {
+    if (!state.serverId || !state.isAdmin) return;
     if (state.serverSidebar || fetchingRef.current.serverSidebar) return;
     
     try {
@@ -91,9 +133,10 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } finally {
       fetchingRef.current.serverSidebar = false;
     }
-  }, [state.serverSidebar]);
+  }, [state.serverSidebar, state.serverId, state.isAdmin]);
 
   const fetchPageLayout = useCallback(async (page: string) => {
+    if (!state.serverId || !state.isAdmin) return;
     const fetchKey = `page_${page}`;
     
     // Return cached layout if available
@@ -126,10 +169,10 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } finally {
       fetchingRef.current[fetchKey] = false;
     }
-  }, []);
+  }, [state.serverId, state.isAdmin]);
 
   const saveChanges = useCallback(async () => {
-    if (!state.hasChanges || !state.serverId || !state.currentPath) return;
+    if (!state.hasChanges || !state.serverId || !state.currentPath || !state.isAdmin) return;
 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
@@ -163,7 +206,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [state.hasChanges, state.serverId, state.currentPath, setHasChanges]);
+  }, [state.hasChanges, state.serverId, state.currentPath, state.isAdmin, setHasChanges]);
 
   const revertChanges = useCallback(() => {
     if (!state.hasChanges) return;
@@ -174,7 +217,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   }, [state.hasChanges, setHasChanges]);
 
   const resetToDefaults = useCallback(async () => {
-    if (!state.serverId || !state.currentPath) return;
+    if (!state.serverId || !state.currentPath || !state.isAdmin) return;
 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
@@ -192,7 +235,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [state.serverId, state.currentPath]);
+  }, [state.serverId, state.currentPath, state.isAdmin]);
 
   return (
     <LayoutContext.Provider 

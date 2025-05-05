@@ -1,9 +1,25 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { formatNumber, formatDate, formatDuration } from "@/lib/utils";
+import { formatNumber, formatDate } from "@/lib/utils";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
 
 type GuildData = {
   id: string;
@@ -50,7 +66,11 @@ export default function Overview() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="rounded-full h-12 w-12 border-4 border-white/10 border-t-white/90"
+        />
       </div>
     );
   }
@@ -62,31 +82,41 @@ export default function Overview() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-6 pb-8">
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
+      className="space-y-8 pb-8 max-w-7xl mx-auto"
+    >
       {/* Server Header */}
-      <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
+      <motion.div
+        variants={itemVariants}
+        className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
+      >
         <div className="flex items-center gap-6">
           {guild.icon_url ? (
-            <img
-              src={guild.icon_url}
-              alt={guild.name}
-              className="w-24 h-24 rounded-2xl shadow-lg"
-            />
+            <div className="w-24 h-24 rounded-2xl shadow-lg overflow-hidden border border-white/20">
+              <img
+                src={guild.icon_url}
+                alt={guild.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
           ) : (
-            <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-white/20">
               <i className="fas fa-server text-4xl text-white/50"></i>
             </div>
           )}
           <div>
-            <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
               {guild.name}
             </h1>
-            <div className="flex items-center gap-4 mt-2 text-white/70">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-2 text-white/70">
                 <i className="fas fa-users"></i>
                 <span>{formatNumber(guild.member_count)} members</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-white/70">
                 <i className="fas fa-clock"></i>
                 <span>Created {formatDate(guild.created_at * 1000)}</span>
               </div>
@@ -99,7 +129,7 @@ export default function Overview() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -107,85 +137,167 @@ export default function Overview() {
           icon="fa-message"
           title="Total Messages"
           value={formatNumber(guild.statistics.total_messages)}
+          gradient="from-blue-500/10 to-cyan-600/10"
+          variants={itemVariants}
         />
         <StatCard
           icon="fa-terminal"
           title="Commands Used"
           value={formatNumber(guild.statistics.total_commands_used)}
+          gradient="from-pink-500/10 to-rose-500/10"
+          variants={itemVariants}
         />
         <StatCard
           icon="fa-users"
           title="Active Members"
           value={formatNumber(guild.statistics.active_members)}
+          gradient="from-orange-500/10 to-red-600/10"
+          variants={itemVariants}
         />
         <StatCard
           icon="fa-chart-simple"
           title="Avg Messages/Member"
           value={formatNumber(guild.statistics.average_messages_per_member)}
+          gradient="from-indigo-500/10 to-purple-500/10"
+          variants={itemVariants}
         />
       </div>
 
       {/* Detailed Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">Top Commands</h3>
+        {/* Command Usage */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 shadow-lg border border-white/10"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+              <i className="fas fa-terminal text-lg text-white/90"></i>
+            </div>
+            <h3 className="text-lg font-semibold text-white">Top Commands</h3>
+          </div>
           <div className="space-y-3">
             {topCommands.map(([command, count]) => (
               <div
                 key={command}
-                className="flex items-center justify-between text-white/70"
+                className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
               >
-                <span className="font-mono">/{command}</span>
-                <span>{formatNumber(count)} uses</span>
+                <span className="text-white/80 font-mono bg-white/5 px-2 py-1 rounded">
+                  /{command}
+                </span>
+                <span className="text-white/60">
+                  {formatNumber(count)} uses
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">Content Statistics</h3>
-          <div className="space-y-3 text-white/70">
-            <div className="flex justify-between">
-              <span>Total Characters</span>
-              <span>{formatNumber(guild.statistics.total_characters)}</span>
+        {/* Server Stats */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 shadow-lg border border-white/10"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+              <i className="fas fa-chart-simple text-lg text-white/90"></i>
             </div>
-            <div className="flex justify-between">
-              <span>Total Attachments</span>
-              <span>{formatNumber(guild.statistics.total_attachments)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Avg. Characters/Message</span>
-              <span>
-                {formatNumber(
-                  guild.statistics.total_characters / guild.statistics.total_messages
-                )}
-              </span>
-            </div>
+            <h3 className="text-lg font-semibold text-white">Content Statistics</h3>
           </div>
-        </div>
+          <div className="space-y-3">
+            <StatRow
+              icon="fa-font"
+              label="Total Characters"
+              value={formatNumber(guild.statistics.total_characters)}
+            />
+            <StatRow
+              icon="fa-paperclip"
+              label="Total Attachments"
+              value={formatNumber(guild.statistics.total_attachments)}
+            />
+            <StatRow
+              icon="fa-chart-line"
+              label="Avg. Characters/Message"
+              value={formatNumber(
+                guild.statistics.total_characters / guild.statistics.total_messages
+              )}
+            />
+          </div>
+        </motion.div>
+
+        {/* Server Info */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 shadow-lg border border-white/10 md:col-span-2"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+              <i className="fas fa-shield text-lg text-white/90"></i>
+            </div>
+            <h3 className="text-lg font-semibold text-white">Server Information</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <StatBox
+              icon="fa-shield"
+              label="Verification"
+              value={guild.verification_level}
+            />
+            <StatBox
+              icon="fa-rocket"
+              label="Boost Level"
+              value={`Level ${guild.boost_level}`}
+            />
+            <StatBox
+              icon="fa-gift"
+              label="Boosts"
+              value={formatNumber(guild.boost_count)}
+            />
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-function StatCard({
-  icon,
-  title,
-  value,
-}: {
-  icon: string;
-  title: string;
-  value: string | number;
-}) {
+function StatCard({ icon, title, value, gradient, variants }: any) {
   return (
-    <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-      <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center mb-4">
+    <motion.div
+      variants={variants}
+      className={`bg-gradient-to-br ${gradient} backdrop-blur-lg rounded-xl p-6 border border-white/10 shadow-lg`}
+    >
+      <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center mb-4 shadow-inner">
         <i className={`fas ${icon} text-xl text-white/90`}></i>
       </div>
       <div className="space-y-1">
         <h3 className="text-sm font-medium text-white/70">{title}</h3>
         <p className="text-2xl font-semibold text-white">{value}</p>
       </div>
+    </motion.div>
+  );
+}
+
+function StatRow({ icon, label, value }: any) {
+  return (
+    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center">
+          <i className={`fas ${icon} text-white/90`}></i>
+        </div>
+        <span className="text-white/70">{label}</span>
+      </div>
+      <span className="text-white font-medium">{value}</span>
+    </div>
+  );
+}
+
+function StatBox({ icon, label, value }: any) {
+  return (
+    <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-lg p-4 border border-white/5 shadow-inner">
+      <div className="flex items-center gap-3 mb-2">
+        <i className={`fas ${icon} text-white/90`}></i>
+        <span className="text-white/70">{label}</span>
+      </div>
+      <p className="text-xl font-semibold text-white">{value}</p>
     </div>
   );
 }

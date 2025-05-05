@@ -121,7 +121,15 @@ export default function ServerSidebar({
           </div>
           
           <Link
-            href="/dashboard"
+            href={
+              (() => {
+                const paths = pathname.split('/');
+                if (paths.length > 5) { // We're in a sub-page
+                  return `/dashboard/server/${serverId}/${paths[4]}`; // Return to main feature page
+                }
+                return '/dashboard'; // Return to user dashboard
+              })()
+            }
             className="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white transition-colors group bg-white/5 hover:bg-white/10"
           >
             <motion.div
@@ -131,7 +139,15 @@ export default function ServerSidebar({
               <div className="w-5 flex items-center justify-center mr-3">
                 <i className="fa-solid fa-arrow-left group-hover:transform group-hover:-translate-x-1 transition-transform" />
               </div>
-              <span className="font-medium">Back to Dashboard</span>
+              <span className="font-medium">
+                {(() => {
+                  const paths = pathname.split('/');
+                  if (paths.length > 5) { // We're in a sub-page
+                    return `Back to ${paths[4].charAt(0).toUpperCase() + paths[4].slice(1)}`;
+                  }
+                  return 'Back to Dashboard';
+                })()}
+              </span>
             </motion.div>
           </Link>
         </div>
@@ -146,7 +162,7 @@ export default function ServerSidebar({
               <div className="space-y-1">
                 {items.map((item, itemIndex) => {
                   const href = `/dashboard/server/${serverId}/${item.link}`;
-                  const isActive = pathname === href;
+                  const isActive = pathname.startsWith(href);
 
                   return (
                     <motion.div

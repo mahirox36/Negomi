@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { FaPlus, FaTrash } from "react-icons/fa";
-import { ThemeType, themeConfig } from '@/app/lib/theme';
+import { ThemeType, themeConfig } from "@/app/lib/theme";
 
 interface Requirement {
   type: string;
@@ -24,13 +24,13 @@ const comparisonMap: Record<string, string> = {
   "<": "Less than",
   ">=": "Greater than or equal",
   "<=": "Less than or equal",
-  "!=": "Not equal"
+  "!=": "Not equal",
 };
 
 export function RequirementSection({
   requirements,
   setRequirements,
-  theme = 'blue'
+  theme = "blue",
 }: RequirementSectionProps) {
   const [requirementTypes, setRequirementTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,10 @@ export function RequirementSection({
   }, []);
 
   const addRequirement = () => {
-    setRequirements([...requirements, { type: "", comparison: "==", value: "" }]);
+    setRequirements([
+      ...requirements,
+      { type: "", comparison: "==", value: "" },
+    ]);
   };
 
   const updateRequirement = (
@@ -60,13 +63,13 @@ export function RequirementSection({
     value: string
   ) => {
     const newReqs = [...requirements];
-    if (field === 'type') {
-      value = value.replace(/\s+/g, '_');
+    if (field === "type") {
+      value = value.replace(/\s+/g, "_");
     }
-    if (field === 'value') {
+    if (field === "value") {
       // Remove any non-numeric characters if the type suggests a numeric value
-      if (['MESSAGES', 'LEVEL', 'EXPERIENCE'].includes(newReqs[index].type)) {
-        value = value.replace(/[^\d.-]/g, '');
+      if (["MESSAGES", "LEVEL", "EXPERIENCE"].includes(newReqs[index].type)) {
+        value = value.replace(/[^\d.-]/g, "");
       }
     }
     newReqs[index] = { ...newReqs[index], [field]: value };
@@ -125,18 +128,26 @@ export function RequirementSection({
                 </label>
                 <select
                   value={req.type}
-                  onChange={(e) => updateRequirement(index, "type", e.target.value)}
+                  onChange={(e) =>
+                    updateRequirement(index, "type", e.target.value)
+                  }
                   className={selectStyles}
                   required
                   disabled={loading}
                 >
-                  <option value="" className={optionStyles}>Select type</option>
+                  <option value="" className={optionStyles} disabled>
+                    Select type
+                  </option>
                   {requirementTypes.map((type) => (
                     <option key={type} value={type} className={optionStyles}>
-                      {type.replace(/_/g, ' ').toLowerCase()
-                        .split(' ')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ')}
+                      {type
+                        .replace(/_/g, " ")
+                        .toLowerCase()
+                        .split(" ")
+                        .map(
+                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                        )
+                        .join(" ")}
                     </option>
                   ))}
                 </select>
@@ -147,11 +158,15 @@ export function RequirementSection({
                 </label>
                 <select
                   value={req.comparison}
-                  onChange={(e) => updateRequirement(index, "comparison", e.target.value)}
+                  onChange={(e) =>
+                    updateRequirement(index, "comparison", e.target.value)
+                  }
                   className={selectStyles}
                   required
                 >
-                  <option value="" className={optionStyles}>Select comparison</option>
+                  <option value="" className={optionStyles} disabled>
+                    Select comparison
+                  </option>
                   {Object.entries(comparisonMap).map(([value, label]) => (
                     <option key={value} value={value} className={optionStyles}>
                       {label}
@@ -164,13 +179,23 @@ export function RequirementSection({
                   Value
                 </label>
                 <input
-                  type={['MESSAGES', 'LEVEL', 'EXPERIENCE'].includes(req.type) ? 'number' : 'text'}
+                  type={
+                    ["MESSAGES", "LEVEL", "EXPERIENCE"].includes(req.type)
+                      ? "number"
+                      : "text"
+                  }
                   value={req.value}
-                  onChange={(e) => updateRequirement(index, "value", e.target.value)}
+                  onChange={(e) =>
+                    updateRequirement(index, "value", e.target.value)
+                  }
                   className={`w-full p-2 bg-slate-800/50 border border-slate-700/50 rounded-lg ${currentTheme.focus} focus:ring-1 text-white`}
                   required
-                  min={['MESSAGES', 'LEVEL', 'EXPERIENCE'].includes(req.type) ? '0' : undefined}
-                  step={['EXPERIENCE'].includes(req.type) ? '0.01' : '1'}
+                  min={
+                    ["MESSAGES", "LEVEL", "EXPERIENCE"].includes(req.type)
+                      ? "0"
+                      : undefined
+                  }
+                  step={["EXPERIENCE"].includes(req.type) ? "0.01" : "1"}
                 />
               </div>
             </div>
