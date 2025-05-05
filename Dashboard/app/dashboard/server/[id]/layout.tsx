@@ -17,12 +17,13 @@ export const metadata: Metadata = {
   description: "Manage your Discord server settings and view analytics",
 };
 
-export default function ServerLayout({ children, params }: LayoutProps) {
-  const serverId = params?.id ?? "";
+export default async function ServerLayout({ children, params }: LayoutProps) {
+  const resolvedParams = await params;
+  const serverId = resolvedParams?.id ?? "";
 
   return (
     <div className="min-h-screen relative">
-      <Suspense fallback={null}>
+      <Suspense>
         <LayoutProvider>
           <ServerLayoutClient serverId={serverId}>{children}</ServerLayoutClient>
         </LayoutProvider>

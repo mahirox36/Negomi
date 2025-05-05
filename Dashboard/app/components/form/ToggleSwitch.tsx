@@ -1,41 +1,75 @@
+import { ThemeType, themeConfig } from '@/app/lib/theme';
+
 interface ToggleSwitchProps {
-  enabled: boolean;
-  onChange: (value: boolean) => void;
-  size?: 'sm' | 'md' | 'lg';
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: string;
+  description?: string;
   disabled?: boolean;
+  theme?: ThemeType;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export default function ToggleSwitch({ 
-  enabled, 
-  onChange,
-  size = 'md',
-  disabled = false 
-}: ToggleSwitchProps) {
-  const sizes = {
-    sm: 'w-10 h-6',
-    md: 'w-14 h-8',
-    lg: 'w-16 h-9'
-  };
+const sizeConfig = {
+  sm: {
+    container: 'h-4 w-8',
+    knob: 'h-3 w-3',
+    translate: { on: 'translate-x-5', off: 'translate-x-1' },
+  },
+  md: {
+    container: 'h-6 w-11',
+    knob: 'h-4 w-4',
+    translate: { on: 'translate-x-6', off: 'translate-x-1' },
+  },
+  lg: {
+    container: 'h-8 w-16',
+    knob: 'h-6 w-6',
+    translate: { on: 'translate-x-9', off: 'translate-x-2' },
+  },
+};
 
-  const thumbSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-7 h-7'
-  };
+export function ToggleSwitch({ 
+  checked, 
+  onChange, 
+  label = '', 
+  description, 
+  disabled = false,
+  theme = 'blue',
+  size = 'lg',
+}: ToggleSwitchProps) {
+  const currentTheme = themeConfig[theme];
+  const sizeProps = sizeConfig[size];
 
   return (
-    <div
-      onClick={() => !disabled && onChange(!enabled)}
-      className={`${sizes[size]} rounded-full transition-colors duration-200 cursor-pointer relative
-        ${enabled ? "bg-emerald-500" : "bg-white/20"}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-    >
-      <div
-        className={`${thumbSizes[size]} absolute rounded-full bg-white top-1 transition-transform duration-200
-          ${enabled ? "translate-x-[calc(100%+0.25rem)]" : "translate-x-1"}
+    <div className="flex items-center justify-between py-2">
+      <div className="flex flex-col">
+        {label && (
+          <span className="text-sm font-medium text-slate-200">{label}</span>
+        )}
+        {description && (
+          <span className="text-xs text-slate-400">{description}</span>
+        )}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        className={`relative inline-flex items-center rounded-full transition-colors
+          ${sizeProps.container}
+          ${currentTheme.focus} focus:ring-2 focus:ring-opacity-20 focus:ring-offset-2 focus:ring-offset-slate-900
+          ${checked ? currentTheme.toggle : 'bg-slate-700'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
-      />
+      >
+        <span
+          className={`inline-block rounded-full bg-white transition-transform
+            ${sizeProps.knob}
+            ${checked ? sizeProps.translate.on : sizeProps.translate.off}
+          `}
+        />
+      </button>
     </div>
   );
 }

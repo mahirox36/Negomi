@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -137,20 +137,23 @@ export default function ServerSidebar({
         </div>
 
         {/* Navigation Items */}
-        <div className="p-4 space-y-8">
-          {Object.entries(serverSidebar as Record<string, SidebarItem[]>).map(([section, items]) => (
+        <nav className="p-4 space-y-2">
+          {Object.entries(serverSidebar as Record<string, SidebarItem[]>).map(([section, items], sectionIndex) => (
             <motion.div key={section}>
               <h3 className="text-white/70 text-sm font-semibold mb-2 px-2">
                 {section}
               </h3>
               <div className="space-y-1">
-                {items.map((item) => {
+                {items.map((item, itemIndex) => {
                   const href = `/dashboard/server/${serverId}/${item.link}`;
                   const isActive = pathname === href;
 
                   return (
-                    <div
+                    <motion.div
                       key={item.name}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: (sectionIndex + itemIndex) * 0.1 }}
                       onClick={(e) => handleNavigation(e, href)}
                       className="cursor-pointer"
                     >
@@ -180,13 +183,13 @@ export default function ServerSidebar({
                           />
                         )}
                       </motion.div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
             </motion.div>
           ))}
-        </div>
+        </nav>
       </div>
     </motion.div>
   );

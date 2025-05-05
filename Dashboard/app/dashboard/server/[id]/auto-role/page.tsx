@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import DiscordSelect from "@/app/components/form/DiscordSelect";
+import SettingsSection from "@/app/components/dashboard/SettingsSection";
 import { useLayout } from "@/providers/LayoutProvider";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -14,8 +15,8 @@ interface AutoRoleSettings {
 
 export default function AutoRole() {
   const params = useParams();
-  const serverId = params.id;
-  const { setHasChanges, isLoading: layoutLoading, pageLayout, fetchPageLayout } = useLayout();
+  const serverId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { setHasChanges, setCurrentPath, setServerId } = useLayout();
   const [settings, setSettings] = useState<AutoRoleSettings>({
     userRoles: [],
     botRoles: [],
@@ -26,13 +27,12 @@ export default function AutoRole() {
   });
   const [isEnabled, setIsEnabled] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const hasInitialFetch = useRef(false);
 
   const fetchSettings = useCallback(async () => {
-    if (!serverId || hasInitialFetch.current) return;
+    if (!serverId) return;
     
-    setIsLoading(true);
     try {
       const [settingsRes, statusRes] = await Promise.all([
         axios.get(`/api/v1/guilds/${serverId}/settings/auto-role`, {
@@ -43,11 +43,24 @@ export default function AutoRole() {
         })
       ]);
       
+      let settingsData = {
+        userRoles: [],
+        botRoles: []
+      };
+      
       if (settingsRes.data) {
-        setSettings(settingsRes.data);
-        setOriginalSettings(settingsRes.data);
-        setHasChanges(false);
+        const data = settingsRes.data.settings || settingsRes.data;
+        if (data) {
+          settingsData = {
+            userRoles: Array.isArray(data.userRoles) ? data.userRoles : [],
+            botRoles: Array.isArray(data.botRoles) ? data.botRoles : []
+          };
+        }
       }
+      
+      setSettings(settingsData);
+      setOriginalSettings(settingsData);
+      setHasChanges(false);
       setIsEnabled(statusRes.data.enabled);
       hasInitialFetch.current = true;
     } catch (error) {
@@ -59,39 +72,43 @@ export default function AutoRole() {
   }, [serverId, setHasChanges]);
 
   useEffect(() => {
+    if (!serverId || hasInitialFetch.current) return;
+    
+    setCurrentPath('auto-role');
+    setServerId(serverId as string);
+    fetchSettings();
+    
+    return () => {
+      hasInitialFetch.current = false;
+    };
+  }, [serverId, fetchSettings, setCurrentPath, setServerId]);
+
+  useEffect(() => {
+    const handleGetUnsavedSettings = (event: CustomEvent) => {
+      if (event.detail && event.detail.callback) {
+        event.detail.callback(settings);
+      }
+    };
+
+    const handleRevertChanges = () => {
+      setSettings({...originalSettings});
+    };
+
     const handleSettingsReset = () => {
       hasInitialFetch.current = false;
       fetchSettings();
     };
 
+    window.addEventListener('getUnsavedSettings', handleGetUnsavedSettings as EventListener);
+    window.addEventListener('revertChanges', handleRevertChanges);
     window.addEventListener('settingsReset', handleSettingsReset);
+    
     return () => {
+      window.removeEventListener('getUnsavedSettings', handleGetUnsavedSettings as EventListener);
+      window.removeEventListener('revertChanges', handleRevertChanges);
       window.removeEventListener('settingsReset', handleSettingsReset);
     };
-  }, [fetchSettings]);
-
-  useEffect(() => {
-    if (!serverId || hasInitialFetch.current) return;
-
-    const loadData = async () => {
-      try {
-        await Promise.all([
-          fetchPageLayout('auto-role'),
-          fetchSettings()
-        ]);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        toast.error('Failed to load settings');
-      }
-    };
-
-    loadData();
-
-    // Cleanup on unmount
-    return () => {
-      hasInitialFetch.current = false;
-    };
-  }, [serverId, fetchSettings, fetchPageLayout]);
+  }, [settings, originalSettings, fetchSettings]);
 
   const handleChange = (type: "userRoles" | "botRoles", value: string[]) => {
     const newSettings = { ...settings, [type]: value };
@@ -118,31 +135,18 @@ export default function AutoRole() {
     }
   };
 
-  if (isLoading || layoutLoading) {
-    return (
-      <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 flex flex-col items-center">
-        <div className="relative w-16 h-16">
-          <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-[spin_3s_linear_infinite]"></div>
-          <div className="absolute inset-2 rounded-full border-4 border-t-white/80 border-white/20 animate-[spin_2s_linear_infinite]"></div>
-          <div className="absolute inset-[38%] rounded-full bg-white/80 animate-pulse"></div>
-        </div>
-        <p className="text-white text-base mt-4 font-medium animate-pulse">
-          Loading...
-        </p>
-      </div>
-    );
-  }
+  if (isLoading) return null;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
+      <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/10 rounded-xl shadow-inner">
+          <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-xl shadow-inner">
             <i className="fas fa-user-tag text-2xl text-white/90"></i>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
               Auto Role
             </h1>
             <p className="text-lg text-white/70 mt-1">
@@ -163,40 +167,33 @@ export default function AutoRole() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">            
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-white/70">
-                {isEnabled ? 'Enabled' : 'Disabled'}
-              </span>
-              <button
-                onClick={toggleFeature}
-                disabled={isToggling}
-                className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-900
-                  ${isEnabled ? 'bg-purple-500' : 'bg-gray-700'}`}
-              >
-                <div className={`absolute w-4 h-4 transition-transform duration-200 rounded-full top-1 left-1 bg-white transform
-                  ${isEnabled ? 'translate-x-6' : 'translate-x-0'}
-                  ${isToggling ? 'opacity-70' : ''}`}
-                />
-              </button>
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/70">
+              {isEnabled ? 'Enabled' : 'Disabled'}
+            </span>
+            <button
+              onClick={toggleFeature}
+              disabled={isToggling}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-900
+                ${isEnabled ? 'bg-purple-500' : 'bg-gray-700'}`}
+            >
+              <div className={`absolute w-4 h-4 transition-transform duration-200 rounded-full top-1 left-1 bg-white transform
+                ${isEnabled ? 'translate-x-6' : 'translate-x-0'}
+                ${isToggling ? 'opacity-70' : ''}`}
+              />
+            </button>
           </div>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* User Roles Panel */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
-                <i className="fas fa-users text-xl text-white/90"></i>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-white">Member Auto Roles</h2>
-                <p className="text-sm text-white/70 mt-1">
-                  Roles that will be automatically assigned to new members when they join
-                </p>
-              </div>
-            </div>
+          {/* Member Roles Section */}
+          <SettingsSection
+            title="Member Auto Roles"
+            description="Roles automatically assigned to new members"
+            icon="fa-users"
+            iconBgColor="bg-blue-500/20"
+            iconColor="text-blue-300"
+          >
             <DiscordSelect
               type="role"
               guildId={serverId as string}
@@ -206,21 +203,16 @@ export default function AutoRole() {
               multiple
               searchable
             />
-          </div>
+          </SettingsSection>
 
-          {/* Bot Roles Panel */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg">
-                <i className="fas fa-robot text-xl text-white/90"></i>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-white">Bot Auto Roles</h2>
-                <p className="text-sm text-white/70 mt-1">
-                  Roles that will be automatically assigned to new bots when they are added
-                </p>
-              </div>
-            </div>
+          {/* Bot Roles Section */}
+          <SettingsSection
+            title="Bot Auto Roles"
+            description="Roles automatically assigned to new bots"
+            icon="fa-robot"
+            iconBgColor="bg-purple-500/20"
+            iconColor="text-purple-300"
+          >
             <DiscordSelect
               type="role"
               guildId={serverId as string}
@@ -230,7 +222,7 @@ export default function AutoRole() {
               multiple
               searchable
             />
-          </div>
+          </SettingsSection>
         </div>
       </div>
     </div>

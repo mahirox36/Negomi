@@ -152,8 +152,8 @@ export default function Navbar() {
 
   // Get avatar URL
   const getAvatarUrl = (user: User) => {
-    if (backendError) return "/default-avatar.png";
-    const format = user.avatar?.startsWith("a_") ? "gif" : "png";
+    if (backendError) return "https://discord.com/assets/788f05731f8aa02e.png";
+    const format = user.avatar?.startsWith("a_") ? "gif" : "webp";
     return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}?size=1024`;
   };
 

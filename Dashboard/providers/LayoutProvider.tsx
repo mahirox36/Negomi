@@ -133,10 +133,27 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
+      
+      // Get current settings from the correct location in app state
+      // This will be from the React component that set hasChanges to true
+      const settingsData = {};
+      window.dispatchEvent(new CustomEvent('getUnsavedSettings', { 
+        detail: { 
+          callback: (settings: any) => {
+            Object.assign(settingsData, settings);
+          } 
+        }
+      }));
+      
       const response = await fetch(`/api/v1/guilds/${state.serverId}/settings/${state.currentPath}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settingsData),
         credentials: 'include'
       });
+      
       if (!response.ok) throw new Error('Failed to save changes');
       setHasChanges(false);
       toast.success('Changes saved successfully');
@@ -150,6 +167,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
 
   const revertChanges = useCallback(() => {
     if (!state.hasChanges) return;
+    // Dispatch event to notify components to revert their changes
     window.dispatchEvent(new CustomEvent('revertChanges'));
     setHasChanges(false);
     toast.success('Changes reverted');
@@ -165,6 +183,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to reset settings');
+      // Dispatch event to notify components that settings have been reset
       window.dispatchEvent(new CustomEvent('settingsReset'));
       toast.success('Settings reset to defaults');
     } catch (error) {

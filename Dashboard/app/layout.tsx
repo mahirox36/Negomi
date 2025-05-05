@@ -1,20 +1,36 @@
 import "./globals.css"
 import { Inter } from "next/font/google"
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from "react"
 import { RootProvider } from '@/lib/providers/RootProvider'
 import Navbar from "@/app/components/Navbar"
 
 const inter = Inter({ subsets: ["latin"] })
 
+//  Author
+const mahiro = {
+  name: "Mahiro",
+  url: "https://discord.com/users/829806976702873621",
+} 
+ 
+export const viewport: Viewport = {
+  themeColor: '#ff69b4',
+}
 export const metadata: Metadata = {
   title: 'Negomi',
   description: 'Manage your Discord server with powerful tools and analytics',
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#4F46E5',
   icons: {
     icon: '/favicon.ico',
   },
+  authors: [mahiro],
+  openGraph: {
+    title: "Negomi - The Ultimate Discord Server Management Tool",
+    description: "Manage your Discord server with powerful tools and analytics",
+    url: "https://negomi.mahirou.online",
+    siteName: "Negomi",
+    locale: "en_US",
+    type: "website",
+  }
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

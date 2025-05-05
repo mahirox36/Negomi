@@ -36,4 +36,21 @@ export interface UserDataDashboard {
     totalXpGained: number;
     achievements: string[];
   };
+  badges: Array<{
+    id: number;
+    name: string;
+    description: string;
+    icon_url: string;
+    emoji: string;
+    created_at: string;
+    guild_id: string;
+    rarity: string;
+    hidden: boolean;
+    requirements: Array<{
+      type: string;
+      comparison: string;
+      value: number;
+    }>;
+    obtained_at: string; // ISO 8601 format
+  } | null>;
 }
