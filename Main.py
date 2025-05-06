@@ -15,6 +15,8 @@ from datetime import datetime
 import nexon
 from nexon.ext.commands import MissingPermissions
 from modules.Nexon import *
+import os
+import json
 
 logger = logging.getLogger("Negomi")
 
@@ -309,14 +311,24 @@ class DiscordBot(commands.Bot):
             )
             failed_channels = []
             success_channels = []
-            if os.path.exists("logs/followed_channels.json"):
-                with open("logs/followed_channels.json", "r") as f:
-                    followed_channels = json.load(f)
+            followed_channels_path = "logs/followed_channels.json"
+            failed_channels_path = "logs/failed_channels.json"
+
+            # Ensure logs directory exists
+            os.makedirs("logs", exist_ok=True)
+
+            # Load already followed channels
+            if os.path.exists(followed_channels_path):
+                with open(followed_channels_path, "r") as f:
+                    try:
+                        followed_channels = json.load(f)
+                    except Exception:
+                        followed_channels = []
             else:
                 followed_channels = []
+
             if isinstance(bot_announce_channel, nexon.TextChannel):
                 self.logger.info("Following bot announce channel")
-                # instead of guild.system_channel make it the
                 for guild in self.guilds:
                     if guild.id in followed_channels:
                         self.logger.info(f"Already following {guild.name} ({guild.id})")
@@ -333,9 +345,11 @@ class DiscordBot(commands.Bot):
                     except Exception as e:
                         failed_channels.append(guild.id)
                         self.logger.warning(f"Failed to follow channel: {str(e)}")
-            with open("logs/followed_channels.json", "w") as f:
-                json.dump(success_channels, f)
-            with open("logs/failed_channels.json", "w") as f:
+
+            # Update followed channels list
+            with open(followed_channels_path, "w") as f:
+                json.dump(followed_channels + success_channels, f)
+            with open(failed_channels_path, "w") as f:
                 json.dump(failed_channels, f)
 
     async def on_guild_join(self, guild: nexon.Guild) -> None:

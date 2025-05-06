@@ -1083,6 +1083,9 @@ class TempVoice(commands.Cog):
                 feature = await Feature.get_guild_feature(guild.id, "temp_voice")
                 if not feature.get_setting():
                     return
+                
+                if not feature.enabled:
+                    return
 
                 create_channel_id = feature.get_setting("CreateChannel")
                 category_id = feature.get_setting("CategoryChannel")

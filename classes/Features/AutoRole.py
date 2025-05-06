@@ -15,6 +15,8 @@ class AutoRole(commands.Cog):
             )
             if not data:
                 return
+            if not data.enabled:
+                return
             if member.bot and data.get_setting('bot_role') != None:
                 return await member.add_roles(guild.get_role(data.get_setting("bot_role"))) # type: ignore
             await member.add_roles(guild.get_role(data.get_setting("member_role"))) # type: ignore

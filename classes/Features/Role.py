@@ -145,11 +145,16 @@ class Roles(commands.Cog):
     ):
         if not ctx.guild or not ctx.user or isinstance(ctx.user, User):
             return await ctx.send(embed=Embed.Error("You are not in a server"))
+        
 
         # Get feature settings and data
         feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
         data, user_roles, max_roles = await self.check_user_roles(ctx, feature)
         settings = feature.get_setting()
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
 
         # Check if user has reached their role limit
         if len(user_roles) >= max_roles:
@@ -293,11 +298,16 @@ class Roles(commands.Cog):
             return await ctx.send(embed=Embed.Error("Command must be used in a server"))
         if not ctx.user or isinstance(ctx.user, User):
             return await ctx.send(embed=Embed.Error("You are not in a server"))
+        
 
         feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
         data = feature.get_global("MembersRoles", {})
         settings = feature.get_setting()
 
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
         # Find the role entry
         role_entry = None
         role_key = None
@@ -406,6 +416,11 @@ class Roles(commands.Cog):
         feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
         data = feature.get_global("MembersRoles", {})
 
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        
         # Find the role entry
         role_entry = None
         role_key = None
@@ -487,7 +502,11 @@ class Roles(commands.Cog):
 
         feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
         data = feature.get_global("MembersRoles", {})
-
+        
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
         # Find the role entry
         role_entry = None
         role_key = None
@@ -542,6 +561,11 @@ class Roles(commands.Cog):
         feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
         data = feature.get_global("MembersRoles", {})
 
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        
         # Find the role entry
         role_entry = None
         role_key = None

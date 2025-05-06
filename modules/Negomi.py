@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Optional
+from typing import Optional, Dict, Any
 import httpx
 import ollama
 from rich import print
@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 from .DiscordConfig import ip
 from pathlib import Path
+from .system_template import system_template
 
 CheckerClient = ollama.Client(ip, timeout = 1)
 client = ollama.Client(ip)
@@ -61,34 +62,10 @@ class ConversationManager:
     def __init__(self, model: str = "Negomi"):
         self.conversation_histories = {}
         self.history_file = Path("Data/Features/AI/history.json")
-        self.summary_threshold = 30  # Increased for better context
+        self.summary_threshold = 30  # Number of messages before summarizing
         self.keep_recent = 12  # Keep more recent messages
         self.model = model
-        self.personality_traits = {
-            'mood': 1.0,  # 0.0 = sad, 1.0 = happy
-            'energy': 1.0,  # 0.0 = tired, 1.0 = energetic
-            'affection': 0.8,  # Base affection level
-        }
-        self.time_moods = {
-            'morning': (5, 11, 1.0),    # 5 AM - 11 AM: Energetic
-            'afternoon': (12, 16, 0.8),  # 12 PM - 4 PM: Neutral-positive
-            'evening': (17, 20, 0.7),    # 5 PM - 8 PM: Relaxed
-            'night': (21, 4, 0.5)        # 9 PM - 4 AM: Tired/sleepy
-        }
         self.memory_decay_rate = 0.95  # Rate at which old memories fade
-        self.personality_traits.update({
-            'curiosity': 0.8,  # Interest in learning new things
-            'empathy': 0.9,    # Ability to understand others' emotions
-            'creativity': 0.85, # Creative thinking and responses
-            'humor': 0.75,     # Tendency to be playful/funny
-            'wisdom': 0.8      # Thoughtful and insightful responses
-        })
-        self.emotional_state = {
-            'valence': 0.7,    # Positive vs negative (-1 to 1)
-            'arousal': 0.5,    # Energy level (0 to 1) 
-            'dominance': 0.6   # Confidence level (0 to 1)
-        }
-        self.relationship_memory = {}  # Store user-specific interactions
         self.load_histories()
 
     def load_histories(self):
@@ -124,26 +101,6 @@ class ConversationManager:
             
             with open(log_path / f"output_for_{self.model}_{timed}.json", "w", encoding='utf-8') as f:
                 f.write(dumps(self.conversation_histories[user_id], indent=4, ensure_ascii=False))
-
-    def update_emotional_state(self, message_content: str, user_id: str):
-        """Update emotional state based on interaction"""
-        # Analyze message sentiment and adjust emotional state
-        positive_words = {'happy', 'love', 'great', 'thanks', 'good'}
-        negative_words = {'sad', 'angry', 'hate', 'bad', 'sorry'}
-        
-        message_lower = message_content.lower()
-        sentiment = sum(word in message_lower for word in positive_words) - sum(word in message_lower for word in negative_words)
-        
-        # Smooth transitions in emotional state
-        self.emotional_state['valence'] = max(-1, min(1, self.emotional_state['valence'] + sentiment * 0.2))
-        self.emotional_state['arousal'] = max(0, min(1, self.emotional_state['arousal'] + sentiment * 0.1))
-        
-        # Update relationship memory
-        if user_id not in self.relationship_memory:
-            self.relationship_memory[user_id] = {'interactions': 0, 'sentiment': 0}
-        
-        self.relationship_memory[user_id]['interactions'] += 1
-        self.relationship_memory[user_id]['sentiment'] += sentiment
 
     def summarize_conversation(self, conversation_history):
         """
@@ -223,46 +180,49 @@ class ConversationManager:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_time_mood_modifier(self):
-        """Get mood modifier based on current time."""
-        current_hour = datetime.datetime.now().hour
-        
-        for period, (start, end, modifier) in self.time_moods.items():
-            if start <= end:
-                if start <= current_hour <= end:
-                    return modifier
-            else:  # Handle night period crossing midnight
-                if current_hour >= start or current_hour <= end:
-                    return modifier
-        return 0.8  # Default modifier
-
-    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", guild_info: Optional[dict] = None, personality_state: Optional[dict] = None, mommy_mode: bool = False):
-        """Process user message and get AI response."""
+    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", 
+                    guild_info: Optional[dict] = None, personality_state: Optional[dict] = None, 
+                    mommy_mode: bool = False):
+        """Process user message and get AI response with emotional intelligence."""
         
         try:
             # Format system message with personality state
             if personality_state:
                 core_traits = personality_state.get('core_traits', {})
                 relationship = personality_state.get('relationship_dynamics', {}).get(str(user), {})
+                current_mood = personality_state.get('current_mood', 'relaxed')
                 
+                # Emotional memory integration - include recent significant memories
+                emotional_memory = personality_state.get('emotional_memory', [])
+                memory_context = ""
+                if emotional_memory:
+                    memory_context = "\nRecent emotional memories:\n"
+                    # Add up to 3 most recent emotional memories
+                    for memory in emotional_memory[-3:]:
+                        memory_context += f"- {memory.get('description', 'Interaction')} " \
+                                         f"(Feeling: {memory.get('mood', 'neutral')})\n"
+                
+                # Format custom traits with emotional context
+                custom_traits = f"Current mood: {current_mood}\n" \
+                               f"Channel: {guild_info['channel'] if guild_info else 'DM'}\n" \
+                               f"{memory_context}"
+                
+                # Create system message with personality parameters
                 system_vars = {
                     'AI': 'Negomi',
-                    'openness': core_traits.get('openness', 0.8),
+                    'openness': core_traits.get('openness', 0.85),
                     'conscientiousness': core_traits.get('conscientiousness', 0.9),
                     'extraversion': core_traits.get('extraversion', 0.75),
                     'name': user,
                     'trust_level': relationship.get('trust', 0.5),
-                    'custom_traits': f"Channel: {guild_info['channel'] if guild_info else 'DM'}"
+                    'custom_traits': custom_traits
                 }
                 
-                from .system_template import system_template, system_mommy_mode
-                system_msg = system_mommy_mode if mommy_mode else system_template
-                formatted_system = system_msg.format(**system_vars)
+                formatted_system = system_template.format(**system_vars)
             else:
-                from .system_template import system_template
                 formatted_system = system_template.format(
                     AI='Negomi',
-                    openness=0.8,
+                    openness=0.85,
                     conscientiousness=0.9,
                     extraversion=0.75,
                     name=user,
@@ -286,6 +246,7 @@ class ConversationManager:
             # Add user message to history
             conversation_history.append({'role': 'user', 'content': f"{user}: {user_message}"})
             non_system_messages = [msg for msg in conversation_history if msg['role'] != 'system']
+            
             # Summarize if needed
             try:
                 if len(non_system_messages) > self.summary_threshold:
@@ -295,17 +256,26 @@ class ConversationManager:
                 logger.error(f"Error in ollama.chat: {e}")
                 return offline
 
-            # Generate response using Ollama
+            # Generate response using Ollama with personality-appropriate parameters
             try:
+                # Adjust temperature based on personality traits
+                temperature = 0.85
+                if personality_state:
+                    openness = personality_state.get('core_traits', {}).get('openness', 0.85)
+                    extraversion = personality_state.get('core_traits', {}).get('extraversion', 0.75)
+                    # Higher openness = slightly higher temperature (more creative)
+                    # Higher extraversion = slightly higher temperature (more expressive)
+                    temperature = min(1.0, 0.7 + (openness * 0.1) + (extraversion * 0.1))
+                
                 response = client.chat(
                     model=self.model,
                     messages=conversation_history,
                     options={
-                        'temperature': 0.85,
-                        'top_p': 0.85,
-                        'frequency_penalty': 0.7,  # Increased for more varied responses
+                        'temperature': temperature,
+                        'top_p': 0.9,
+                        'frequency_penalty': 0.7,
                         'presence_penalty': 0.7,
-                        'max_tokens': 150  # Limit response length for more natural conversation
+                        'max_tokens': 150
                     }
                 )
                 text = response.get('message', {}).get('content', "Error: No response generated.")
