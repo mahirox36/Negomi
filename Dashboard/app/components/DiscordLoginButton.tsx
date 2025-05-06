@@ -1,17 +1,12 @@
+import axios from "axios";
 import { motion } from "framer-motion";
 
-export default function DiscordLoginButton() {
-    const handleLogin = () => {
-      const DISCORD_CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-      const authUrl = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&response_type=code&redirect_uri=https%3A%2F%2Fnegomi.mahirou.online%2Fdashboard&scope=guilds+email`;
-      window.location.href = authUrl;
-    };
-  
+export default function DiscordLoginButton() {  
     return (
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={handleLogin}
+        onClick={() => window.location.href = "https://negomi.mahirou.online/api/discord/login"}
         className="flex items-center gap-2.5 px-4 py-2 bg-background border border-input hover:bg-accent hover:text-accent-foreground rounded-md font-medium transition-colors"
       >
         <svg

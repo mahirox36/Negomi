@@ -1,21 +1,35 @@
 import json
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 import os
 
 
 class Color:
     def __init__(self, value: int | str):
-        self.value = value
         if isinstance(value, str):
-            self.value = int(value.replace("#", "0x"), 16)
+            if not value.startswith("#"):
+                raise ValueError("String color must start with '#'")
+            try:
+                self.value = int(value.replace("#", ""), 16)
+            except ValueError:
+                raise ValueError("Invalid hex color format")
+        elif isinstance(value, int):
+            if not 0 <= value <= 0xFFFFFF:
+                raise ValueError("Integer color must be between 0 and 16777215")
+            self.value = value
+        else:
+            raise ValueError("Color must be a hex string or integer")
+        self.hex = f"#{self.value:06x}"
 
     def __str__(self):
-        return f"{hex(self.value).replace('0x', '#')}"
+        return self.hex
     
     def __eq__(self, other):
         if isinstance(other, Color):
             return self.value == other.value
         return False
+
+    def __repr__(self):
+        return f"Color('{self.hex}')"
 
 
 class Config:
@@ -38,7 +52,7 @@ class Config:
         self.__file = file
         self.__layout = []
         self.comments = {'top': []}
-        self.data = {}
+        self.data: Dict[str, Union[Dict[str, Any], List[Any]]] = {}
         self.filepath = file
         self.none = [
         "none", "None", "null", "Null", "nil", "Nil", 
@@ -87,15 +101,16 @@ class Config:
                         raise ValueError("Invalid value: must be a boolean, string, int, float, or tuple")
                     lines.append(f"{key} = {value}\n")
             elif isinstance(section_data, list):
-                for item in section_data:
-                    if section_data.index(item) in self.comments[section]:
-                        for comment in self.comments[section][section_data.index(item)]:
-                            lines.append(f"# {comment}\n")
-                    if isinstance(item, str):
-                        item = f"\"{item}\""
-                    elif not isinstance(item, (int, float, bool)):
-                        raise ValueError("Invalid item in list: must be a boolean, string, int, or float")
-                    lines.append(f"- {item}\n")
+                if section_data is not None:
+                    for idx, item in enumerate(section_data):
+                        if idx in self.comments[section]:
+                            for comment in self.comments[section][idx]:
+                                lines.append(f"# {comment}\n")
+                        if isinstance(item, str):
+                            item = f"\"{item}\""
+                        elif not isinstance(item, (int, float, bool)):
+                            raise ValueError("Invalid item in list: must be a boolean, string, int, or float")
+                        lines.append(f"- {item}\n")
             lines.append("\n")
         
         with open(self.__file, "w") as f:
@@ -162,10 +177,7 @@ class Config:
             Union[Dict[str, Any], List[Any]]: The value associated with the specified key.
         """
         if key in self.data:
-            try:
-                return self.data[key]
-            except KeyError:
-                return None
+            return self.data[key]
         else:
             raise KeyError(f"'{key}' not found in the configuration data")
 
@@ -177,10 +189,22 @@ class Config:
             key (str): The key to set the value for.
             value (Union[Dict[str, Any], List[Any]]): The value to set for the specified key.
         """
-        if key in self.data:
-            self.data[key] = value
-        else:
-            raise KeyError(f"'{key}' not found in the configuration data")
+        if key not in self.__layout:
+            self.__layout.append(key)
+        self.data[key] = value
+
+    def remove_section(self, section: str) -> None:
+        """Removes a section from the configuration."""
+        if section in self.__layout:
+            self.__layout.remove(section)
+            del self.data[section]
+            del self.comments[section]
+
+    def clear_section(self, section: str) -> None:
+        """Clears all data from a section while keeping it in the layout."""
+        if section in self.__layout:
+            self.data[section] = {} if isinstance(self.data[section], dict) else []
+            self.comments[section] = {}
 
     def get_data(self) -> Dict[str, Union[Dict[str, Any], List[Any]]]:
         """
@@ -191,7 +215,7 @@ class Config:
         """
         return self.data
 
-    def create_comment(self, comment: str, section: str = None, key: str | int = None) -> None:
+    def create_comment(self, comment: str, section: Optional[str] = None, key: Optional[str | int] = None) -> None:
         """
         Creates a comment for a specified key in a specified section, or a top-level comment if no section/key is provided.
 

@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Python App",
+      "type": "shell",
+      "command": "python main.py",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Dashboard",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "Dashboard"
+      },
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Both",
+      "dependsOn": [
+        "Run Python App",
+        "Run Dashboard"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+    }
+  ]
+}

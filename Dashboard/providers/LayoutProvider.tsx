@@ -1,67 +1,255 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { SidebarLayout, LayoutItem } from '../types/layout';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
-interface LayoutContextType {
+interface LayoutState {
   sidebar: SidebarLayout | null;
   serverSidebar: SidebarLayout | null;
   pageLayout: LayoutItem[] | null;
+  isLoading: boolean;
+  hasChanges: boolean;
+  currentPath: string | null;
+  serverId: string | null;
+  isAdmin: boolean;
+}
+
+interface LayoutContextType extends LayoutState {
+  setHasChanges: (value: boolean) => void;
+  setCurrentPath: (path: string) => void;
+  setServerId: (id: string) => void;
   fetchSidebar: () => Promise<void>;
   fetchServerSidebar: () => Promise<void>;
   fetchPageLayout: (page: string) => Promise<void>;
+  saveChanges: () => Promise<void>;
+  revertChanges: () => void;
+  resetToDefaults: () => Promise<void>;
 }
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
 
+interface FetchState {
+  [key: string]: boolean;
+}
+
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
-  const [sidebar, setSidebar] = useState<SidebarLayout | null>(null);
-  const [serverSidebar, setServerSidebar] = useState<SidebarLayout | null>(null);
-  const [pageLayout, setPageLayout] = useState<LayoutItem[] | null>(null);
+  const [state, setState] = useState<LayoutState>({
+    sidebar: null,
+    serverSidebar: null,
+    pageLayout: null,
+    isLoading: false,
+    hasChanges: false,
+    currentPath: null,
+    serverId: null,
+    isAdmin: false
+  });
+
+  const router = useRouter();
+
+  // Use ref to track ongoing fetches to prevent duplicate requests
+  const fetchingRef = useRef<FetchState>({});
+  const layoutCacheRef = useRef<{[key: string]: LayoutItem[]}>({});
+
+  const setHasChanges = useCallback((value: boolean) => {
+    setState(prev => ({ ...prev, hasChanges: value }));
+  }, []);
+
+  const setCurrentPath = useCallback((path: string) => {
+    setState(prev => ({ ...prev, currentPath: path }));
+  }, []);
+
+  const checkAdminPermission = useCallback(async (serverId: string) => {
+    try {
+      // First check if user is logged in
+      const userResponse = await fetch("/api/v1/auth/user", {
+        credentials: "include",
+      });
+      
+      if (!userResponse.ok) {
+        router.push("/api/v1/auth/discord/login");
+        return false;
+      }
+
+      // Then check admin permission
+      const response = await fetch(`/api/v1/guilds/${serverId}/is_admin`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        router.push("/dashboard");
+        setState(prev => ({ ...prev, isAdmin: false }));
+        toast.error('You need admin permissions to access this');
+        return false;
+      }
+
+      setState(prev => ({ ...prev, isAdmin: true }));
+      return true;
+    } catch (error) {
+      setState(prev => ({ ...prev, isAdmin: false }));
+      toast.error('Failed to verify permissions');
+      return false;
+    }
+  }, [router]);
+
+  const setServerId = useCallback(async (id: string) => {
+    if (await checkAdminPermission(id)) {
+      setState(prev => ({ ...prev, serverId: id }));
+    }
+  }, [checkAdminPermission]);
 
   const fetchSidebar = useCallback(async () => {
-    if (sidebar) return;
-    const response = await fetch('/api/layout/settings/sidebar');
-    const data = await response.json();
-    setSidebar(data);
-  }, [sidebar]);
+    if (state.sidebar || fetchingRef.current.sidebar) return;
+    
+    try {
+      fetchingRef.current.sidebar = true;
+      const response = await fetch('/api/v1/layout/settings/sidebar');
+      if (!response.ok) throw new Error('Failed to fetch sidebar');
+      const data = await response.json();
+      setState(prev => ({ ...prev, sidebar: data }));
+    } catch (error) {
+      console.error('Error fetching sidebar:', error);
+      toast.error('Failed to load sidebar');
+    } finally {
+      fetchingRef.current.sidebar = false;
+    }
+  }, [state.sidebar]);
 
   const fetchServerSidebar = useCallback(async () => {
-    if (serverSidebar) return;
-    const response = await fetch('/api/layout/settings/server/sidebar');
-    const data = await response.json();
-    setServerSidebar(data);
-  }, [serverSidebar]);
+    if (!state.serverId || !state.isAdmin) return;
+    if (state.serverSidebar || fetchingRef.current.serverSidebar) return;
+    
+    try {
+      fetchingRef.current.serverSidebar = true;
+      const response = await fetch('/api/v1/layout/settings/server/sidebar');
+      if (!response.ok) throw new Error('Failed to fetch server sidebar');
+      const data = await response.json();
+      setState(prev => ({ ...prev, serverSidebar: data }));
+    } catch (error) {
+      console.error('Error fetching server sidebar:', error);
+      toast.error('Failed to load server sidebar');
+    } finally {
+      fetchingRef.current.serverSidebar = false;
+    }
+  }, [state.serverSidebar, state.serverId, state.isAdmin]);
 
   const fetchPageLayout = useCallback(async (page: string) => {
+    if (!state.serverId || !state.isAdmin) return;
+    const fetchKey = `page_${page}`;
+    
+    // Return cached layout if available
+    if (layoutCacheRef.current[page]) {
+      setState(prev => ({ ...prev, pageLayout: layoutCacheRef.current[page] }));
+      return;
+    }
+
+    if (fetchingRef.current[fetchKey]) return;
+    
     try {
-      // Convert page names like "basic-settings" to "Basic Settings"
-      const formattedPage = page
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+      fetchingRef.current[fetchKey] = true;
+      setState(prev => ({ ...prev, isLoading: true }));
       
-      const response = await fetch(`/api/layout/settings/server/${formattedPage}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch page layout');
-      }
+      const response = await fetch(`/api/v1/layout/settings/server/${page}`);
+      if (!response.ok) throw new Error('Failed to fetch page layout');
       const data = await response.json();
-      setPageLayout(data);
+      
+      // Cache the layout
+      layoutCacheRef.current[page] = data;
+      setState(prev => ({ 
+        ...prev, 
+        pageLayout: data,
+        isLoading: false 
+      }));
     } catch (error) {
       console.error('Error fetching page layout:', error);
-      setPageLayout(null);
+      setState(prev => ({ ...prev, pageLayout: null, isLoading: false }));
+      toast.error('Failed to load page layout');
+    } finally {
+      fetchingRef.current[fetchKey] = false;
     }
-  }, []);
+  }, [state.serverId, state.isAdmin]);
+
+  const saveChanges = useCallback(async () => {
+    if (!state.hasChanges || !state.serverId || !state.currentPath || !state.isAdmin) return;
+
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      // Get current settings from the correct location in app state
+      // This will be from the React component that set hasChanges to true
+      const settingsData = {};
+      window.dispatchEvent(new CustomEvent('getUnsavedSettings', { 
+        detail: { 
+          callback: (settings: any) => {
+            Object.assign(settingsData, settings);
+          } 
+        }
+      }));
+      
+      const response = await fetch(`/api/v1/guilds/${state.serverId}/settings/${state.currentPath}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settingsData),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to save changes');
+      setHasChanges(false);
+      toast.success('Changes saved successfully');
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [state.hasChanges, state.serverId, state.currentPath, state.isAdmin, setHasChanges]);
+
+  const revertChanges = useCallback(() => {
+    if (!state.hasChanges) return;
+    // Dispatch event to notify components to revert their changes
+    window.dispatchEvent(new CustomEvent('revertChanges'));
+    setHasChanges(false);
+    toast.success('Changes reverted');
+  }, [state.hasChanges, setHasChanges]);
+
+  const resetToDefaults = useCallback(async () => {
+    if (!state.serverId || !state.currentPath || !state.isAdmin) return;
+
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      const response = await fetch(`/api/v1/guilds/${state.serverId}/settings/${state.currentPath}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to reset settings');
+      // Dispatch event to notify components that settings have been reset
+      window.dispatchEvent(new CustomEvent('settingsReset'));
+      toast.success('Settings reset to defaults');
+    } catch (error) {
+      console.error('Error resetting settings:', error);
+      toast.error('Failed to reset settings');
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [state.serverId, state.currentPath, state.isAdmin]);
 
   return (
     <LayoutContext.Provider 
       value={{ 
-        sidebar, 
-        serverSidebar, 
-        pageLayout, 
-        fetchSidebar, 
-        fetchServerSidebar, 
-        fetchPageLayout 
+        ...state,
+        setHasChanges,
+        setCurrentPath,
+        setServerId,
+        fetchSidebar,
+        fetchServerSidebar,
+        fetchPageLayout,
+        saveChanges,
+        revertChanges,
+        resetToDefaults
       }}
     >
       {children}

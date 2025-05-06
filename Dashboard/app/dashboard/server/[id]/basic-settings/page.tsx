@@ -1,0 +1,220 @@
+"use client";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useLayout } from "@/providers/LayoutProvider";
+import { useColorPickerRefs } from "@/hooks/useColorPickerRefs";
+import ColorPicker from "@/app/components/form/ColorPicker";
+import DiscordSelect from "@/app/components/form/DiscordSelect";
+import TextInput from "@/app/components/form/TextInput";
+import Textarea from "@/app/components/form/Textarea";
+import SettingsSection from "@/app/components/dashboard/SettingsSection";
+import { ToggleSwitch } from "@/app/components/form/ToggleSwitch";
+import axios from "axios";
+import toast from "react-hot-toast";
+
+interface BasicSettings {
+  [key: string]: any;
+}
+
+export default function BasicSettings() {
+  const params = useParams();
+  const serverId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { setHasChanges, setCurrentPath, setServerId } = useLayout();
+  const [settings, setSettings] = useState<BasicSettings>({});
+  const [originalSettings, setOriginalSettings] = useState<BasicSettings>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const { getRef } = useColorPickerRefs();
+  const hasInitialFetch = useRef(false);
+
+  // Fetch settings from API
+  const fetchSettings = useCallback(async () => {
+    if (!serverId) return;
+
+    try {
+      const response = await axios.get(
+        `/api/v1/guilds/${serverId}/settings/basic-settings`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      const settingsData = response.data?.settings || response.data || {};
+      setSettings(settingsData);
+      setOriginalSettings(settingsData);
+      setHasChanges(false);
+      hasInitialFetch.current = true;
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [serverId, setHasChanges]);
+
+  // Initialize data
+  useEffect(() => {
+    if (!serverId || hasInitialFetch.current) return;
+
+    setCurrentPath("basic-settings");
+    setServerId(serverId as string);
+    fetchSettings();
+
+    return () => {
+      hasInitialFetch.current = false;
+    };
+  }, [serverId, fetchSettings, setCurrentPath, setServerId]);
+
+  // Layout Provider event handlers
+  useEffect(() => {
+    const handleGetUnsavedSettings = (event: CustomEvent) => {
+      if (event.detail && event.detail.callback) {
+        event.detail.callback(settings);
+      }
+    };
+
+    const handleRevertChanges = () => {
+      setSettings({ ...originalSettings });
+    };
+
+    const handleSettingsReset = () => {
+      hasInitialFetch.current = false;
+      fetchSettings();
+    };
+
+    window.addEventListener(
+      "getUnsavedSettings",
+      handleGetUnsavedSettings as EventListener
+    );
+    window.addEventListener("revertChanges", handleRevertChanges);
+    window.addEventListener("settingsReset", handleSettingsReset);
+
+    return () => {
+      window.removeEventListener(
+        "getUnsavedSettings",
+        handleGetUnsavedSettings as EventListener
+      );
+      window.removeEventListener("revertChanges", handleRevertChanges);
+      window.removeEventListener("settingsReset", handleSettingsReset);
+    };
+  }, [settings, originalSettings, fetchSettings]);
+
+  const handleSettingChange = (key: string, value: any) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    setHasChanges(
+      JSON.stringify(newSettings) !== JSON.stringify(originalSettings)
+    );
+  };
+
+  if (isLoading) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-xl shadow-inner">
+            <i className="fas fa-palette text-2xl text-white/90"></i>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+              Basic Settings
+            </h1>
+            <p className="text-lg text-white/70 mt-1">
+              Configure basic server settings and preferences
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10">
+        <div className="p-6 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            {/* Badge Colors */}
+            <SettingsSection
+              title="Badge Rarity Colors"
+              description="Set colors for different badge rarity levels"
+              icon="fa-gem"
+              iconBgColor="bg-purple-500/20"
+              iconColor="text-purple-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-white">Common Badge Color</h3>
+                    <p className="text-xs text-white/50">Color for common rarity badges</p>
+                  </div>
+                  <ColorPicker
+                    color={settings.commonColor || "#ff1493"}
+                    onChange={(color) => handleSettingChange("commonColor", color)}
+                    ref={getRef("commonColor")}
+                    isOpen={colorPickerOpen === "commonColor"}
+                    onToggle={() => setColorPickerOpen(colorPickerOpen === "commonColor" ? null : "commonColor")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-white">Uncommon Badge Color</h3>
+                    <p className="text-xs text-white/50">Color for uncommon rarity badges</p>
+                  </div>
+                  <ColorPicker
+                    color={settings.uncommonColor || "#00ffb9"}
+                    onChange={(color) => handleSettingChange("uncommonColor", color)}
+                    ref={getRef("uncommonColor")}
+                    isOpen={colorPickerOpen === "uncommonColor"}
+                    onToggle={() => setColorPickerOpen(colorPickerOpen === "uncommonColor" ? null : "uncommonColor")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-white">Rare Badge Color</h3>
+                    <p className="text-xs text-white/50">Color for rare rarity badges</p>
+                  </div>
+                  <ColorPicker
+                    color={settings.rareColor || "#ff4500"}
+                    onChange={(color) => handleSettingChange("rareColor", color)}
+                    ref={getRef("rareColor")}
+                    isOpen={colorPickerOpen === "rareColor"}
+                    onToggle={() => setColorPickerOpen(colorPickerOpen === "rareColor" ? null : "rareColor")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-white">Epic Badge Color</h3>
+                    <p className="text-xs text-white/50">Color for epic rarity badges</p>
+                  </div>
+                  <ColorPicker
+                    color={settings.epicColor || "#32cd32"}
+                    onChange={(color) => handleSettingChange("epicColor", color)}
+                    ref={getRef("epicColor")}
+                    isOpen={colorPickerOpen === "epicColor"}
+                    onToggle={() => setColorPickerOpen(colorPickerOpen === "epicColor" ? null : "epicColor")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-white">Legendary Badge Color</h3>
+                    <p className="text-xs text-white/50">Color for legendary rarity badges</p>
+                  </div>
+                  <ColorPicker
+                    color={settings.legendaryColor || "#9400d3"}
+                    onChange={(color) => handleSettingChange("legendaryColor", color)}
+                    ref={getRef("legendaryColor")}
+                    isOpen={colorPickerOpen === "legendaryColor"}
+                    onToggle={() => setColorPickerOpen(colorPickerOpen === "legendaryColor" ? null : "legendaryColor")}
+                  />
+                </div>
+              </div>
+            </SettingsSection>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

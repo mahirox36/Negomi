@@ -1,17 +1,26 @@
 export type CommandType = 'slash' | 'user' | 'message'
 export type CommandCategory = string
 
+export interface CommandOption {
+  name: string;
+  description: string;
+  type: string;
+  required: boolean;
+  choices?: Array<{
+    name: string;
+    value: string | number;
+  }>;
+}
+
 export interface Command {
-  name: string
-  description: string
-  usage: string
-  type: CommandType
-  category: CommandCategory
-  admin_only: boolean
-  guild_only: boolean
-  guild_installed: boolean
-  user_installed: boolean
-  permissions: string[]
-  cooldown: number | null
-  examples: string[]
+  name: string;
+  description: string;
+  category: string;
+  cooldown?: number;
+  admin_only?: boolean;
+  guild_installed?: boolean;
+  user_installed?: boolean;
+  options?: CommandOption[];
+  usage?: number;
+  lastUsed?: number;
 }

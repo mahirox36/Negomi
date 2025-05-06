@@ -1,205 +1,36 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { getDiscordLoginUrl } from "../utils/auth";
 import { useUser } from "../contexts/UserContext";
-import { API_BASE_URL } from "../config";
+import { useBackendCheck } from "../hooks/useBackendCheck";
 
 interface User {
   id: string;
   username: string;
-  avatar: string;
-  global_name?: string;
+  avatar: string | null | undefined;
+  global_name?: string | null;
 }
 
 export default function Navbar() {
   const { user } = useUser();
-  const [isOwner, setIsOwner] = useState<boolean | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const { error: backendError } = useBackendCheck();
+  const [isOwner, setIsOwner] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const hasMounted = useRef(false);
+
   const profileRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState("");
-  const [isAtTop, setIsAtTop] = useState(true);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsAtTop(window.scrollY < 100);
-    };
+  const isDashboard = pathname.includes("/dashboard");
+  const isAdminPage = pathname.includes("/admin");
 
-    // Initial check
-    handleScroll();
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const isActive = (path: string) => {
-    // Remove scroll check for non-home pages to make transitions instant
-    if (!path.startsWith("/#")) {
-      return pathname === path;
-    }
-
-    // Home page and section checks remain the same
-    if (path === "/") {
-      return pathname === "/" && isAtTop && !activeSection;
-    }
-
-    if (path.startsWith("/#") && pathname === "/") {
-      return activeSection === path.substring(2);
-    }
-
-    return false;
-  };
-
-  // Generate unique layoutId based on current active section/page
-  const getLayoutId = () => {
-    if (pathname === "/") {
-      return activeSection ? `section-${activeSection}` : "home";
-    }
-    return pathname.replace("/", "page-");
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (pathname !== "/") {
-        setActiveSection("");
-        return;
-      }
-
-      // Check if we're at the top of the page
-      if (window.scrollY < 100) {
-        setActiveSection("");
-        return;
-      }
-
-      const sections = ["features", "setup"];
-      const viewportMiddle = window.innerHeight / 2;
-
-      // Find the section closest to the middle of the viewport
-      let closestSection = "";
-      let closestDistance = Infinity;
-
-      sections.forEach((section) => {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const distance = Math.abs(
-            rect.top + rect.height / 2 - viewportMiddle
-          );
-
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestSection = section;
-          }
-        }
-      });
-
-      setActiveSection(closestSection);
-    };
-
-    // Run once immediately to set initial state
-    handleScroll();
-
-    // Add smooth scroll behavior
-    const handleNavClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const href = target.getAttribute("href");
-
-      if (href?.startsWith("/#")) {
-        e.preventDefault();
-        const sectionId = href.replace("/#", "");
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    };
-
-    document.querySelectorAll('a[href^="/#"]').forEach((link) => {
-      link.addEventListener("click", handleNavClick as any);
-    });
-
-    // Throttle scroll event for better performance
-    let ticking = false;
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      document.querySelectorAll('a[href^="/#"]').forEach((link) => {
-        link.removeEventListener("click", handleNavClick as any);
-      });
-    };
-  }, [pathname, activeSection]); // Add pathname as dependency
-
-  // Add click outside handler
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
-        setIsProfileOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("isOwner"); // Clear the cached owner status
-    window.location.reload();
-  };
-
-  useEffect(() => {
-    const checkOwnerStatus = async () => {
-      // Check if we already have the owner status in localStorage
-      const cachedOwnerStatus = localStorage.getItem('isOwner');
-      
-      if (user && cachedOwnerStatus === null) {
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/is_owner`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ user_id: user.id }),
-              credentials: "include",
-            }
-          );
-          const data = await response.json();
-          console.log("Owner status:", data.is_owner);
-          setIsOwner(data.is_owner);
-          // Cache the result
-          localStorage.setItem('isOwner', data.is_owner.toString());
-        } catch (error) {
-          console.error("Error checking owner status:", error);
-          setIsOwner(false);
-          localStorage.setItem('isOwner', 'false');
-        }
-      } else if (cachedOwnerStatus !== null) {
-        setIsOwner(cachedOwnerStatus === 'true');
-      }
-    };
-
-    checkOwnerStatus();
-  }, [user]);
-
+  // Navigation items definition
   const baseNavItems = [
     { path: "/", label: "Home" },
     { path: "/dashboard", label: "Dashboard" },
@@ -207,57 +38,149 @@ export default function Navbar() {
     { path: "/statistics", label: "Statistics" },
   ];
 
-  const navItems = isOwner
+  const navItems = (!backendError && isOwner)
     ? [...baseNavItems, { path: "/admin", label: "Admin" }]
     : baseNavItems;
 
-  const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    path: string
-  ) => {
-    if (path.startsWith("/#") && pathname !== "/") {
-      e.preventDefault();
-      const sectionId = path.replace("/#", "");
+  // Check if we're on the current page
+  const isActive = useCallback(
+    (path: string) => {
+      if (path === "/") {
+        return pathname === "/";
+      }
+      return pathname.startsWith(path);
+    },
+    [pathname]
+  );
 
-      // Store the target section in localStorage
-      localStorage.setItem("scrollTarget", sectionId);
+  // Handle scroll effects
+  useEffect(() => {
+    hasMounted.current = true;
+    const handleScroll = () => {
+      if (hasMounted.current) {
+        setIsScrolled(window.scrollY > 20);
+      }
+    };
 
-      // Navigate to home page
+    handleScroll(); // Initial check
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      hasMounted.current = false;
+    };
+  }, []);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !(
+          event.target instanceof Element &&
+          event.target.matches(
+            'button[name="Hamburger Menu"], button[name="Hamburger Menu"] *'
+          )
+        )
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close mobile menu on navigation change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Check owner status
+  useEffect(() => {
+    const checkOwnerStatus = async () => {
+      if (!user || backendError) {
+        setIsOwner(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/v1/admin/is_owner", {
+          credentials: "include",
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch owner status");
+
+        const data = await response.json();
+        setIsOwner(Boolean(data.is_owner));
+        localStorage.setItem("isOwner", String(data.is_owner));
+      } catch (error) {
+        console.error("Error checking owner status:", error);
+        setIsOwner(false);
+        localStorage.setItem("isOwner", "false");
+      }
+    };
+
+    checkOwnerStatus();
+  }, [user, backendError]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/v1/auth/discord/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear storage and redirect regardless of success/failure
+      localStorage.clear();
       window.location.href = "/";
     }
   };
 
-  // Add effect to handle scroll after navigation
-  useEffect(() => {
-    if (pathname === "/") {
-      const scrollTarget = localStorage.getItem("scrollTarget");
-      if (scrollTarget) {
-        // Clear the stored target
-        localStorage.removeItem("scrollTarget");
-
-        // Small delay to ensure the page is loaded
-        setTimeout(() => {
-          const element = document.getElementById(scrollTarget);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-          }
-        }, 500); // Increased delay for more reliability
-      }
-    }
-  }, [pathname]);
+  // Get avatar URL
+  const getAvatarUrl = (user: User) => {
+    if (backendError) return "https://discord.com/assets/788f05731f8aa02e.png";
+    const format = user.avatar?.startsWith("a_") ? "gif" : "webp";
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}?size=1024`;
+  };
 
   return (
     <motion.nav
       initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className="fixed w-full bg-white/10 backdrop-blur-lg z-50"
+      animate={{
+        y: 0,
+        backgroundColor: isAdminPage
+          ? "rgba(17, 24, 39, 1)"
+          : isDashboard
+          ? "rgba(255, 255, 255, 0.1)"
+          : hasMounted.current && isScrolled
+          ? "rgba(255, 255, 255, 0.1)"
+          : "rgba(255, 255, 255, 0)",
+      }}
+      transition={{ duration: 0.3 }}
+      className="fixed w-full z-50 backdrop-blur-lg"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-select">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <motion.div
             className="flex items-center"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Link href="/" className="text-white font-bold text-xl">
               Negomi
@@ -266,46 +189,70 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4 relative">
+            <div className="ml-10 flex items-center space-x-4">
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={(e) => handleNavigation(e, item.path)}
-                  className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${
-                      isActive(item.path)
-                        ? "text-white"
-                        : "text-gray-300 hover:text-white"
-                    }`}
-                >
-                  {item.label}
-                  {isActive(item.path) && (
+                <Link key={item.path} href={item.path}>
+                  <motion.div
+                    className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+              group hover:text-white flex items-center ${
+                isActive(item.path) ? "text-white" : "text-gray-300"
+              }`}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 17,
+                    }}
+                  >
+                    <span className="relative z-10 pointer-events-none">
+                      {item.label}
+                      <motion.span
+                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-white/70 rounded-full pointer-events-none"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: isActive(item.path) ? 1 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </span>
+
+                    <AnimatePresence>
+                      {isActive(item.path) && (
+                        <motion.div
+                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/20 to-white/10"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          style={{
+                            boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)",
+                          }}
+                        />
+                      )}
+                    </AnimatePresence>
+
                     <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-0 rounded-md bg-white/20 -z-10"
+                      className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
                       initial={false}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.15,
-                        duration: 0.5,
+                      whileHover={{
+                        opacity: 1,
+                        boxShadow: "0 0 20px rgba(255, 255, 255, 0.15)",
                       }}
                     />
-                  )}
+                  </motion.div>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Profile Section - Now visible on both desktop and mobile */}
+          {/* Right side: Profile & Mobile menu button */}
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="relative" ref={profileRef}>
                 <motion.div
-                  className="flex items-center space-x-4 cursor-pointer group"
+                  className="flex items-center space-x-3 cursor-pointer group"
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="flex items-center space-x-2">
                     <motion.svg
@@ -324,26 +271,35 @@ export default function Navbar() {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </motion.svg>
-                    <span className="text-white hidden md:inline">
+                    <span className="text-white hidden md:inline text-sm">
                       {user.global_name || user.username}
                     </span>
                   </div>
-                  <img
-                    src={`https://cdn.discordapp.com/avatars/${user.id}/${
-                      user.avatar
-                    }.${user.avatar?.startsWith("a_") ? "gif" : "png"}`}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all">
+                    {backendError ? (
+                      <div className="bg-gray-600 w-full h-full" />
+                    ) : (
+                      <img
+                        src={getAvatarUrl(user)}
+                        alt="Avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
                 </motion.div>
 
                 <AnimatePresence>
                   {isProfileOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute md:right-0 -right-4 mt-2 w-48 rounded-md shadow-lg bg-white/10 backdrop-blur-lg ring-1 ring-black ring-opacity-5"
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 25,
+                      }}
+                      className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white/10 backdrop-blur-lg ring-1 ring-white/10 overflow-hidden"
                     >
                       <div className="py-1">
                         {/* Show username in dropdown on mobile */}
@@ -352,7 +308,7 @@ export default function Navbar() {
                         </div>
                         <button
                           onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/20"
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
                         >
                           Logout
                         </button>
@@ -362,20 +318,39 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             ) : (
-              <Link
-                href={getDiscordLoginUrl()}
-                className="text-white text-sm md:text-base"
-              >
-                Login
-              </Link>
+              <div className="relative group">
+                <Link
+                  href={backendError ? "#" : "/api/v1/auth/discord/login"}
+                  className={`text-sm md:text-base font-medium transition-colors ${
+                    backendError
+                      ? "text-gray-500 cursor-not-allowed"
+                      : "text-white hover:text-gray-200"
+                  }`}
+                  onClick={(e) => backendError && e.preventDefault()}
+                >
+                  Login
+                </Link>
+                {backendError && (
+                  <div
+                    className="absolute -top-1 left-1/2 transform -translate-x-1/2 -translate-y-full 
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                  >
+                    <div className="bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                      Login unavailable - Bot is offline
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
-            {/* Mobile Menu Button - Now after profile section */}
+            {/* Mobile Menu Button */}
             <motion.button
+              name="Hamburger Menu"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-white/20 focus:outline-none"
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <svg
                 className="h-6 w-6"
@@ -383,13 +358,16 @@ export default function Navbar() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <path
+                <motion.path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d={
-                    isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"
-                  }
+                  animate={{
+                    d: isMenuOpen
+                      ? "M6 18L18 6M6 6l12 12"
+                      : "M4 6h16M4 12h16M4 18h16",
+                  }}
+                  transition={{ duration: 0.2 }}
                 />
               </svg>
             </motion.button>
@@ -397,25 +375,27 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu - Navigation links only */}
+      {/* Mobile Menu */}
       <AnimatePresence>
-        {isOpen && (
+        {isMenuOpen && (
           <motion.div
+            ref={menuRef}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+              opacity: { duration: 0.2 },
+            }}
             className="md:hidden overflow-hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/5">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
-                  onClick={(e) => {
-                    setIsOpen(false);
-                    handleNavigation(e, item.path);
-                  }}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
                     ${
                       isActive(item.path)

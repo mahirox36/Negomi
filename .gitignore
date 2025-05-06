@@ -18,6 +18,10 @@ Assets/Badges/*.jpg
 Assets/Badges/*.jpeg
 Assets/Badges/*.png
 .venv
-Roadmap/
+Info/
 DataOLD/
 notes.*
+Nexon2
+.env
+migrations
+docs/

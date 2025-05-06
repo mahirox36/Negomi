@@ -1,5 +1,6 @@
 export interface SidebarItem {
   name: string;
+  link: string;
   icon: string;
 }
 
@@ -24,5 +25,6 @@ export interface LayoutItem {
     name: string;
     type: string;
     value: string;
+    description?: string;
   }>;
 }

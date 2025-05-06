@@ -3,7 +3,6 @@
 import { ReactNode } from 'react';
 import { useUser } from '../contexts/UserContext';
 import LoadingScreen from './LoadingScreen';
-import Navbar from './Navbar';
 import Footer from './Footer';
 
 interface PageWrapperProps {
@@ -32,7 +31,6 @@ export default function PageWrapper({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <Navbar />
       <main className="pt-16">
         {children}
       </main>

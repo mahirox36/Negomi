@@ -4,7 +4,6 @@ import { User, Guild } from '../types/discord';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { API_BASE_URL } from '../config';
 
 interface SidebarProps {
   user?: User;
@@ -22,12 +21,14 @@ export default function Sidebar({ guilds }: SidebarProps) {
       if (adminGuilds.length > 0) {
         setIsLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/guilds/filter_joined`, {
+          const res = await fetch("/api/v1/guilds/filter_joined", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ guilds: adminGuilds.map(g => g.id) }),
+            credentials: "include",
+            
           });
           const data = await res.json();
           setJoinedGuilds(data);
@@ -41,7 +42,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
         setIsLoading(false);
       }
     };
-    
+
     fetchJoinedGuilds();
   }, [guilds]); // Depend on the original guilds prop instead
 
@@ -83,15 +84,11 @@ export default function Sidebar({ guilds }: SidebarProps) {
 
         return canvas.toDataURL();
     }
+    // Check if the icon hash starts with 'a_' which indicates it's an animated icon (GIF)
+    if (guild.icon.startsWith('a_')) {
+      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.gif`;
+    }
     return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
-  };
-
-  // Generate Discord OAuth URL for bot addition
-  const getBotInviteUrl = (guildId: string) => {
-    const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-    const permissions = process.env.NEXT_PUBLIC_BOT_PERMISSIONS || '8';
-    const scopes = 'bot%20applications.commands';
-    return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${permissions}&scope=${scopes}&guild_id=${guildId}&disable_guild_select=true&response_type=code&redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/callback')}`;
   };
 
   // Separate guilds into joined and not joined
@@ -111,7 +108,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
               {/* Joined servers */}
               {joinedGuildsList.map(guild => (
                 <Link
-                  href={`/dashboard/server/${guild.id}`}
+                  href={`/dashboard/server/${guild.id}/overview`}
                   key={guild.id}
                   className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white"
                 >
@@ -132,7 +129,7 @@ export default function Sidebar({ guilds }: SidebarProps) {
                   <h4 className="text-white/70 text-xs font-medium mb-2">Available Servers</h4>
                   {notJoinedGuildsList.map(guild => (
                     <a
-                      href={getBotInviteUrl(guild.id)}
+                      href={`/api/v1/auth/bot/invite?guild_id=${guild.id}`}
                       key={guild.id}
                       className="flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/60 hover:text-white"
                     >
@@ -156,3 +153,24 @@ export default function Sidebar({ guilds }: SidebarProps) {
     </div>
   );
 }
+
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
+  let timeoutId: NodeJS.Timeout;
+  const debouncedFunc = (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    return new Promise<ReturnType<T>>((resolve) => {
+      timeoutId = setTimeout(() => {
+        resolve(func(...args));
+      }, wait);
+    });
+  };
+  debouncedFunc.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  };
+  return debouncedFunc;
+}
+

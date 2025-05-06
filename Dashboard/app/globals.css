@@ -49,11 +49,14 @@
 
 .star {
   position: absolute;
-  width: 2px;
-  height: 2px;
+  width: 3px;
+  height: 3px;
   background: white;
   border-radius: 50%;
-  animation: twinkle 1s infinite alternate;
+  @apply absolute bg-white rounded-full;
+  box-shadow: 0 0 20px #fff, 0 0 30px #fff, 0 0 40px #fff;  /* Much stronger glow */
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
 @keyframes twinkle {
@@ -63,6 +66,37 @@
   100% {
     opacity: 1;
   }
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide scrollbar for main content but allow scrolling */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Responsive adjustments */
@@ -141,3 +175,84 @@
   }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes warning-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px) rotate(-0.5deg); }
+  20%, 40%, 60%, 80% { transform: translateX(2px) rotate(0.5deg); }
+}
+.animate-warning-shake {
+  animation: warning-shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+.react-colorful {
+  user-select: none;
+  touch-action: none;
+}
+
+.react-colorful__saturation {
+  touch-action: none;
+  cursor: grab;
+}
+
+.react-colorful__saturation:active {
+  cursor: grabbing;
+}
+
+.react-colorful__hue {
+  touch-action: none;
+  cursor: grab;
+}
+
+.react-colorful__hue:active {
+  cursor: grabbing;
+}
+
+.react-colorful__pointer {
+  width: 18px;
+  height: 18px;
+  touch-action: none;
+}
+.custom-picker.react-colorful {
+  width: 200px;
+  height: 200px;
+  user-select: none;
+}
+
+.custom-picker .react-colorful__saturation {
+  border-radius: 4px 4px 0 0;
+  border-bottom: 10px solid transparent;
+  touch-action: none;
+}
+
+.custom-picker .react-colorful__hue {
+  height: 20px;
+  border-radius: 0 0 4px 4px;
+  touch-action: none;
+}
+
+.custom-picker .react-colorful__pointer {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  border: 2px solid white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+}
+
+.color-picker-root {
+  isolation: isolate;
+}
+
+button, button * {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

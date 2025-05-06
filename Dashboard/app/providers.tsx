@@ -1,10 +1,8 @@
 'use client'
 
-import { ReactNode } from 'react'
-import { UserProvider } from './contexts/UserContext'
+import { RootProvider } from '@/lib/providers/RootProvider'
+import type { ReactNode } from 'react'
 
-export default function ClientProvider({ children }: { children: ReactNode }) {
-  return (
-    <UserProvider>{children}</UserProvider>
-  )
+export default function Providers({ children }: { children: ReactNode }) {
+  return <RootProvider>{children}</RootProvider>
 }

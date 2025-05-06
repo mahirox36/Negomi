@@ -3,7 +3,6 @@ import emoji
 import random
 from string import hexdigits
 from typing import Any, Dict, List, Union, Optional
-from nexon import DataManager
 
 def get_by_percent(percent: Union[int, float] ,text: str, min_words: int = 5, returns: str = "") -> str:
     """Get a specified percentage of words from a sentence.

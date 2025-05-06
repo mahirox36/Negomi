@@ -3,10 +3,19 @@ from modules.config import Color
 from typing import Optional, Union
 from nexon import Client, Member, User, ButtonStyle, Interaction, Role, Guild
 from nexon.ui import Button, View
+from better_profanity import profanity
 from nexon.ext import commands
+import uuid
+
 
 class Request(View):
-    def __init__(self, guild_id: int, client: commands.Bot, fromUser: Member):
+    def __init__(
+        self,
+        guild_id: int,
+        client: commands.Bot,
+        fromUser: Member,
+        role_key: Optional[str] = None,
+    ):
         super().__init__(timeout=None)
         self.accept_button = Button(label="✅ Accept", style=ButtonStyle.green)
         self.accept_button.callback = self.accept_callback
@@ -14,317 +23,605 @@ class Request(View):
         self.guild_id = guild_id
         self.client = client
         self.fromUser = fromUser
+        self.role_key = role_key
 
-    async def accept_callback(self, ctx: Interaction):
+    async def accept_callback(self, interaction: Interaction):
         if not (guild := self.client.get_guild(self.guild_id)):
             return
-            
-        file = DataManager("Roles", self.guild_id, file_name="MembersRoles")
-        if not (user_data := file.data.get(f"{self.fromUser.id}")):
+
+        feature = await Feature.get_guild_feature(self.guild_id, "custom_roles")
+        data: dict = feature.get_global("MembersRoles", {})
+        if not (role_entry := data.get(self.role_key)):
             return
-            
-        user = dict(user_data)
-        if not (role := guild.get_role(user["roleID"])):
+
+        if not interaction.user:
             return
-            
-        if not ctx.user:
+
+        role_entry["members"].append(f"{interaction.user.id}")
+        data[self.role_key] = role_entry
+        await feature.save()
+
+        if not (member := guild.get_member(interaction.user.id)):
             return
-            
-        user["members"].append(f"{ctx.user.id}")
-        file.data[f"{self.fromUser.id}"].update(user)
-        file.data.update({
-            f"{ctx.user.id}": {
-                "owner": False,
-                "roleID": role.id,
-            }
-        })
-        file.save()
-        
-        if not (member := guild.get_member(ctx.user.id)):
+
+        if not (role := guild.get_role(role_entry["role_id"])):
             return
-            
+
         await member.add_roles(role)
-        
-        await ctx.response.send_message(
+
+        await interaction.response.send_message(
             embed=Embed.Info(
-                title=f"You Joined a {self.fromUser.display_name}'s Role",
+                title=f"You Joined {self.fromUser.display_name}'s Role",
                 description=f"In {guild.name} and Role {role.name}",
-                author=[guild.name, guild.icon.url if guild.icon else None]
             ),
-            ephemeral=True
+            ephemeral=True,
         )
+
+
+# Settings:
+#  - creation_mode: "everyone" | "boosters" | "specific_roles"
+#  - not_allowed: Custom Not Allowed Words List
+#  - allowed_roles: List of role IDs that can create roles (when creation_mode is "specific_roles")
+#  - max_roles_per_user: Maximum number of roles a user can create (default: 1)
+#  - can_hoist: Whether users can make their roles appear separately in the member list (default: true)
+#  - can_mention: Whether users can make their roles mentionable (default: false)
+#  - color_restriction: "all" | "preset" | "none" - Controls color options (default: "all")
+#  - max_members_per_role: Maximum number of members that can be added to a custom role (default: 10)
+#  - require_confirmation: Whether role additions require confirmation from the target user (default: true)
+#  - parent_role_id: Role ID under which new roles will be created
+
 
 class Roles(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        #Not allowed Words for roles
-        self.notAllowed = ["nigga","niggers","nigger","gay","femboy","femboys",
-                           "trans","transgender","kiss","sex","strip"]
         self.colors = {
-    "Red": Color("#FF0000"),"Green": Color("#008000"),"Blue": Color("#0000FF"),"Yellow": Color("#FFFF00"),"Cyan": Color("#00FFFF"),
-    "Magenta": Color("#FF00FF"),"Orange": Color("#FFA500"),"Purple": Color("#800080"),"Pink": Color("#FFC0CB"),"Brown": Color("#A52A2A"),
-    "Gray": Color("#808080"),"Black": Color("#000001"),"White": Color("#FFFFFF"),"Lime": Color("#00FF00"),"Olive": Color("#808000"),
-    "Navy": Color("#000080"),"Teal": Color("#008080"),"Maroon": Color("#800000"),"Silver": Color("#C0C0C0"),"Gold": Color("#FFD700"),
-    "Coral": Color("#FF7F50"),"Salmon": Color("#FA8072"),"Turquoise": Color("#40E0D0"),"Indigo": Color("#4B0082"),"Violet": Color("#EE82EE")}
-    
+            "Red": Color("#FF0000"),
+            "Green": Color("#008000"),
+            "Blue": Color("#0000FF"),
+            "Yellow": Color("#FFFF00"),
+            "Cyan": Color("#00FFFF"),
+            "Magenta": Color("#FF00FF"),
+            "Orange": Color("#FFA500"),
+            "Purple": Color("#800080"),
+            "Pink": Color("#FFC0CB"),
+            "Brown": Color("#A52A2A"),
+            "Gray": Color("#808080"),
+            "Black": Color("#000001"),
+            "White": Color("#FFFFFF"),
+            "Lime": Color("#00FF00"),
+            "Olive": Color("#808000"),
+            "Navy": Color("#000080"),
+            "Teal": Color("#008080"),
+            "Maroon": Color("#800000"),
+            "Silver": Color("#C0C0C0"),
+            "Gold": Color("#FFD700"),
+            "Coral": Color("#FF7F50"),
+            "Salmon": Color("#FA8072"),
+            "Turquoise": Color("#40E0D0"),
+            "Indigo": Color("#4B0082"),
+            "Violet": Color("#EE82EE"),
+        }
+
     @slash_command(name="role")
-    async def role(self,ctx:init):
+    async def role(self, ctx: init):
         pass
-    
-    @slash_command(name="mode",description="Change the mode of role creation", default_member_permissions=Permissions(administrator=True))
-    async def setup(self, ctx: init, mode: str = SlashOption(
-        name="mode",
-        description="Select who can create roles",
-        choices={"Everyone": "everyone", "Only Boosters": "boosters"},
-        required=True
-    )):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(
-                embed=Embed.Error(
-                    "This command can only be used in a server.",
-                    title="Server Only Command"
-                ),
-                ephemeral=True
-            )
-            return
-        file = DataManager("Roles", guild.id, file_name="Settings")
-        
-        try:
-            if not file.data:
-                file.data = {}
-        except AttributeError:
-            file.data = {}
-            
-        file.data["creation_mode"] = mode
-        file.save()
-        
-        mode_text = "everyone" if mode == "everyone" else "only server boosters"
-        await ctx.send(
-            embed=Embed.Info(
-                title="Role Creation Mode Updated",
-                description=f"Role creation is now available to {mode_text}."
-            ),
-            ephemeral=True
-        )
-    @role.subcommand(name="create",description="Create a role for yourself")
-    async def create_role(self, ctx: Interaction, name: str, color: str = SlashOption(
-        "color", "Type Hex code or one of these colors", required=True, autocomplete=True
-    )):
-        if not ctx.guild:
-            return
-            
-        # Check role creation mode
-        settings_file = DataManager("Roles", ctx.guild.id, file_name="Settings")
-        try:
-            mode = settings_file.data.get("creation_mode", "everyone")
-        except AttributeError:
-            mode = "everyone"
 
-        # Check if user is booster when required
+    async def check_user_roles(
+        self, ctx: Interaction, feature: Feature
+    ) -> tuple[dict, list, int]:
+        """Helper function to check user's custom roles"""
+        data = feature.get_global("MembersRoles", {})
+        settings = feature.get_setting()
+        max_roles = settings.get("max_roles_per_user", 1)
+        if not ctx.user:
+            return data, [], max_roles
+
+        user_roles = [r for r in data.values() if r.get("owner_id") == str(ctx.user.id)]
+        return data, user_roles, max_roles
+
+    @role.subcommand(name="create", description="Create a custom role")
+    async def create_role(
+        self,
+        ctx: Interaction,
+        name: str,
+        color: str = SlashOption(
+            "color",
+            "Type Hex code or one of these colors",
+            required=True,
+            autocomplete=True,
+        ),
+        hoist: bool = SlashOption(
+            "hoist",
+            "Display members separately in the member list",
+            required=False,
+            default=None,
+        ),
+        mentionable: bool = SlashOption(
+            "mentionable",
+            "Allow anyone to @mention this role",
+            required=False,
+            default=None,
+        ),
+    ):
+        if not ctx.guild or not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("You are not in a server"))
+        
+
+        # Get feature settings and data
+        feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
+        data, user_roles, max_roles = await self.check_user_roles(ctx, feature)
+        settings = feature.get_setting()
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+
+        # Check if user has reached their role limit
+        if len(user_roles) >= max_roles:
+            return await ctx.response.send_message(
+                embed=Embed.Error(f"You can only create up to {max_roles} role(s)"),
+                ephemeral=True,
+            )
+
+        # Check creation mode permissions
+        mode = settings.get("creation_mode", "everyone")
         if mode == "boosters" and not getattr(ctx.user, "premium_since", None):
-            await ctx.response.send_message(
-                embed=Embed.Error(
-                    "Only server boosters can create roles. Boost the server to unlock this feature!",
-                    title="Booster Only Command"
-                ),
-                ephemeral=True
+            return await ctx.response.send_message(
+                embed=Embed.Error("Only server boosters can create roles"),
+                ephemeral=True,
             )
-            return
+        elif mode == "specific_roles":
+            allowed_roles = settings.get("allowed_roles", [])
+            user_role_ids = [role.id for role in ctx.user.roles]
+            if not any(str(role_id) in allowed_roles for role_id in user_role_ids):
+                return await ctx.response.send_message(
+                    embed=Embed.Error("You don't have the required roles"),
+                    ephemeral=True,
+                )
 
-        try:
-            color_obj = self.colors.get(color.capitalize(), Color(color if color.startswith("#") else f"#{color}"))
-        except (KeyError, ValueError):
-            await ctx.response.send_message(
-                embed=Embed.Error("Invalid color format"),
-                ephemeral=True
+        # Check name against prohibited words
+        if name.lower() in settings.get(
+            "not_allowed", []
+        ) or profanity.contains_profanity(name.lower()):
+            return await ctx.send(
+                embed=Embed.Error("This word/name isn't allowed"), ephemeral=True
             )
-            return
 
-        guild = ctx.guild
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        try:
-            if file.data.get(f"{ctx.user.id}") != None:
-                await ctx.send(embed=Embed.Error("You already have a role"),ephemeral=True)
-                return
-        except AttributeError: file.data = {}
-        if name.lower() in self.notAllowed:
-            await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
-            return
-        role = await guild.create_role(reason=f"{ctx.user.name}/{ctx.user.id} Created a role",
-                                name=name, color=color_obj.value,hoist=True)
+        # Handle color restrictions
+        color_restriction = settings.get("color_restriction", "all")
+        if color_restriction == "none":
+            color_obj = Color("#99AAB5")
+        elif color_restriction == "preset" and color.capitalize() not in self.colors:
+            return await ctx.response.send_message(
+                embed=Embed.Error("You can only use preset colors"), ephemeral=True
+            )
+        else:
+            try:
+                if color.capitalize() in self.colors:
+                    color_obj = self.colors[color.capitalize()]
+                else:
+                    try:
+                        color_value = color if color.startswith("#") else f"#{color}"
+                        color_obj = Color(color_value)
+                    except Exception:
+                        return await ctx.send(
+                            embed=Embed.Error("Invalid color format"), ephemeral=True
+                        )
+            except (KeyError, ValueError):
+                return await ctx.response.send_message(
+                    embed=Embed.Error("Invalid color format"), ephemeral=True
+                )
+
+        # Check role properties permissions
+        can_hoist = settings.get("can_hoist", True)
+        can_mention = settings.get("can_mention", False)
+
+        if hoist is None:
+            hoist = can_hoist
+        elif hoist and not can_hoist:
+            return await ctx.response.send_message(
+                embed=Embed.Error("You cannot hoist roles"), ephemeral=True
+            )
+
+        if mentionable is None:
+            mentionable = can_mention
+        elif mentionable and not can_mention:
+            return await ctx.response.send_message(
+                embed=Embed.Error("You cannot make roles mentionable"), ephemeral=True
+            )
+
+        # Create the role under the specified parent role if set
+        parent_role_id = settings.get("parent_role_id")
+        
+        role = await ctx.guild.create_role(
+            reason=f"{ctx.user.name} created a custom role",
+            name=name,
+            color=color_obj.value,
+            hoist=hoist,
+            mentionable=mentionable,
+            
+        )
+
+        if parent_role_id:
+            try:
+                parent_role = ctx.guild.get_role(int(parent_role_id))
+                if parent_role:
+                    # Place the new role just below the parent role
+                    positions = {
+                        role: parent_role.position - 1
+                    }
+                    await ctx.guild.edit_role_positions(positions=positions) # type: ignore
+            except Exception as e:
+                print(f"Failed to set role position: {e}")
+
         await ctx.user.add_roles(role)
-        await ctx.send(embed=Embed.Info(f"You have created a role by the name: {name}", title="Role Created!"),ephemeral=True)
-        data= {f"{ctx.user.id}":{
-            "owner"     :True,
-            "roleID"    :role.id,
-            "members"   :[]
-        }}
-        file.data.update(data)
-        file.save()
-    
-    @role.subcommand(name="edit",description="Edit your own role like the name or role or both!")
-    @cooldown(15)
-    async def role_edit(self,ctx:init,name:str=None,color:str=SlashOption("color","Type Hex code or one of these colors",
-                                        required=False, autocomplete=True,default=None)):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
-            return
-        if color != None:
-            color = self.colors[color.capitalize()]
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        try:
-            user = file.data.get(f"{ctx.user.id}")
-            if user == None:
-                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-                return
-            if user["owner"] == False:
-                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
-                return
-        except AttributeError: 
-            await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-            return
-        try:
-            if name.lower() in self.notAllowed:
-                await ctx.send(embed=Embed.Error("This word/name isn't allowed"),ephemeral=True)
-                return
-        except AttributeError:pass
-        role = guild.get_role(user["roleID"])
-        if (name == None) and (color == None):
-            await ctx.send(embed=Embed.Error("you haven't change anything ||trying to be funny?||"),ephemeral=True)
-            return
-        if name != None:await role.edit(name=name)
-        if color!= None:await role.edit(color=color)
-        await ctx.send(embed=Embed.Info(f"You have Edit a role by the name", title="Role Edited!"),ephemeral=True)
 
+        # Generate unique ID for the role entry
+        role_id = str(uuid.uuid4())
 
-    @role.subcommand(name="delete",description="delete your own role")
-    async def role_delete(self,ctx:init):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
-            return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        try:
-            user = file.data.get(f"{ctx.user.id}")
-            if user == None:
-                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-                return
-            if user["owner"] == False:
-                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
-                return
-        except AttributeError: 
-            await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-            return
-        role = guild.get_role(user["roleID"])
-        await role.delete(reason=f"{ctx.user.name}/{ctx.user.id} deleted a role")
-        await ctx.send(embed=Embed.Info(f"You have deleted the role", title="Role Deleted!"),ephemeral=True)
-        for i in user["members"]:
-            del file.data[i]
-        del file.data[f"{ctx.user.id}"]
-        file.save()
-    
-    @user_command("Role: Add User", contexts=[InteractionContextType.guild])
-    async def role_user_add_user_command(self,ctx:init, member:Member):
-        await self.role_user_add(ctx,member)
-    @user_command("Role: Remove User", contexts=[InteractionContextType.guild])
-    async def role_user_remove_user_command(self,ctx:init, member:Member):
-        await self.role_user_remove(ctx,member)
+        # Add role to database
+        data[role_id] = {
+            "owner": True,
+            "owner_id": str(ctx.user.id),
+            "role_id": role.id,
+            "members": [],
+            "settings": {
+                "max_members": settings.get("max_members_per_role", 10),
+                "require_confirmation": settings.get("require_confirmation", True),
+            },
+            "created_at": str(datetime.now()),
+        }
 
+        await feature.set_global("MembersRoles", data)
 
-    @role.subcommand(name="add",description="Add the role to a user")
-    @cooldown(15)
-    async def role_user_add(self,ctx:init, member:Member):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
-            return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        if ctx.user.id == member.id:
-            await ctx.send(embed=Embed.Error("You can't add yourself"),ephemeral=True)
-            return
-        elif member.bot:
-            await ctx.send(embed=Embed.Error("You can't add a bot"),ephemeral=True)
-            return
-        try:
-            user = dict(file.data.get(f"{ctx.user.id}"))
-            user2= file.data.get(f"{member.id}")
-            if user == None:
-                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-                return
-            if user2 != None:
-                await ctx.send(embed=Embed.Error("He/She already have a role"),ephemeral=True)
-                return
-            if user["owner"] == False:
-                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
-                return
-        except AttributeError: 
-            await ctx.send(embed=Embed.Error("You & Him/Her Don't have a role"),ephemeral=True)
-            return
-        view = Request(guild.id,self.client,ctx.user)
-        #Send DM or Channel
-        role = guild.get_role(user["roleID"])
-        try:
-            await member.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
-                              view=view)
-        except:
-            await ctx.channel.send(member.mention,embed=Embed.Info(title=f"You got Invited by {ctx.user.display_name}",description=f"In {guild.name} and Role {role.name}",author=[guild.name,guild.icon.url]),
-                                view=view)
-        await ctx.send(embed=Embed.Info(title="Invited!",description=f"You have Invited {member.mention}"))
+        await ctx.send(embed=Embed.Info(f"Created role: {name}"), ephemeral=True)
 
-    @role.subcommand(name="remove",description="Remove the role from a user")
-    @cooldown(15)
-    async def role_user_remove(self,ctx:init, member:Member):
-        guild = ctx.guild
-        if not guild:
-            await ctx.send(embed=Embed.Error("This command can only be used in a server"),ephemeral=True)
-            return
-        file = DataManager("Roles", guild.id, file_name="MembersRoles")
-        if ctx.user.id == member.id:
-            await ctx.send(embed=Embed.Error("You can't remove yourself"),ephemeral=True)
-            return
-        elif member.bot:
-            await ctx.send(embed=Embed.Error("You can't remove a bot"),ephemeral=True)
-            return
-        try:
-            user = file.data.get(f"{ctx.user.id}")
-            user2= file.data.get(f"{member.id}")
-            if user == None:
-                await ctx.send(embed=Embed.Error("You Don't have a role"),ephemeral=True)
-                return
-            elif user2 == None:
-                await ctx.send(embed=Embed.Error("He/She doesn't have a role"),ephemeral=True)
-                return
-            elif user["owner"] == False:
-                await ctx.send(embed=Embed.Error("You aren't the owner of the Role"),ephemeral=True)
-                return
-            elif user["roleID"] != user2["roleID"]:
-                await ctx.send(embed=Embed.Error("He/She doesn't have your role"),ephemeral=True)
-        except AttributeError: 
-            await ctx.send(embed=Embed.Error("You & Him/Her Don't have a role"),ephemeral=True)
-            return
-        role = guild.get_role(user["roleID"])
-        user["members"].remove(f"{member.id}")
-        file.data[f"{ctx.user.id}"].update(user)
-        del file.data[f"{member.id}"]
-        file.save()
+    @role.subcommand(name="edit", description="Edit one of your custom roles")
+    async def role_edit(
+        self,
+        ctx: Interaction,
+        role_name: str = SlashOption(
+            "role", "Select which role to edit", autocomplete=True
+        ),
+        new_name: str = SlashOption("name", "New role name", required=False),
+        color: str = SlashOption(
+            "color", "New role color", required=False, autocomplete=True
+        ),
+        hoist: bool = SlashOption(
+            "hoist", "Display members separately", required=False
+        ),
+        mentionable: bool = SlashOption(
+            "mentionable", "Allow @mentions", required=False
+        ),
+    ):
+        if not ctx.guild:
+            return await ctx.send(embed=Embed.Error("Command must be used in a server"))
+        if not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("You are not in a server"))
+        
+
+        feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
+        data = feature.get_global("MembersRoles", {})
+        settings = feature.get_setting()
+
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        # Find the role entry
+        role_entry = None
+        role_key = None
+        for key, entry in data.items():
+            role = ctx.guild.get_role(entry["role_id"])
+            if not role:
+                role = await ctx.guild.fetch_role(entry["role_id"])
+            if entry.get("owner_id") == str(ctx.user.id) and role.name == role_name:
+                role_entry = entry
+                role_key = key
+                break
+
+        if not role_entry:
+            return await ctx.send(
+                embed=Embed.Error("You don't own this role"), ephemeral=True
+            )
+
+        role = ctx.guild.get_role(role_entry["role_id"])
+        if not role:
+            return await ctx.send(embed=Embed.Error("Role not found"), ephemeral=True)
+
+        updates = {}
+
+        # Handle name change
+        if new_name:
+            if new_name.lower() in settings.get(
+                "not_allowed", []
+            ) or profanity.contains_profanity(new_name.lower()):
+                return await ctx.send(
+                    embed=Embed.Error("This name isn't allowed"), ephemeral=True
+                )
+            updates["name"] = new_name
+
+        # Handle color change
+        if color:
+            color_restriction = settings.get("color_restriction", "all")
+            if color_restriction == "none":
+                return await ctx.send(
+                    embed=Embed.Error("Color customization is disabled"), ephemeral=True
+                )
+            elif color_restriction == "preset" and color.capitalize() not in self.colors:
+                return await ctx.send(
+                    embed=Embed.Error("You can only use preset colors"), ephemeral=True
+                )
+            else:
+                try:
+                    if color.capitalize() in self.colors:
+                        color_obj = self.colors[color.capitalize()]
+                    else:
+                        try:
+                            color_value = color if color.startswith("#") else f"#{color}"
+                            color_obj = Color(color_value)
+                        except Exception:
+                            return await ctx.send(
+                                embed=Embed.Error("Invalid color format"), ephemeral=True
+                            )
+                except (KeyError, ValueError):
+                    return await ctx.response.send_message(
+                        embed=Embed.Error("Invalid color format"), ephemeral=True
+                    )
+
+        # Handle permission-based properties
+        if hoist is not None:
+            if not settings.get("can_hoist", True) and hoist:
+                return await ctx.send(
+                    embed=Embed.Error("You cannot hoist roles"), ephemeral=True
+                )
+            updates["hoist"] = hoist
+
+        if mentionable is not None:
+            if not settings.get("can_mention", False) and mentionable:
+                return await ctx.send(
+                    embed=Embed.Error("You cannot make roles mentionable"),
+                    ephemeral=True,
+                )
+            updates["mentionable"] = mentionable
+
+        if not updates:
+            return await ctx.send(
+                embed=Embed.Error("No changes specified"), ephemeral=True
+            )
+
+        # Apply updates
+        await role.edit(**updates)
+        await ctx.send(embed=Embed.Info("Role updated successfully"), ephemeral=True)
+
+    @role.subcommand(name="add", description="Add someone to your custom role")
+    async def role_add(
+        self,
+        ctx: Interaction,
+        member: Member,
+        role_name: str = SlashOption(
+            "role", "Select which role to add them to", autocomplete=True
+        ),
+    ):
+        if not ctx.guild:
+            return await ctx.send(embed=Embed.Error("Command must be used in a server"))
+
+        if member.bot:
+            return await ctx.send(
+                embed=Embed.Error("You cannot add bots to custom roles"), ephemeral=True
+            )
+        if not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("You are not in a server"))
+
+        feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
+        data = feature.get_global("MembersRoles", {})
+
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        
+        # Find the role entry
+        role_entry = None
+        role_key = None
+        for key, entry in data.items():
+            role = ctx.guild.get_role(entry["role_id"])
+            if not role:
+                role = await ctx.guild.fetch_role(entry["role_id"])
+            if entry.get("owner_id") == str(ctx.user.id) and role.name == role_name:
+                role_entry = entry
+                role_key = key
+                break
+
+        if not role_entry:
+            return await ctx.send(
+                embed=Embed.Error("You don't own this role"), ephemeral=True
+            )
+
+        role = ctx.guild.get_role(role_entry["role_id"])
+        if not role:
+            return await ctx.send(embed=Embed.Error("Role not found"), ephemeral=True)
+
+        # Check member limit
+        max_members = role_entry["settings"].get("max_members", 10)
+        if len(role_entry["members"]) >= max_members:
+            return await ctx.send(
+                embed=Embed.Error(
+                    f"This role has reached its member limit ({max_members})"
+                ),
+                ephemeral=True,
+            )
+
+        # Handle confirmation requirement
+        if role_entry["settings"].get("require_confirmation", True):
+            view = Request(ctx.guild.id, self.client, ctx.user, role_key)
+            try:
+                await member.send(
+                    embed=Embed.Info(
+                        title=f"Role Invitation from {ctx.user.display_name}",
+                        description=f"Would you like to join the role '{role.name}'?",
+                    ),
+                    view=view,
+                )
+                await ctx.send(
+                    embed=Embed.Info(f"Invitation sent to {member.mention}"),
+                    ephemeral=True,
+                )
+            except:
+                await ctx.send(
+                    embed=Embed.Error(
+                        "Could not DM the user. They may have DMs disabled."
+                    ),
+                    ephemeral=True,
+                )
+        else:
+            # Direct addition
+            role_entry["members"].append(str(member.id))
+            await member.add_roles(role)
+            data[role_key] = role_entry
+            await feature.set_global("MembersRoles", data)
+
+            await ctx.send(
+                embed=Embed.Info(f"Added {member.mention} to {role.name}"),
+                ephemeral=True,
+            )
+
+    @role.subcommand(name="remove", description="Remove someone from your custom role")
+    async def role_remove(
+        self,
+        ctx: Interaction,
+        member: Member,
+        role_name: str = SlashOption(
+            "role", "Select which role to remove them from", autocomplete=True
+        ),
+    ):
+        if not ctx.guild:
+            return await ctx.send(embed=Embed.Error("Command must be used in a server"))
+        if not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("You are not in a server"))
+
+        feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
+        data = feature.get_global("MembersRoles", {})
+        
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        # Find the role entry
+        role_entry = None
+        role_key = None
+        for key, entry in data.items():
+            role = ctx.guild.get_role(entry["role_id"])
+            if not role:
+                role = await ctx.guild.fetch_role(entry["role_id"])
+            if entry.get("owner_id") == str(ctx.user.id) and role.name == role_name:
+                role_entry = entry
+                role_key = key
+                break
+
+        if not role_entry:
+            return await ctx.send(
+                embed=Embed.Error("You don't own this role"), ephemeral=True
+            )
+
+        role = ctx.guild.get_role(role_entry["role_id"])
+        if not role:
+            return await ctx.send(embed=Embed.Error("Role not found"), ephemeral=True)
+
+        if str(member.id) not in role_entry["members"]:
+            return await ctx.send(
+                embed=Embed.Error(f"{member.mention} is not in this role"),
+                ephemeral=True,
+            )
+
+        # Remove member
+        role_entry["members"].remove(str(member.id))
         await member.remove_roles(role)
+        data[role_key] = role_entry
+        await feature.set_global("MembersRoles", data)
 
-        await ctx.send(embed=Embed.Info(f"The {member.display_name} Removed!", title="Member Removed!"),ephemeral=True)
-    
+        await ctx.send(
+            embed=Embed.Info(f"Removed {member.mention} from {role.name}"),
+            ephemeral=True,
+        )
+
+    @role.subcommand(name="delete", description="Delete one of your custom roles")
+    async def role_delete(
+        self,
+        ctx: Interaction,
+        role_name: str = SlashOption(
+            "role", "Select which role to delete", autocomplete=True
+        ),
+    ):
+        if not ctx.guild:
+            return await ctx.send(embed=Embed.Error("Command must be used in a server"))
+        if not ctx.user or isinstance(ctx.user, User):
+            return await ctx.send(embed=Embed.Error("You are not in a server"))
+
+        feature = await Feature.get_guild_feature(ctx.guild.id, "custom_roles")
+        data = feature.get_global("MembersRoles", {})
+
+        if not feature.enabled:
+            return await ctx.send(
+                embed=Embed.Error("This feature is disabled"), ephemeral=True
+            )
+        
+        # Find the role entry
+        role_entry = None
+        role_key = None
+        for key, entry in data.items():
+            role = ctx.guild.get_role(entry["role_id"])
+            if not role:
+                role = await ctx.guild.fetch_role(entry["role_id"])
+            if entry.get("owner_id") == str(ctx.user.id) and role.name == role_name:
+                role_entry = entry
+                role_key = key
+                break
+
+        if not role_entry:
+            return await ctx.send(
+                embed=Embed.Error("You don't own this role"), ephemeral=True
+            )
+
+        role = ctx.guild.get_role(role_entry["role_id"])
+        if role:
+            await role.delete(reason=f"Deleted by owner {ctx.user.name}")
+
+        # Remove from database
+        del data[role_key]
+        await feature.set_global("MembersRoles", data)
+
+        await ctx.send(
+            embed=Embed.Info(f"Deleted role: {role_name}"), ephemeral=True
+        )
 
     @create_role.on_autocomplete("color")
     @role_edit.on_autocomplete("color")
-    async def name_autocomplete(self, interaction: Interaction, current: str):
-        colors = [i for i in self.colors.keys()]
-        suggestions = [name for name in colors if name.lower().startswith(current.lower())]
-        if (suggestions == []) and (current.startswith("#")):
-             suggestions = [current]
-        await interaction.response.send_autocomplete(suggestions)
-    
-    
-    
+    async def color_autocomplete(self, interaction: Interaction, current: str):
+        colors = list(self.colors.keys())
+        return [name for name in colors if current.lower() in name.lower()] or (
+            [current] if current.startswith("#") else []
+        )
+
+    @role_edit.on_autocomplete("role_name")
+    @role_add.on_autocomplete("role_name")
+    @role_remove.on_autocomplete("role_name")
+    @role_delete.on_autocomplete("role_name")
+    async def role_autocomplete(self, interaction: Interaction, current: str):
+        if not interaction.guild or not interaction.user or isinstance(interaction.user, User):
+            return []
+
+        feature = await Feature.get_guild_feature(interaction.guild.id, "custom_roles")
+        data = feature.get_global("MembersRoles", {})
+
+        user_roles = []
+        for entry in data.values():
+            if entry.get("owner_id") == str(interaction.user.id):
+                if role := interaction.guild.get_role(entry["role_id"]):
+                    user_roles.append(role.name)
+
+        return [name for name in user_roles if current.lower() in name.lower()]
+
 
 def setup(client: commands.Bot):
     client.add_cog(Roles(client))

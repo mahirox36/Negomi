@@ -1,16 +1,17 @@
 import datetime
 import os
-from typing import Optional
+from typing import Optional, Dict, Any
 import httpx
 import ollama
 from rich import print
 from json import dumps, loads
 import logging
-logger = logging.getLogger("bot")
+logger = logging.getLogger(__name__)
 
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 from .DiscordConfig import ip
 from pathlib import Path
+from .system_template import system_template
 
 CheckerClient = ollama.Client(ip, timeout = 1)
 client = ollama.Client(ip)
@@ -61,20 +62,10 @@ class ConversationManager:
     def __init__(self, model: str = "Negomi"):
         self.conversation_histories = {}
         self.history_file = Path("Data/Features/AI/history.json")
-        self.summary_threshold = 30  # Increased for better context
+        self.summary_threshold = 30  # Number of messages before summarizing
         self.keep_recent = 12  # Keep more recent messages
         self.model = model
-        self.personality_traits = {
-            'mood': 1.0,  # 0.0 = sad, 1.0 = happy
-            'energy': 1.0,  # 0.0 = tired, 1.0 = energetic
-            'affection': 0.8,  # Base affection level
-        }
-        self.time_moods = {
-            'morning': (5, 11, 1.0),    # 5 AM - 11 AM: Energetic
-            'afternoon': (12, 16, 0.8),  # 12 PM - 4 PM: Neutral-positive
-            'evening': (17, 20, 0.7),    # 5 PM - 8 PM: Relaxed
-            'night': (21, 4, 0.5)        # 9 PM - 4 AM: Tired/sleepy
-        }
+        self.memory_decay_rate = 0.95  # Rate at which old memories fade
         self.load_histories()
 
     def load_histories(self):
@@ -128,24 +119,36 @@ class ConversationManager:
         messages_to_summarize = non_system_messages[:-self.keep_recent]
         recent_messages = non_system_messages[-self.keep_recent:]
         
-        prompt = """Summarize this conversation naturally, focusing on key information and context that would be important for future responses. Create a concise internal summary that captures the main points, decisions, and context of the conversation.
-
-Do not include any meta-commentary about the summary itself or formatting instructions.
-
-Previous conversation:
-"""
+        # Weight messages by importance and recency
+        weighted_messages = []
+        for idx, msg in enumerate(messages_to_summarize):
+            age_weight = self.memory_decay_rate ** (len(messages_to_summarize) - idx)
+            importance = 1.0
+            
+            # Increase importance for emotional content
+            if any(word in msg['content'].lower() for word in ['love', 'hate', 'angry', 'happy', 'sad']):
+                importance *= 1.5
+                
+            # Increase importance for questions
+            if '?' in msg['content']:
+                importance *= 1.3
+                
+            weighted_messages.append((msg, age_weight * importance))
         
-        # Add messages to the prompt
-        for msg in messages_to_summarize:
-            if msg['role'] == 'user':
-                content = msg['content'].replace('Mahiro: ', '')  # Remove prefix for cleaner summary
-                prompt += f"User: {content}\n"
-            else:
-                prompt += f"{self.model}: {msg['content']}\n"
+        # Sort by weight and select top messages
+        weighted_messages.sort(key=lambda x: x[1], reverse=True)
+        key_messages = [msg[0] for msg in weighted_messages[:min(5, len(weighted_messages))]]
+        
+        # Generate focused summary
+        summary_prompt = "Create a concise summary focusing on key emotional moments, important decisions, and critical context. Include:\n"
+        summary_prompt += "1. Main emotional themes\n2. Important decisions or agreements\n3. Key facts discussed\n\n"
+        
+        for msg in key_messages:
+            summary_prompt += f"{msg['role']}: {msg['content']}\n"
 
         try:
             # Get the summary and ensure it doesn't leak internal details
-            summary = generate(prompt)
+            summary = generate(summary_prompt)
             
             # Create new summary message with clear internal marker
             summary_message = {
@@ -177,111 +180,121 @@ Previous conversation:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_time_mood_modifier(self):
-        """Get mood modifier based on current time."""
-        current_hour = datetime.datetime.now().hour
+    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", 
+                    guild_info: Optional[dict] = None, personality_state: Optional[dict] = None, 
+                    mommy_mode: bool = False):
+        """Process user message and get AI response with emotional intelligence."""
         
-        for period, (start, end, modifier) in self.time_moods.items():
-            if start <= end:
-                if start <= current_hour <= end:
-                    return modifier
-            else:  # Handle night period crossing midnight
-                if current_hour >= start or current_hour <= end:
-                    return modifier
-        return 0.8  # Default modifier
-
-    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", guild_info: Optional[dict] = None):
-        """Process user message and get AI response with improved context handling."""
-        if user == "Mahiro":
-            # Adjust traits based on interaction with creator
-            self.personality_traits['affection'] = min(1.0, self.personality_traits['affection'] + 0.1)
-            temperature = 0.95  # More creative with creator
-        else:
-            temperature = 0.85  # Slightly more consistent with others
-
-        # Apply time-based mood adjustment
-        time_modifier = self.get_time_mood_modifier()
-        self.personality_traits['energy'] = time_modifier
-
-        # Adjust mood based on both time and message sentiment
-        base_mood = self.personality_traits['mood']
-        if any(word in user_message.lower() for word in ['happy', 'good', 'great', 'love']):
-            self.personality_traits['mood'] = min(1.0, base_mood * time_modifier + 0.1)
-        elif any(word in user_message.lower() for word in ['sad', 'bad', 'angry', 'hate']):
-            self.personality_traits['mood'] = max(0.0, base_mood * time_modifier - 0.1)
-        else:
-            # Gradually adjust mood towards time-appropriate level
-            self.personality_traits['mood'] = (base_mood + time_modifier) / 2
-
-        # Add personality context to system message without exposing raw numbers
-        current_hour = datetime.datetime.now().hour
-        context_message = f"Current time: {current_hour:02d}:00."
-        
-        
-        if guild_info:
-            context_message += f"\nCurrent channel: #{guild_info['channel']}"
-
-        personality_context = {
-            'role': 'system',
-            'content': context_message
-        }
-
-        if channel_id not in self.conversation_histories:
-            self.conversation_histories[channel_id] = [personality_context]
-
-        conversation_history = self.conversation_histories[channel_id]
-
-        if channel_id not in self.conversation_histories:
-            self.conversation_histories[channel_id] = []
-
-        conversation_history = self.conversation_histories[channel_id]
-
-        if user_message.startswith("/clear"):
-            self.archive_conversation(channel_id)
-            # Keep only the initial system message when clearing
-            self.conversation_histories[channel_id] = [msg for msg in conversation_history if msg['role'] == 'system'][:1]
-            self.save_histories()
-            return False
-
-        # Add user message to history
-        conversation_history.append({'role': 'user', 'content': f"{user}: {user_message}"})
-        non_system_messages = [msg for msg in conversation_history if msg['role'] != 'system']
-        # Summarize if needed
         try:
-            if len(non_system_messages) > self.summary_threshold:
-                conversation_history = self.summarize_conversation(conversation_history)
-                self.conversation_histories[channel_id] = conversation_history
-        except httpx.ConnectTimeout as e:
-            logger.error(f"Error in ollama.chat: {e}")
-            return offline
-
-        # Generate response using Ollama
-        try:
-            response = client.chat(
-                model=self.model,
-                messages=conversation_history,
-                options={
-                    'temperature': temperature,
-                    'top_p': 0.85,
-                    'frequency_penalty': 0.7,  # Increased for more varied responses
-                    'presence_penalty': 0.7,
-                    'max_tokens': 150  # Limit response length for more natural conversation
+            # Format system message with personality state
+            if personality_state:
+                core_traits = personality_state.get('core_traits', {})
+                relationship = personality_state.get('relationship_dynamics', {}).get(str(user), {})
+                current_mood = personality_state.get('current_mood', 'relaxed')
+                
+                # Emotional memory integration - include recent significant memories
+                emotional_memory = personality_state.get('emotional_memory', [])
+                memory_context = ""
+                if emotional_memory:
+                    memory_context = "\nRecent emotional memories:\n"
+                    # Add up to 3 most recent emotional memories
+                    for memory in emotional_memory[-3:]:
+                        memory_context += f"- {memory.get('description', 'Interaction')} " \
+                                         f"(Feeling: {memory.get('mood', 'neutral')})\n"
+                
+                # Format custom traits with emotional context
+                custom_traits = f"Current mood: {current_mood}\n" \
+                               f"Channel: {guild_info['channel'] if guild_info else 'DM'}\n" \
+                               f"{memory_context}"
+                
+                # Create system message with personality parameters
+                system_vars = {
+                    'AI': 'Negomi',
+                    'openness': core_traits.get('openness', 0.85),
+                    'conscientiousness': core_traits.get('conscientiousness', 0.9),
+                    'extraversion': core_traits.get('extraversion', 0.75),
+                    'name': user,
+                    'trust_level': relationship.get('trust', 0.5),
+                    'custom_traits': custom_traits
                 }
-            )
-            text = response.get('message', {}).get('content', "Error: No response generated.")
-        except httpx.ConnectTimeout as e:
-            logger.error(f"Error in ollama.chat: {e}")
-            return offline
+                
+                formatted_system = system_template.format(**system_vars)
+            else:
+                formatted_system = system_template.format(
+                    AI='Negomi',
+                    openness=0.85,
+                    conscientiousness=0.9,
+                    extraversion=0.75,
+                    name=user,
+                    trust_level=0.5,
+                    custom_traits=''
+                )
+
+            # Initialize conversation if needed
+            if channel_id not in self.conversation_histories:
+                self.conversation_histories[channel_id] = [
+                    {'role': 'system', 'content': formatted_system}
+                ]
+
+            # Update system message with current personality state
+            conversation_history = self.conversation_histories[channel_id]
+            for msg in conversation_history:
+                if msg['role'] == 'system':
+                    msg['content'] = formatted_system
+                    break
+
+            # Add user message to history
+            conversation_history.append({'role': 'user', 'content': f"{user}: {user_message}"})
+            non_system_messages = [msg for msg in conversation_history if msg['role'] != 'system']
+            
+            # Summarize if needed
+            try:
+                if len(non_system_messages) > self.summary_threshold:
+                    conversation_history = self.summarize_conversation(conversation_history)
+                    self.conversation_histories[channel_id] = conversation_history
+            except httpx.ConnectTimeout as e:
+                logger.error(f"Error in ollama.chat: {e}")
+                return offline
+
+            # Generate response using Ollama with personality-appropriate parameters
+            try:
+                # Adjust temperature based on personality traits
+                temperature = 0.85
+                if personality_state:
+                    openness = personality_state.get('core_traits', {}).get('openness', 0.85)
+                    extraversion = personality_state.get('core_traits', {}).get('extraversion', 0.75)
+                    # Higher openness = slightly higher temperature (more creative)
+                    # Higher extraversion = slightly higher temperature (more expressive)
+                    temperature = min(1.0, 0.7 + (openness * 0.1) + (extraversion * 0.1))
+                
+                response = client.chat(
+                    model=self.model,
+                    messages=conversation_history,
+                    options={
+                        'temperature': temperature,
+                        'top_p': 0.9,
+                        'frequency_penalty': 0.7,
+                        'presence_penalty': 0.7,
+                        'max_tokens': 150
+                    }
+                )
+                text = response.get('message', {}).get('content', "Error: No response generated.")
+            except httpx.ConnectTimeout as e:
+                logger.error(f"Error in ollama.chat: {e}")
+                return offline
+            except Exception as e:
+                logger.error(f"Error in ollama.chat: {e}")
+                text = "Sorry, I encountered an issue generating a response."
+
+            # Add cleaned response to history if valid
+            if text and text != "Error: No response generated.":
+                conversation_history.append({'role': 'assistant', 'content': text})
+                self.save_histories()
+
+            return text
         except Exception as e:
-            logger.error(f"Error in ollama.chat: {e}")
-            text = "Sorry, I encountered an issue generating a response."
-
-        # Add cleaned response to history if valid
-        if text and text != "Error: No response generated.":
-            conversation_history.append({'role': 'assistant', 'content': text})
-            self.save_histories()
-
-        return text
+            logger.error(f"Error in get_response: {e}")
+            return "An error occurred while processing the response."
 
 def generate(prompt, model: str="Negomi") -> str:
     try:
