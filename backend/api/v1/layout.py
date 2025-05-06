@@ -228,11 +228,7 @@ async def get_server_sidebar():
             },
         ],
         "Features": [
-            # {
-            #     "name": "AI",
-            #     "link": "ai",
-            #     "icon": "fa-solid fa-robot"
-            # },
+            {"name": "AI", "link": "ai", "icon": "fa-solid fa-robot"},
             {"name": "Auto Role", "link": "auto-role", "icon": "fa-solid fa-user-plus"},
             # {
             #     "name": "Backup",

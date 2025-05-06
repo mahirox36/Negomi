@@ -224,7 +224,7 @@ class APIServer:
     async def get_commands_of_bot(self) -> List[Dict[str, Any]]:
         """Get all bot commands with metadata"""
         commands = []
-        for command in self.client.get_application_commands():
+        for command in self.client.get_all_application_commands():
             if command.integration_types:
                 guild_installed = (
                     IntegrationType.guild_install in command.integration_types

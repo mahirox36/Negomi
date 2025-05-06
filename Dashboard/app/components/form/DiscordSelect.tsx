@@ -318,15 +318,6 @@ export default function DiscordSelect({
             <i className="fas fa-times text-xs" />
           </button>
         )}
-        {isDisabled && (
-          <div className="tooltip absolute z-50 whitespace-nowrap p-2 rounded-md bg-gray-900 text-white text-xs
-            transform -translate-x-1/2 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100
-            border border-gray-700 shadow-lg left-1/2"
-            style={{bottom: 'calc(100% + 10px)'}}
-          >
-            This role cannot be assigned due to permission restrictions
-          </div>
-        )}
       </div>
     );
   };

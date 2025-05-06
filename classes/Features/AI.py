@@ -70,11 +70,17 @@ Extra Rules:
 """
 
 
+# Settings:
+# - allow_threads: bool (enable/disable AI in threads)
+# - allowed_roles: list (restrict AI commands to certain roles)
+# - cooldown_seconds: int (rate limit for AI responses per user)
+# - public_channels: list[channel id] (restrict AI to specific channels)
+
+
 class AI(commands.Cog):
     def __init__(self, client: Client):
         self.client = client
         self.conversation_manager = ConversationManager()
-        self.settings: Feature
         self.ready = False
         self.personality = None  # Will hold AIPersonality instance
         self.emote_mapping = {
@@ -98,21 +104,15 @@ class AI(commands.Cog):
             "mischievous": ["(¬‿¬)", "(￣ω￣;)", "(∩｀-´)⊃━☆ﾟ.*･｡ﾟ"],
         }
         self._last_emote = {}  # Track last used emote per channel
+        self._last_messages = {}  # Track last message time per user
 
     @commands.Cog.listener()
     async def on_ready(self):
         global system
-        self.settings = await Feature.get_global_feature(
-            "AI",
-            default={
-                "public_channels": {},  # guild_id: channel_id
-                "active_threads": {},  # user_id: thread_id
-            },
-        )
-        
+
         # Initialize or load AI personality
         self.personality = await AIPersonality.get_default()
-        
+
         models = [
             model.model.split(":")[0]
             for model in negomi.list().models
@@ -140,45 +140,108 @@ class AI(commands.Cog):
             f.write(system)
         self.ready = True
 
+    async def get_guild_settings(self, guild_id: int) -> dict:
+        """Get guild-specific AI settings"""
+        feature = await Feature.get_guild_feature(
+            guild_id,
+            "ai",
+            default={
+                "public_channels": [],  # List of channel IDs
+                "active_threads": {},   # user_id: thread_id
+                "allowed_roles": [],    # List of role IDs
+                "allow_threads": True,  # Allow private threads
+                "cooldown_seconds": 5,  # Message cooldown
+            }
+        )
+        return feature.settings.get("settings", {})
+
+    async def check_cooldown(self, user_id: int, guild_id: int) -> bool:
+        """Check if user is within cooldown period"""
+        if not guild_id:
+            return True
+            
+        guild_settings = await self.get_guild_settings(guild_id)
+        cooldown = guild_settings.get("cooldown_seconds", 5)
+        
+        if cooldown <= 0:
+            return True
+            
+        now = datetime.now().timestamp()
+        last_msg_time = self._last_messages.get(f"{guild_id}:{user_id}", 0)
+        
+        if now - last_msg_time < cooldown:
+            return False
+            
+        self._last_messages[f"{guild_id}:{user_id}"] = now
+        return True
+
+    async def process_message(self, message: Message, type: str = "public"):
+        # Get guild settings if in a guild
+        guild_settings = {}
+        if message.guild:
+            guild_settings = await self.get_guild_settings(message.guild.id)
+            
+            # Check cooldown
+            if not await self.check_cooldown(message.author.id, message.guild.id):
+                cooldown = guild_settings.get("cooldown_seconds", 5)
+                last_msg_time = self._last_messages.get(f"{message.guild.id}:{message.author.id}", 0)
+                wait_time = cooldown - (datetime.now().timestamp() - last_msg_time)
+                if wait_time > 0:
+                    await message.reply(
+                        embed=Embed.Warning(f"Please wait {int(wait_time)} seconds before sending another message", "Cooldown"), delete_after=6
+                    )
+                    return
+
+            # Check role permissions if in guild
+            if guild_settings.get("allowed_roles"):
+                member_roles = []
+                if isinstance(message.author, Member):
+                    member_roles = [role.id for role in message.author.roles]
+                if not any(role_id in guild_settings["allowed_roles"] for role_id in member_roles):
+                    return
+
+        async with message.channel.typing():
+            return await self.handle_ai_response(message, type)
+
     @commands.Cog.listener()
     async def on_message(self, message: Message):
         if message.author.bot:
             return
 
-        async def process_message(message: Message, type: str = "public"):
-            async with message.channel.typing():
-                return await self.handle_ai_response(message, type)
-
         # Handle private threads
         if isinstance(message.channel, Thread):
-            active_threads = self.settings.get_setting("active_threads", {})
+            if not message.guild:
+                return
+
+            guild_settings = await self.get_guild_settings(message.guild.id)
+            active_threads = guild_settings.get("active_threads", {})
+
             if str(message.channel.id) in active_threads.values():
-                await process_message(message, "thread")
+                await self.process_message(message, "thread")
                 return
 
         # Handle public channels
         if isinstance(message.channel, TextChannel):
             if message.guild:
-                public_channels = self.settings.get_setting("public_channels", {})
-                if str(message.guild.id) in public_channels:
-                    if message.channel.id == int(
-                        public_channels[str(message.guild.id)]
-                    ):
-                        await process_message(message)
-                        return
+                guild_settings = await self.get_guild_settings(message.guild.id)
+                public_channels = guild_settings.get("public_channels", [])
+
+                if str(message.channel.id) in public_channels:
+                    await self.process_message(message)
+                    return
 
         # Handle mentions and DMs
         if isinstance(message.channel, DMChannel):
-            await process_message(message)
+            await self.process_message(message)
 
         if self.client.user.mentioned_in(message) and message.guild and not message.mention_everyone:  # type: ignore
-            await process_message(message)
+            await self.process_message(message)
             return
 
     async def handle_ai_response(self, message: Message, type: str = "public"):
         if not self.ready:
             await message.reply(
-                embed=Embed.Warning("Still initializing...", "Please wait")
+                embed=Embed.Warning("Still initializing...", "Please wait"), delete_after=6
             )
             return
 
@@ -224,7 +287,9 @@ class AI(commands.Cog):
             # Enhanced emotion selection
             if not isinstance(response, str):
                 logger.error(f"AI response is not a string: {response!r}")
-                await message.reply(embed=Embed.Error("AI returned an invalid response."))
+                await message.reply(
+                    embed=Embed.Error("AI returned an invalid response.")
+                )
                 return
             mood = await self.select_emotional_response(response, context)
 
@@ -237,25 +302,28 @@ class AI(commands.Cog):
                     user_id,
                     familiarity_change=0.01,
                     trust_change=0.005,
-                    affinity_change=0.005
+                    affinity_change=0.005,
                 )
 
             # Update AI mood based on context and response
             if self.personality is not None:
                 await self.personality.update_mood(
                     mood,
-                    intensity=context.get('emotional_intensity', 0.5),
-                    trigger=f"Interaction with {name}"
+                    intensity=context.get("emotional_intensity", 0.5),
+                    trigger=f"Interaction with {name}",
                 )
 
             # Store significant interactions as emotional memories
-            if context.get('emotional_intensity', 0) > 0.7 and self.personality is not None:
+            if (
+                context.get("emotional_intensity", 0) > 0.7
+                and self.personality is not None
+            ):
                 await self.personality.create_emotional_memory(
                     user_id,
                     "significant_interaction",
                     f"Had a meaningful exchange with {name}: {content[:50]}...",
-                    impact=context.get('emotional_intensity', 0.5),
-                    associated_mood=mood
+                    impact=context.get("emotional_intensity", 0.5),
+                    associated_mood=mood,
                 )
 
             # Add the emote to the response if appropriate
@@ -272,51 +340,115 @@ class AI(commands.Cog):
         """Analyze message context for better response generation"""
         content = message.clean_content
         user_id = message.author.id
-        
+
         # Get user relationship data if it exists
         if self.personality is not None:
             relationship = self.personality.get_user_relationship(user_id)
         else:
             relationship = {}
-        familiarity = relationship.get('familiarity', 0.1)
-        
+        familiarity = relationship.get("familiarity", 0.1)
+
         # Enhanced emotional analysis
         emotional_indicators = self.detect_emotional_indicators(content)
-        emotional_intensity = sum(abs(val) for val in emotional_indicators.get('sentiment_values', [0])) / max(1, len(emotional_indicators.get('sentiment_values', [0])))
-        
+        emotional_intensity = sum(
+            abs(val) for val in emotional_indicators.get("sentiment_values", [0])
+        ) / max(1, len(emotional_indicators.get("sentiment_values", [0])))
+
         context = {
-            'time_of_day': datetime.now().hour,
-            'is_direct_mention': self.client.user and self.client.user.mentioned_in(message),
-            'message_type': "dm" if isinstance(message.channel, DMChannel) else "guild",
-            'emotional_indicators': emotional_indicators,
-            'emotional_intensity': emotional_intensity,
-            'user_id': user_id,
-            'channel_id': message.channel.id,
-            'familiarity': familiarity,
-            'user_history': {
-                'familiarity': familiarity,
-                'trust': relationship.get('trust', 0.5),
-                'affinity': relationship.get('affinity', 0.5),
-                'interaction_count': relationship.get('interaction_count', 0),
-            }
+            "time_of_day": datetime.now().hour,
+            "is_direct_mention": self.client.user
+            and self.client.user.mentioned_in(message),
+            "message_type": "dm" if isinstance(message.channel, DMChannel) else "guild",
+            "emotional_indicators": emotional_indicators,
+            "emotional_intensity": emotional_intensity,
+            "user_id": user_id,
+            "channel_id": message.channel.id,
+            "familiarity": familiarity,
+            "user_history": {
+                "familiarity": familiarity,
+                "trust": relationship.get("trust", 0.5),
+                "affinity": relationship.get("affinity", 0.5),
+                "interaction_count": relationship.get("interaction_count", 0),
+            },
         }
 
         return context
 
     def detect_emotional_indicators(self, content: str) -> dict:
         """Enhanced emotional detection in message content"""
-        indicators = {"sentiment": 0, "intensity": 0, "emotions": set(), "sentiment_values": []}
+        indicators = {
+            "sentiment": 0,
+            "intensity": 0,
+            "emotions": set(),
+            "sentiment_values": [],
+        }
 
         # Expanded emotion detection patterns
         emotion_patterns = {
-            "joy": (["happy", "joy", "yay", "wonderful", "😊", "😃", "love", "great", "excellent"], 1),
-            "sadness": (["sad", "sorry", "miss", "lonely", "😢", "😭", "disappointed", "upset", "hurt"], -1),
-            "anger": (["angry", "mad", "hate", "upset", "😠", "😡", "frustrated", "annoyed"], -1),
-            "fear": (["scared", "afraid", "worried", "anxiety", "😨", "😰", "nervous", "concerned"], -0.7),
+            "joy": (
+                [
+                    "happy",
+                    "joy",
+                    "yay",
+                    "wonderful",
+                    "😊",
+                    "😃",
+                    "love",
+                    "great",
+                    "excellent",
+                ],
+                1,
+            ),
+            "sadness": (
+                [
+                    "sad",
+                    "sorry",
+                    "miss",
+                    "lonely",
+                    "😢",
+                    "😭",
+                    "disappointed",
+                    "upset",
+                    "hurt",
+                ],
+                -1,
+            ),
+            "anger": (
+                ["angry", "mad", "hate", "upset", "😠", "😡", "frustrated", "annoyed"],
+                -1,
+            ),
+            "fear": (
+                [
+                    "scared",
+                    "afraid",
+                    "worried",
+                    "anxiety",
+                    "😨",
+                    "😰",
+                    "nervous",
+                    "concerned",
+                ],
+                -0.7,
+            ),
             "love": (["love", "adore", "cherish", "care", "❤️", "🥰", "affection"], 1),
-            "surprise": (["wow", "omg", "whoa", "amazing", "😮", "😲", "unbelievable", "incredible"], 0.5),
+            "surprise": (
+                [
+                    "wow",
+                    "omg",
+                    "whoa",
+                    "amazing",
+                    "😮",
+                    "😲",
+                    "unbelievable",
+                    "incredible",
+                ],
+                0.5,
+            ),
             "gratitude": (["thank", "grateful", "appreciate", "thanks", "🙏"], 0.8),
-            "confusion": (["confused", "what?", "don't understand", "🤔", "unclear"], -0.3),
+            "confusion": (
+                ["confused", "what?", "don't understand", "🤔", "unclear"],
+                -0.3,
+            ),
         }
 
         content_lower = content.lower()
@@ -331,15 +463,17 @@ class AI(commands.Cog):
                 indicators["intensity"] += matches
 
         # Detect question patterns for curiosity
-        if "?" in content or any(q in content_lower for q in ["what", "how", "why", "when", "where", "who"]):
+        if "?" in content or any(
+            q in content_lower for q in ["what", "how", "why", "when", "where", "who"]
+        ):
             indicators["emotions"].add("curiosity")
             indicators["intensity"] += 1
-            
+
         # Detect exclamations for intensity
         if "!" in content:
             exclamation_count = content.count("!")
             indicators["intensity"] += exclamation_count * 0.5
-            
+
         return indicators
 
     def personality_to_dict(self) -> dict:
@@ -347,8 +481,8 @@ class AI(commands.Cog):
         if not self.personality:
             return {
                 "core_traits": {
-                    "openness": 0.85, 
-                    "conscientiousness": 0.9, 
+                    "openness": 0.85,
+                    "conscientiousness": 0.9,
                     "extraversion": 0.75,
                     "agreeableness": 0.85,
                     "stability": 0.8,
@@ -357,13 +491,19 @@ class AI(commands.Cog):
                 "relationship_dynamics": {},
                 "current_mood": "relaxed",
             }
-            
+
         return {
             "core_traits": self.personality.core_traits,
             "learned_preferences": self.personality.learned_preferences,
             "relationship_dynamics": self.personality.relationship_dynamics,
-            "current_mood": self.personality.mood_tracker.get("current_mood", "relaxed"),
-            "emotional_memory": self.personality.emotional_memory[-5:] if self.personality.emotional_memory else [],
+            "current_mood": self.personality.mood_tracker.get(
+                "current_mood", "relaxed"
+            ),
+            "emotional_memory": (
+                self.personality.emotional_memory[-5:]
+                if self.personality.emotional_memory
+                else []
+            ),
         }
 
     def get_contextual_emote(self, mood: str, context: dict) -> str:
@@ -394,20 +534,20 @@ class AI(commands.Cog):
         """Update AI personality state based on context"""
         if not self.personality:
             self.personality = await AIPersonality.get_default()
-            
+
         user_id = context.get("user_id")
         if not user_id:
             return
-            
+
         # Update relationship with small increments for regular interactions
         familiarity_change = 0.01
         trust_change = 0.0
         affinity_change = 0.0
-        
+
         # Adjust based on emotional context
         emotional_indicators = context.get("emotional_indicators", {})
         sentiment = emotional_indicators.get("sentiment", 0)
-        
+
         if sentiment > 0:
             # Positive sentiment increases trust and affinity
             trust_change = 0.01
@@ -416,28 +556,34 @@ class AI(commands.Cog):
             # Negative sentiment slightly decreases trust and affinity
             trust_change = -0.005
             affinity_change = -0.01
-            
+
         # Update relationship dynamics in the database
         await self.personality.update_relationship(
-            user_id, 
+            user_id,
             familiarity_change=familiarity_change,
             trust_change=trust_change,
-            affinity_change=affinity_change
+            affinity_change=affinity_change,
         )
-        
+
         # Learn preferences from interaction
         if "emotions" in emotional_indicators:
             emotion_pref = list(emotional_indicators["emotions"])
             if emotion_pref:
-                await self.personality.learn_preference(user_id, "emotional_responses", emotion_pref)
+                await self.personality.learn_preference(
+                    user_id, "emotional_responses", emotion_pref
+                )
 
     async def select_emotional_response(self, response: str, context: dict) -> str:
         """Select appropriate emotional tone based on context and response"""
         # Get current AI mood from database
-        current_mood = self.personality.mood_tracker.get("current_mood", "relaxed") if self.personality else "relaxed"
+        current_mood = (
+            self.personality.mood_tracker.get("current_mood", "relaxed")
+            if self.personality
+            else "relaxed"
+        )
         emotions = context.get("emotional_indicators", {}).get("emotions", set())
         time_of_day = context.get("time_of_day", 12)
-        
+
         # Handle emotional mirroring for strong emotions
         if "joy" in emotions or "love" in emotions:
             return "happy" if time_of_day not in range(21, 5) else "relaxed"
@@ -460,27 +606,45 @@ class AI(commands.Cog):
             return "sleepy"
 
     @slash_command(name="ai")
-    async def ai(self, ctx: init):
+    async def ai(self, ctx: Interaction):
         pass
 
     @ai.subcommand(name="chat", description="Start a private chat thread")
-    async def create_chat(self, ctx: init):
+    async def create_chat(self, ctx: Interaction):
         if isinstance(ctx.channel, DMChannel):
             return await ctx.send(embed=Embed.Error("Cannot create threads in DMs"))
-        elif not ctx.user:
+        elif not ctx.guild:
             return await ctx.send(
-                embed=Embed.Error("You are not in a voice channel!", title="AI Error")
+                embed=Embed.Error("Not in a guild!", title="AI Error")
             )
-        elif not ctx.channel:
+        if not ctx.user:
             return await ctx.send(
-                embed=Embed.Error("You are not in a voice channel!", title="AI Error")
+                embed=Embed.Error("You are not even user", title="AI Error")
             )
-        elif isinstance(
-            ctx.channel,
-            (VoiceChannel, StageChannel, CategoryChannel, Thread, PartialMessageable),
-        ):
+
+        # Check guild settings
+        guild_settings = await self.get_guild_settings(ctx.guild.id)
+
+        # Check if threads are allowed
+        if not guild_settings.get("allow_threads", True):
             return await ctx.send(
-                embed=Embed.Error("You are not in a voice channel!", title="AI Error")
+                embed=Embed.Error("Private AI threads are not enabled in this server", title="AI Error")
+            )
+
+        # Check role permissions
+        if guild_settings.get("allowed_roles"):
+            member_roles = []
+            if isinstance(ctx.user, Member):
+                member_roles = [role.id for role in ctx.user.roles]
+            if not any(role_id in guild_settings["allowed_roles"] for role_id in member_roles):
+                return await ctx.send(
+                    embed=Embed.Error("You don't have permission to create AI threads", title="AI Error")
+                )
+
+        # Only allow thread creation in TextChannel
+        if not isinstance(ctx.channel, TextChannel):
+            return await ctx.send(
+                embed=Embed.Error("Threads can only be created in text channels.", title="AI Error")
             )
 
         thread = await ctx.channel.create_thread(
@@ -488,10 +652,13 @@ class AI(commands.Cog):
             type=ChannelType.private_thread,  # type: ignore
         )
 
-        # Update active threads in settings
-        active_threads = self.settings.get_setting("active_threads", {})
+        # Update active threads in guild settings
+        active_threads = guild_settings.get("active_threads", {})
         active_threads[str(ctx.user.id)] = str(thread.id)
-        await self.settings.set_setting("active_threads", active_threads)
+        guild_settings["active_threads"] = active_threads
+
+        guild_feature = await Feature.get_guild_feature(ctx.guild.id, "ai")
+        await guild_feature.set_setting("active_threads", active_threads)
 
         # Create an emotional memory for this new chat
         if self.personality:
@@ -500,7 +667,7 @@ class AI(commands.Cog):
                 "chat_started",
                 f"Started a new private chat with {ctx.user.name}",
                 0.6,  # Moderate positive impact
-                "excited"
+                "excited",
             )
 
         await ctx.response.send_info(
@@ -508,62 +675,22 @@ class AI(commands.Cog):
         )
         await thread.send(f"Hello {ctx.user.mention}! How can I help you today?")
 
-    @ai.subcommand(name="public")
-    async def public(self, ctx: init):
-        pass
-
-    @public.subcommand(name="set", description="Set channel for public AI chat")
-    @has_permissions(administrator=True)
-    async def set_public(self, ctx: init, channel: TextChannel):
-        if not ctx.guild or not channel:
-            return await ctx.response.send_info("Failed to set channel", "Error")
-
-        public_channels = self.settings.get_setting("public_channels", {})
-        public_channels[str(ctx.guild.id)] = str(channel.id)
-        await self.settings.set_setting("public_channels", public_channels)
-
-        await ctx.response.send_info(
-            f"Set {channel.mention} as public AI chat channel", "AI Channel Set"
-        )
-
-    @staticmethod
-    def split_response(response_text: str, max_length: int = 4096) -> list[str]:
-        return [
-            response_text[i : i + max_length]
-            for i in range(0, len(response_text), max_length)
-        ]
-
-    @public.subcommand(name="disable", description="Disable public AI chat")
-    @has_permissions(administrator=True)
-    async def disable_public(self, ctx: init):
-        if not ctx.guild:
-            return await ctx.response.send_info(
-                "Failed to disable public AI chat", "Error"
-            )
-        public_channels = self.settings.get_setting("public_channels", {})
-        guild_id = str(ctx.guild.id)
-
-        if guild_id in public_channels:
-            del public_channels[guild_id]
-            await self.settings.set_setting("public_channels", public_channels)
-            return await ctx.response.send_info(
-                "Disabled public AI chat", "AI Disabled!"
-            )
-
-        await ctx.send(
-            embed=Embed.Error("Public AI chat is already disabled", "AI Disabled!")
-        )
-
-    @ai.subcommand(name="personality", description="View and manage AI personality settings")
-    async def personality_cmd(self, ctx: init):
+    @ai.subcommand(
+        name="personality", description="View and manage AI personality settings"
+    )
+    async def personality_cmd(self, ctx: Interaction):
         if not self.personality:
-            return await ctx.send(embed=Embed.Error("AI personality not initialized", "Error"))
+            return await ctx.send(
+                embed=Embed.Error("AI personality not initialized", "Error")
+            )
         if not ctx.user:
-            return await ctx.send(embed=Embed.Error("You are not in a voice channel!", "AI Error"))
-            
+            return await ctx.send(
+                embed=Embed.Error("You are not in a voice channel!", "AI Error")
+            )
+
         traits = self.personality.core_traits
         mood = self.personality.mood_tracker
-        
+
         # Create personality profile embed
         embed = Embed.Info(
             f"**Current Mood**: {mood.get('current_mood', 'relaxed').title()} (Intensity: {mood.get('intensity', 0.5):.1f})\n\n"
@@ -578,11 +705,18 @@ class AI(commands.Cog):
             f"• Familiarity: {self.personality.get_user_relationship(ctx.user.id).get('familiarity', 0.1):.2f}\n"
             f"• Trust: {self.personality.get_user_relationship(ctx.user.id).get('trust', 0.5):.2f}\n"
             f"• Affinity: {self.personality.get_user_relationship(ctx.user.id).get('affinity', 0.5):.2f}",
-            title="AI Personality Profile"
+            title="AI Personality Profile",
         )
-        
+
         await ctx.send(embed=embed)
 
+    @staticmethod
+    def split_response(response_text: str, max_length: int = 4096) -> list[str]:
+        return [
+            response_text[i : i + max_length]
+            for i in range(0, len(response_text), max_length)
+        ]
+    
     @message_command(
         "Summarize",
         integration_types=[
@@ -594,7 +728,7 @@ class AI(commands.Cog):
             InteractionContextType.private_channel,
         ],
     )
-    async def summarize(self, ctx: init, target: Message):
+    async def summarize(self, ctx: Interaction, target: Message):
         await ctx.response.defer(ephemeral=True)
         message = target.content
         prompt = f"Please provide a concise summary of the following text:\n\n{message}"
@@ -618,7 +752,7 @@ class AI(commands.Cog):
             InteractionContextType.private_channel,
         ],
     )
-    async def ask(self, ctx: init, message: str, ephemeral: bool = True):
+    async def ask(self, ctx: Interaction, message: str, ephemeral: bool = True):
         await ctx.response.defer(ephemeral=ephemeral)
         response = generate(message, "llama3.2")
         if len(response) > 4096:
