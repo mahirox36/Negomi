@@ -57,7 +57,7 @@ async def createBadge(
             (
                 RequirementType(req.get("type")),
                 ComparisonType(req.get("comparison")),
-                str(req.get("value")),
+                str(req.get("value")).lower(),
             )
             for req in badge_request.requirements
         ]
@@ -210,7 +210,7 @@ async def editBadge(
             (
                 RequirementType(req.get("type")),
                 ComparisonType(req.get("comparison")),
-                str(req.get("value")),
+                str(req.get("value")).lower(),
             )
             for req in request_badge.requirements
         ]
