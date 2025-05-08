@@ -303,55 +303,6 @@ class DiscordBot(commands.Bot):
             if send_to_owner_enabled:
                 await self._send_startup_message()
 
-            bot_announce_channel = self.get_channel(1338953197280034867)
-            if not bot_announce_channel:
-                bot_announce_channel = await self.fetch_channel(1338953197280034867)
-            self.logger.info(
-                f"Bot announce channel: {bot_announce_channel} ({type(bot_announce_channel)})"
-            )
-            failed_channels = []
-            success_channels = []
-            followed_channels_path = "logs/followed_channels.json"
-            failed_channels_path = "logs/failed_channels.json"
-
-            # Ensure logs directory exists
-            os.makedirs("logs", exist_ok=True)
-
-            # Load already followed channels
-            if os.path.exists(followed_channels_path):
-                with open(followed_channels_path, "r") as f:
-                    try:
-                        followed_channels = json.load(f)
-                    except Exception:
-                        followed_channels = []
-            else:
-                followed_channels = []
-
-            if isinstance(bot_announce_channel, nexon.TextChannel):
-                self.logger.info("Following bot announce channel")
-                for guild in self.guilds:
-                    if guild.id in followed_channels:
-                        self.logger.info(f"Already following {guild.name} ({guild.id})")
-                        continue
-                    self.logger.info(f"Following {guild.name} ({guild.id})")
-                    try:
-                        if not guild.public_updates_channel:
-                            failed_channels.append(guild.id)
-                            continue
-                        await bot_announce_channel.follow(
-                            destination=guild.public_updates_channel
-                        )
-                        success_channels.append(guild.id)
-                    except Exception as e:
-                        failed_channels.append(guild.id)
-                        self.logger.warning(f"Failed to follow channel: {str(e)}")
-
-            # Update followed channels list
-            with open(followed_channels_path, "w") as f:
-                json.dump(followed_channels + success_channels, f)
-            with open(failed_channels_path, "w") as f:
-                json.dump(failed_channels, f)
-
     async def on_guild_join(self, guild: nexon.Guild) -> None:
         """Handler for when the bot joins a new guild."""
         self.logger.debug(f"Joined new guild: {guild.name} ({guild.id})")
