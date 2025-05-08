@@ -339,6 +339,14 @@ async def save_settings(guild_id: int, page: str, request: Request):
     """Save all settings for a specific page"""
     backend: APIServer = request.app.state.backend
     try:
+        if page.replace("-","_") == "temp_voice":
+            settings = await request.json()
+            # Handle special case for temp_voice settings
+            channel_id = settings.get("categoryID")
+            if not channel_id:
+                raise HTTPException(status_code=400, detail="Channel ID is required")
+
+            return await create_temp_voice_channel(guild_id, request, channel_id)
         # Get direct settings data from request
         request_body = await request.body()
         if not request_body:
@@ -467,9 +475,9 @@ async def get_badge(guild_id: int, badge_id: int, request: Request):
     return await getBadge(badge_id, request, guild_id)  # type: ignore
 
 
-@router.post("/{guild_id}/temp-voice")
+
 async def create_temp_voice_channel(
-    guild_id: int, request: Request, channel_id: ChannelID
+    guild_id: int, request: Request, channel_id: str
 ):
     """Create a temporary voice channel category setup"""
     backend: APIServer = request.app.state.backend
@@ -496,7 +504,7 @@ async def create_temp_voice_channel(
             )
 
         feature = await Feature.get_guild_feature(guild_id, "temp_voice")
-        categoryID = channel_id.channel_id
+        categoryID = channel_id
 
         # Clean up old create channel if it exists
         if await feature.get_setting("CreateChannel"):
@@ -573,17 +581,6 @@ async def get_temp_voice_channel(guild_id: int, request: Request):
     # backend: APIServer = request.app.state.backend
     feature = await Feature.get_guild_feature(guild_id, "temp_voice")
     return str(feature.get_setting("CategoryChannel"))
-    # guild = await backend.fetch_guild(guild_id)
-    # channel_id = await feature.get_setting("CreateChannel")
-    # if channel_id:
-    #     channel = guild.get_channel(int(channel_id))
-    #     if channel:
-    #         return {
-    #             "id": str(channel.id),
-    #             "name": channel.name,
-    #             "category": str(channel.category_id) if channel.category_id else None
-    #         }
-    raise HTTPException(status_code=404, detail="Temporary voice channel not found")
 
 
 # Welcome Feature Models
