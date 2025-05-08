@@ -101,8 +101,7 @@ class StorageManager:
                 self.s3_client.upload_fileobj,
                 file,
                 self.config.bucket_name,
-                key,
-                {"ExtraArgs": {"ACL": "public-read"}},
+                key
             )
 
     async def delete_file(self, filename: str) -> None:
