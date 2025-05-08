@@ -12,10 +12,11 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:25400';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:25400/api/:path*',
+        destination: `${apiBaseUrl}/api/:path*`,
       },
     ];
   },

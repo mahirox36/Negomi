@@ -152,8 +152,8 @@ export default function StatisticsPage() {
     const fetchData = async () => {
       try {
         const [statsRes, guildsRes] = await Promise.all([
-          axios.get("https://negomi.mahirou.online/api/v1/bot/stats", { withCredentials: true }),
-          axios.get("https://negomi.mahirou.online/api/v1/guilds", { withCredentials: true })
+          axios.get("/api/v1/bot/stats", { withCredentials: true }),
+          axios.get("/api/v1/guilds", { withCredentials: true })
         ]);
         
         setStats(statsRes.data);
