@@ -507,10 +507,10 @@ async def create_temp_voice_channel(
         categoryID = channel_id
 
         # Clean up old create channel if it exists
-        if await feature.get_setting("CreateChannel"):
+        if feature.get_setting("CreateChannel"):
             try:
                 old_channel = guild.get_channel(
-                    int(await feature.get_setting("CreateChannel"))
+                    int(feature.get_setting("CreateChannel"))
                 )
                 if old_channel:
                     await old_channel.delete(
@@ -551,8 +551,7 @@ async def create_temp_voice_channel(
             name="➕ Create Voice Channel",
             category=category,
             reason="Temporary voice channel system setup",
-            overwrites=overwrites,
-            user_limit=1,  # Prevents users from joining directly
+            overwrites=overwrites
         )
 
         # Save settings
