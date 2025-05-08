@@ -6,6 +6,8 @@ import boto3
 import logging
 import uuid
 from mypy_boto3_s3.client import S3Client
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 
 class StorageConfig:
@@ -92,9 +94,16 @@ class StorageManager:
         if not self.s3_client:
             raise HTTPException(status_code=500, detail="Storage not initialized")
 
-        self.s3_client.upload_fileobj(
-            file, self.config.bucket_name, key, ExtraArgs={"ACL": "public-read"}
-        )
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            await loop.run_in_executor(
+                executor,
+                self.s3_client.upload_fileobj,
+                file,
+                self.config.bucket_name,
+                key,
+                {"ExtraArgs": {"ACL": "public-read"}},
+            )
 
     async def delete_file(self, filename: str) -> None:
         """Delete a file from storage"""
