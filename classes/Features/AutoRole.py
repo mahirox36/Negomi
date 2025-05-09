@@ -1,6 +1,5 @@
 from typing import cast
 from modules.Nexon import *
-from 
 class AutoRole(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
