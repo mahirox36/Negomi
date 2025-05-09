@@ -101,8 +101,9 @@ class UserInfoPanel(View):
         embed.add_field(name="Previous Names", value=f"`{names}`")
         
         birthday = "Not Set"
-        if data.birthdate:
-            birthday = data.birthdate.strftime("%B %d, %Y")
+        birthdayData = data.birthdate if isinstance(data, UserData) else data.user.birthdate
+        if birthdayData:
+            birthday = birthdayData.strftime("%B %d, %Y")
         embed.add_field(name="Birthday", value=f"`{birthday}`")
         return embed
 
