@@ -26,8 +26,9 @@ case $choice in
         aerich upgrade || { echo "Aerich upgrade failed."; exit 1; }
         ;;
     *)
-        echo "Invalid choice. Exiting."
-        exit 1
+        echo "Running Aerich migrations and upgrades..."
+        aerich migrate || { echo "Aerich migration failed."; exit 1; }
+        aerich upgrade || { echo "Aerich upgrade failed."; exit 1; }
         ;;
 esac
 
