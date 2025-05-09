@@ -28,7 +28,7 @@ class timeCapsule(commands.Cog):
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", message)
         if links:
             await ctx.send(embed=Embed.Error("You cannot send Links"))
-        now = utils.utcnow()
+        now = utils.utcnow().replace(tzinfo=None)
         try:
             target_date = datetime(year, month, day)
         except ValueError:
