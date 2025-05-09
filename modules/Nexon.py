@@ -10,8 +10,9 @@ nest_asyncio.apply()
 from nexon import MemberData, UserData, Feature, ScopeType, utils
 from .DiscordConfig import *
 from .utils import extract_emojis, get_by_percent, remove_numbers, emoji, IDManager
-
+from rich.console import Console
 import logging
+console = Console(force_terminal=True)
 
 Level = logger_level.lower()
 match Level[0]:

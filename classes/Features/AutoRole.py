@@ -1,6 +1,6 @@
 from typing import cast
 from modules.Nexon import *
-
+from 
 class AutoRole(commands.Cog):
     def __init__(self, client:Bot):
         self.client = client
@@ -28,7 +28,9 @@ class AutoRole(commands.Cog):
                 await member.add_roles(user_role)
             else:
                 logger.info(f"User role with ID {data.get_setting('userRoles')} not found.")
-        except:
+        except Exception as e:
+            console.print_exception()
+            logger.error(f"Error in AutoRole: {e}")
             return
 
 
