@@ -156,7 +156,7 @@ export default function StatisticsPage() {
         ]);
         
         setStats(statsRes.data);
-        setGuilds(guildsRes.data.guilds);
+        setGuilds(guildsRes.guilds);
         setError(null);
       } catch (error) {
         console.error("Error fetching data:", error);
