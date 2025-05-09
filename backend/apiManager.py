@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import logging
 from functools import lru_cache
-from modules.Nexon import debug, config as configDiscord
+from modules.Nexon import debug, config as configDiscord, utils
 from nexon.OAuth2 import OAuth2Client, OAuth2Session, OAuth2Token
 from nexon import IntegrationType
 from nexon.ext import commands
@@ -24,6 +24,7 @@ from nexon.data.models import UserBadge
 from .features.cache import CacheManager
 from .features.storage import StorageManager
 from .tasks import start_tasks
+
 
 
 class APIConfig:
@@ -64,7 +65,7 @@ class APIServer:
         self.storage = storage
         self.client = client
         self.oauth_sessions: Dict[str, OAuth2Session] = {}
-        self.start_time = datetime.now()
+        self.start_time = utils.utcnow()
         self.rate_limit_store: Dict[str, List[float]] = {}
         self.background_tasks = BackgroundTasks()
         self._server = None
@@ -105,7 +106,7 @@ class APIServer:
         self.app.state.backend = self
 
     async def _rate_limit_check(self, ip: str) -> bool:
-        now = datetime.now().timestamp()
+        now = utils.utcnow().timestamp()
         if ip not in self.rate_limit_store:
             self.rate_limit_store[ip] = []
 

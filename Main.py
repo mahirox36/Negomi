@@ -2,7 +2,7 @@ import time
 from rich.traceback import install
 
 from nexon import BadgeManager
-from nexon.data.models import BotUser
+from nexon.data.models import BotUser, GuildData
 from nexon.enums import Rarity
 
 install()
@@ -11,12 +11,13 @@ import traceback
 from typing import Generator
 from pathlib import Path
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import nexon
 from nexon.ext.commands import MissingPermissions
 from modules.Nexon import *
 import os
 import json
+from nexon.ext.tasks import loop
 
 logger = logging.getLogger("Negomi")
 
@@ -34,8 +35,7 @@ class DiscordBot(commands.Bot):
             enable_user_data=True,
         )
 
-        self.start_time = datetime.now()
-
+        self.start_time = utils.utcnow()
         self._cleanup_done = asyncio.Event()
 
         # Setup logging
@@ -43,11 +43,13 @@ class DiscordBot(commands.Bot):
 
         BadgeManager().set_badge_earned_callback(self.onBadgeEarned)
 
+        self.daily_task.start()
+        
         self.setup_hook()
 
     async def onBadgeEarned(self, user: nexon.User, badge: nexon.Badge):
         """Handle badge earning notifications with rich embeds and fallback mechanisms."""
-        now = datetime.now()
+        now = utils.utcnow()
 
         # Create a visually appealing embed with badge details
         title = (
@@ -302,6 +304,23 @@ class DiscordBot(commands.Bot):
 
             if send_to_owner_enabled:
                 await self._send_startup_message()
+    
+    async def on_guild_remove(self, guild: nexon.Guild) -> None:
+        """Handler for when the bot leaves a guild."""
+        self.logger.debug(f"Left guild: {guild.name} ({guild.id})")
+        isDeleteDataInstantly = (await Feature.get_guild_feature(
+            guild.id, "basic_settings"
+        )).get_setting("isDeleteDataInstantly", False)
+        if isDeleteDataInstantly:
+            await Feature.delete_guild_features(guild.id)
+            guild_data= await GuildData.get_or_none(id= guild.id)
+            if guild_data:
+                await guild_data.delete()
+        else:
+            await Feature.soft_delete_guild_features(guild.id)
+            guild_data = await GuildData.get_or_none(id=guild.id)
+            if guild_data:
+                await guild_data.request_deletion()
 
     async def on_guild_join(self, guild: nexon.Guild) -> None:
         """Handler for when the bot joins a new guild."""
@@ -320,6 +339,12 @@ class DiscordBot(commands.Bot):
 
         except Exception as e:
             self.logger.warning(f"Failed to follow channel: {str(e)}")
+        
+        # Cancel any existing deletion requests for the guild
+        guild_data = await GuildData.get_or_none(id=guild.id)
+        if guild_data and guild_data.is_pending_deletion():
+            await guild_data.cancel_deletion()
+        await Feature.cancel_soft_delete_guild_features(guild.id)
 
     async def _send_startup_message(self) -> None:
         """Send startup notification to bot owner"""
@@ -440,6 +465,23 @@ class DiscordBot(commands.Bot):
 
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
         self.logger.error(f"Traceback in {event_method}: {traceback.format_exc()}")
+    
+    @loop(hours=23)
+    async def daily_task(self):
+        """Daily task to check for expired badges and send notifications."""
+        self.logger.info("Running daily task")
+        try:
+            threshold = utils.utcnow() - timedelta(days=3)
+            await Feature.filter(deletion_requested_at__lte=threshold).delete()
+            await GuildData.filter(
+                deletion_requested_at__lte=threshold
+            ).delete()
+        except Exception as e:
+            self.logger.error(f"Error in daily task: {str(e)}")
+    
+    @daily_task.before_loop
+    async def before_daily_task(self):
+        await self.wait_until_ready()
 
 
 async def main():

@@ -11,7 +11,7 @@ import time
 import logging
 import asyncio
 import io
-
+from modules.Nexon import utils
 
 if TYPE_CHECKING:
     from classes.Features.Welcome import Welcome
@@ -84,7 +84,7 @@ async def get_stats(request: Request):
             "channel_count": sum(len(g.channels) for g in backend.client.guilds),
             "voice_connections": len(backend.client.voice_clients),
             "latency": round(backend.client.latency * 1000),
-            "uptime": (datetime.now() - backend.start_time).total_seconds(),
+            "uptime": (utils.utcnow() - backend.start_time).total_seconds(),
             "command_count": len(await backend.get_commands_of_bot()),
             "cogs_loaded": len(backend.client.cogs),
             "current_shard": getattr(backend.client, "shard_id", 0),
@@ -108,7 +108,7 @@ async def get_stats(request: Request):
                 "latency": historical_data["bot_latency"][-10:],
             },
         },
-        "timestamp": datetime.now().timestamp(),
+        "timestamp": utils.utcnow().timestamp(),
     }
 
 
@@ -389,7 +389,7 @@ async def track_command_usage(request: Request):
         user.favorites_commands[command_name] = (
             user.favorites_commands.get(command_name, 0) + 1
         )
-        user.last_command_use[command_name] = datetime.now().timestamp()
+        user.last_command_use[command_name] = utils.utcnow().timestamp()
 
         await user.save()
         return {"success": True}

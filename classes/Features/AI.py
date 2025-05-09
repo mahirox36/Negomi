@@ -166,7 +166,7 @@ class AI(commands.Cog):
         if cooldown <= 0:
             return True
             
-        now = datetime.now().timestamp()
+        now = utils.utcnow().timestamp()
         last_msg_time = self._last_messages.get(f"{guild_id}:{user_id}", 0)
         
         if now - last_msg_time < cooldown:
@@ -185,7 +185,7 @@ class AI(commands.Cog):
             if not await self.check_cooldown(message.author.id, message.guild.id):
                 cooldown = guild_settings.get("cooldown_seconds", 5)
                 last_msg_time = self._last_messages.get(f"{message.guild.id}:{message.author.id}", 0)
-                wait_time = cooldown - (datetime.now().timestamp() - last_msg_time)
+                wait_time = cooldown - (utils.utcnow().timestamp() - last_msg_time)
                 if wait_time > 0:
                     await message.reply(
                         embed=Embed.Warning(f"Please wait {int(wait_time)} seconds before sending another message", "Cooldown"), delete_after=6
@@ -355,7 +355,7 @@ class AI(commands.Cog):
         ) / max(1, len(emotional_indicators.get("sentiment_values", [0])))
 
         context = {
-            "time_of_day": datetime.now().hour,
+            "time_of_day": utils.utcnow().hour,
             "is_direct_mention": self.client.user
             and self.client.user.mentioned_in(message),
             "message_type": "dm" if isinstance(message.channel, DMChannel) else "guild",

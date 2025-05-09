@@ -16,7 +16,6 @@ import {
 import { Line } from "react-chartjs-2";
 import type { ChartOptions } from 'chart.js';
 import PageWrapper from "../../components/PageWrapper";
-import axios from "axios";
 
 // Register ChartJS components
 ChartJS.register(
@@ -152,8 +151,8 @@ export default function StatisticsPage() {
     const fetchData = async () => {
       try {
         const [statsRes, guildsRes] = await Promise.all([
-          axios.get("/api/v1/bot/stats", { withCredentials: true }),
-          axios.get("/api/v1/guilds", { withCredentials: true })
+          fetch("/api/v1/bot/stats", { credentials: "include" }).then(res => res.json()),
+          fetch("/api/v1/guilds", { credentials: "include" }).then(res => res.json())
         ]);
         
         setStats(statsRes.data);

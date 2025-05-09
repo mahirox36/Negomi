@@ -6,6 +6,7 @@ import ollama
 from rich import print
 from json import dumps, loads
 import logging
+from nexon import utils
 logger = logging.getLogger(__name__)
 
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
@@ -92,7 +93,7 @@ class ConversationManager:
     def archive_conversation(self, user_id):
         """Archive a conversation to a dated log file."""
         if user_id in self.conversation_histories:
-            current_datetime = datetime.datetime.now()
+            current_datetime = utils.utcnow()
             date = current_datetime.strftime("%Y-%m-%d")
             timed = current_datetime.strftime("%H-%M-%S-%f")
             

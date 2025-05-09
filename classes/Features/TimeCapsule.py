@@ -28,7 +28,7 @@ class timeCapsule(commands.Cog):
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", message)
         if links:
             await ctx.send(embed=Embed.Error("You cannot send Links"))
-        now = datetime.now()
+        now = utils.utcnow()
         try:
             target_date = datetime(year, month, day)
         except ValueError:
@@ -78,7 +78,7 @@ class timeCapsule(commands.Cog):
 
     async def check_time_capsules(self):
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
-        now = datetime.now()
+        now = utils.utcnow()
         updated_data = []
 
         for capsule in feature.settings:

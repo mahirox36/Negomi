@@ -6,6 +6,7 @@ import asyncio
 import logging
 from fastapi import HTTPException
 import subprocess
+from modules.Nexon import utils
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ async def handle_process_output(
 
 def get_uptime(start_time: datetime) -> str:
     """Calculate uptime from start time"""
-    delta = datetime.now() - start_time
+    delta = utils.utcnow() - start_time
     days = delta.days
     hours = delta.seconds // 3600
     minutes = (delta.seconds // 60) % 60

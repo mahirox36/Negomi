@@ -1047,7 +1047,7 @@ class TempVoice(commands.Cog):
                 "self_deaf": after.self_deaf,
                 "self_stream": after.self_stream,
                 "self_video": after.self_video,
-                "timestamp": datetime.now().timestamp(),
+                "timestamp": utils.utcnow().timestamp(),
             }
 
             self.voice_states[guild_id][after_channel_id][member.id] = current_state
@@ -1139,7 +1139,7 @@ class TempVoice(commands.Cog):
                         "self_deaf": after.self_deaf,
                         "self_stream": after.self_stream,
                         "self_video": after.self_video,
-                        "timestamp": datetime.now().timestamp(),
+                        "timestamp": utils.utcnow().timestamp(),
                     }
                 }
 
@@ -1262,7 +1262,7 @@ class TempVoice(commands.Cog):
                             {
                                 "self_stream": state.self_stream,
                                 "self_video": state.self_video,
-                                "timestamp": datetime.now().timestamp(),
+                                "timestamp": utils.utcnow().timestamp(),
                             }
                         )
 

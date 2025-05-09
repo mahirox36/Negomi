@@ -78,7 +78,7 @@ class BirthdayModal(Modal):
             day = int(self.day.value)
             date = datetime(year, month, day)
             
-            if date > datetime.now():
+            if date > utils.utcnow():
                 return await interaction.response.send_message("Birthday cannot be in the future!", ephemeral=True)
                 
             userData = await interaction.user.get_data()

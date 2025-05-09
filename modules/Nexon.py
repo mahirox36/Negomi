@@ -41,7 +41,7 @@ from pathlib import Path
 import json
 import asyncio
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 # Every class/functions I used in nextcord
 from nexon import (
     Client, Interaction as init, Member, Interaction,

@@ -269,7 +269,7 @@ class Roles(commands.Cog):
                 "max_members": settings.get("max_members_per_role", 10),
                 "require_confirmation": settings.get("require_confirmation", True),
             },
-            "created_at": str(datetime.now()),
+            "created_at": str(utils.utcnow()),
         }
 
         await feature.set_global("MembersRoles", data)
