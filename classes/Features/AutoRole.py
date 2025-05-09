@@ -13,6 +13,7 @@ class AutoRole(commands.Cog):
                 feature_name="auto_role",
                 guild_id=guild.id,
             )
+            logger.info(f"AutoRole: {data}")
             if not data.get_setting():
                 return
             if not data.enabled:
