@@ -173,6 +173,14 @@ class DiscordBot(commands.Bot):
 
     async def cleanup(self):
         """Cleanup bot resources including IPC"""
+        
+        await self.change_presence(
+            activity=nexon.Activity(
+                type=nexon.ActivityType.watching, name="Under Maintenance"
+            ),
+            status=nexon.Status.dnd,
+        )
+        
         if self._cleanup_done.is_set():
             return
 
