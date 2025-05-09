@@ -36,9 +36,10 @@ class timeCapsule(commands.Cog):
         if target_date <= now:
             return await ctx.send(embed=Embed.Error("The date must be in the future!"))
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
-        feature.settings.append({
-            "ID":ctx.user.id,
-            "message":message,
+
+        feature.get_setting().append({
+            "ID": ctx.user.id,
+            "message": message,
             "time": target_date.isoformat()
         })
         await feature.save()
@@ -51,7 +52,7 @@ class timeCapsule(commands.Cog):
             return await ctx.send(embed=Embed.Error("You must be a user to use this command"))
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
         data = []
-        for time in feature.settings:
+        for time in feature.get_setting():
             if time["ID"] == ctx.user.id:
                 data.append(time)
         if data:
@@ -81,7 +82,7 @@ class timeCapsule(commands.Cog):
         now = utils.utcnow()
         updated_data = []
 
-        for capsule in feature.settings:
+        for capsule in feature.get_setting():
             try:
                 target_date = datetime.fromisoformat(capsule["time"])
             except ValueError:
