@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import LoadingScreen from "../components/LoadingScreen";
+import LoadingScreen from "../../components/LoadingScreen";
 import { motion } from "framer-motion";
 
 export default function TermsOfService() {

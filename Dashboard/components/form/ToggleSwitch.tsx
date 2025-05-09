@@ -1,4 +1,4 @@
-import { ThemeType, themeConfig } from '@/app/lib/theme';
+import { ThemeType, themeConfig } from '@/lib/theme';
 
 interface ToggleSwitchProps {
   checked: boolean;

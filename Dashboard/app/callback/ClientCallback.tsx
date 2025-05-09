@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useUser } from "../contexts/UserContext";
-import LoadingScreen from "../components/LoadingScreen";
+import { useUser } from "../../contexts/UserContext";
+import LoadingScreen from "../../components/LoadingScreen";
 import axios from "axios";
 import { debounce } from "lodash";
 

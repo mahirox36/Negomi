@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThemeType, themeConfig } from '@/app/lib/theme';
+import { ThemeType, themeConfig } from '@/lib/theme';
 import axios from "axios";
 
 interface Guild {

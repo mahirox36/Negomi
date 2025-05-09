@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { FaPlus, FaTrash } from "react-icons/fa";
-import { ThemeType, themeConfig } from "@/app/lib/theme";
+import { ThemeType, themeConfig } from "@/lib/theme";
 
 interface Requirement {
   type: string;

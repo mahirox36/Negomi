@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useBackendCheck } from "../hooks/useBackendCheck";
-import DashboardLayout from "../components/DashboardLayout";
-import { User, Guild } from "../types/discord";
-import { UserDataDashboard } from "../types/UserData";
-import LoadingScreen from "../components/LoadingScreen";
+import { useBackendCheck } from "../../hooks/useBackendCheck";
+import DashboardLayout from "../../components/DashboardLayout";
+import { User, Guild } from "../../types/discord";
+import { UserDataDashboard } from "../../types/UserData";
+import LoadingScreen from "../../components/LoadingScreen";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { formatNumber } from "@/lib/utils";

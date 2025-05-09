@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { UserProvider } from '@/app/contexts/UserContext';
+import { UserProvider } from '@/contexts/UserContext';
 import { LayoutProvider } from '../contexts/LayoutContext';
 import { Toaster } from 'react-hot-toast';
 

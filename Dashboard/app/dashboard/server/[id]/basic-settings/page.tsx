@@ -4,12 +4,12 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLayout } from "@/providers/LayoutProvider";
 import { useColorPickerRefs } from "@/hooks/useColorPickerRefs";
-import ColorPicker from "@/app/components/form/ColorPicker";
-import DiscordSelect from "@/app/components/form/DiscordSelect";
-import TextInput from "@/app/components/form/TextInput";
-import Textarea from "@/app/components/form/Textarea";
-import SettingsSection from "@/app/components/dashboard/SettingsSection";
-import { ToggleSwitch } from "@/app/components/form/ToggleSwitch";
+import ColorPicker from "@/components/form/ColorPicker";
+import DiscordSelect from "@/components/form/DiscordSelect";
+import TextInput from "@/components/form/TextInput";
+import Textarea from "@/components/form/Textarea";
+import SettingsSection from "@/components/dashboard/SettingsSection";
+import { ToggleSwitch } from "@/components/form/ToggleSwitch";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -132,6 +132,33 @@ export default function BasicSettings() {
       <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10">
         <div className="p-6 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            {/* Data Deletion Preference */}
+            <SettingsSection
+              title="Data Deletion Preference"
+              description="Choose whether to delete data instantly when the bot leaves the server or wait 3 days"
+              icon="fa-trash-alt"
+              iconBgColor="bg-red-500/20"
+              iconColor="text-red-300"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-white">
+                    Delete Data Instantly
+                  </h3>
+                  <p className="text-xs text-white/50">
+                    Enable to delete data immediately when the bot leaves the
+                    server. Default: Wait 3 days.
+                  </p>
+                </div>
+                <ToggleSwitch
+                  checked={settings.deleteDataInstantly || false}
+                  onChange={(value) =>
+                    handleSettingChange("deleteDataInstantly", value)
+                  }
+                />
+              </div>
+            </SettingsSection>
+
             {/* Badge Colors */}
             <SettingsSection
               title="Badge Rarity Colors"
@@ -143,71 +170,125 @@ export default function BasicSettings() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-white">Common Badge Color</h3>
-                    <p className="text-xs text-white/50">Color for common rarity badges</p>
+                    <h3 className="text-sm font-medium text-white">
+                      Common Badge Color
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      Color for common rarity badges
+                    </p>
                   </div>
                   <ColorPicker
                     color={settings.commonColor || "#ff1493"}
-                    onChange={(color) => handleSettingChange("commonColor", color)}
+                    onChange={(color) =>
+                      handleSettingChange("commonColor", color)
+                    }
                     ref={getRef("commonColor")}
                     isOpen={colorPickerOpen === "commonColor"}
-                    onToggle={() => setColorPickerOpen(colorPickerOpen === "commonColor" ? null : "commonColor")}
+                    onToggle={() =>
+                      setColorPickerOpen(
+                        colorPickerOpen === "commonColor" ? null : "commonColor"
+                      )
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-white">Uncommon Badge Color</h3>
-                    <p className="text-xs text-white/50">Color for uncommon rarity badges</p>
+                    <h3 className="text-sm font-medium text-white">
+                      Uncommon Badge Color
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      Color for uncommon rarity badges
+                    </p>
                   </div>
                   <ColorPicker
                     color={settings.uncommonColor || "#00ffb9"}
-                    onChange={(color) => handleSettingChange("uncommonColor", color)}
+                    onChange={(color) =>
+                      handleSettingChange("uncommonColor", color)
+                    }
                     ref={getRef("uncommonColor")}
                     isOpen={colorPickerOpen === "uncommonColor"}
-                    onToggle={() => setColorPickerOpen(colorPickerOpen === "uncommonColor" ? null : "uncommonColor")}
+                    onToggle={() =>
+                      setColorPickerOpen(
+                        colorPickerOpen === "uncommonColor"
+                          ? null
+                          : "uncommonColor"
+                      )
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-white">Rare Badge Color</h3>
-                    <p className="text-xs text-white/50">Color for rare rarity badges</p>
+                    <h3 className="text-sm font-medium text-white">
+                      Rare Badge Color
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      Color for rare rarity badges
+                    </p>
                   </div>
                   <ColorPicker
                     color={settings.rareColor || "#ff4500"}
-                    onChange={(color) => handleSettingChange("rareColor", color)}
+                    onChange={(color) =>
+                      handleSettingChange("rareColor", color)
+                    }
                     ref={getRef("rareColor")}
                     isOpen={colorPickerOpen === "rareColor"}
-                    onToggle={() => setColorPickerOpen(colorPickerOpen === "rareColor" ? null : "rareColor")}
+                    onToggle={() =>
+                      setColorPickerOpen(
+                        colorPickerOpen === "rareColor" ? null : "rareColor"
+                      )
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-white">Epic Badge Color</h3>
-                    <p className="text-xs text-white/50">Color for epic rarity badges</p>
+                    <h3 className="text-sm font-medium text-white">
+                      Epic Badge Color
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      Color for epic rarity badges
+                    </p>
                   </div>
                   <ColorPicker
                     color={settings.epicColor || "#32cd32"}
-                    onChange={(color) => handleSettingChange("epicColor", color)}
+                    onChange={(color) =>
+                      handleSettingChange("epicColor", color)
+                    }
                     ref={getRef("epicColor")}
                     isOpen={colorPickerOpen === "epicColor"}
-                    onToggle={() => setColorPickerOpen(colorPickerOpen === "epicColor" ? null : "epicColor")}
+                    onToggle={() =>
+                      setColorPickerOpen(
+                        colorPickerOpen === "epicColor" ? null : "epicColor"
+                      )
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-white">Legendary Badge Color</h3>
-                    <p className="text-xs text-white/50">Color for legendary rarity badges</p>
+                    <h3 className="text-sm font-medium text-white">
+                      Legendary Badge Color
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      Color for legendary rarity badges
+                    </p>
                   </div>
                   <ColorPicker
                     color={settings.legendaryColor || "#9400d3"}
-                    onChange={(color) => handleSettingChange("legendaryColor", color)}
+                    onChange={(color) =>
+                      handleSettingChange("legendaryColor", color)
+                    }
                     ref={getRef("legendaryColor")}
                     isOpen={colorPickerOpen === "legendaryColor"}
-                    onToggle={() => setColorPickerOpen(colorPickerOpen === "legendaryColor" ? null : "legendaryColor")}
+                    onToggle={() =>
+                      setColorPickerOpen(
+                        colorPickerOpen === "legendaryColor"
+                          ? null
+                          : "legendaryColor"
+                      )
+                    }
                   />
                 </div>
               </div>

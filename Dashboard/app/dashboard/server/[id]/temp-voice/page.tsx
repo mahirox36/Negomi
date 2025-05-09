@@ -2,8 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
-import DiscordSelect from "@/app/components/form/DiscordSelect";
-import SettingsSection from "@/app/components/dashboard/SettingsSection";
+import DiscordSelect from "@/components/form/DiscordSelect";
+import SettingsSection from "@/components/dashboard/SettingsSection";
 import { useLayout } from "@/providers/LayoutProvider";
 import axios from "axios";
 import toast from "react-hot-toast";

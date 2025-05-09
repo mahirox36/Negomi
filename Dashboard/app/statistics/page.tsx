@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { Line } from "react-chartjs-2";
 import type { ChartOptions } from 'chart.js';
-import PageWrapper from "../components/PageWrapper";
+import PageWrapper from "../../components/PageWrapper";
 import axios from "axios";
 
 // Register ChartJS components

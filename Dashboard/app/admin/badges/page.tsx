@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { themeConfig } from "@/app/lib/theme";
+import { themeConfig } from "@/lib/theme";
 
 interface Badge {
   id: string;

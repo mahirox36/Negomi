@@ -3,8 +3,8 @@
 import { ReactNode, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import ServerSidebar from "@/app/components/ServerSidebar";
-import AccessDenied from "@/app/components/forbidden";
+import ServerSidebar from "@/components/ServerSidebar";
+import AccessDenied from "@/components/forbidden";
 import { useLayout } from "@/providers/LayoutProvider";
 import toast from "react-hot-toast";
 

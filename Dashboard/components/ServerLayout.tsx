@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
-import PageTransition from "@/app/components/PageTransition";
-import ServerSidebar from "@/app/components/ServerSidebar";
-import AccessDenied from "@/app/components/forbidden";
+import PageTransition from "@/components/PageTransition";
+import ServerSidebar from "@/components/ServerSidebar";
+import AccessDenied from "@/components/forbidden";
 
 interface SettingsLayoutProps {
   children: ReactNode;

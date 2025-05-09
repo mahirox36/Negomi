@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { BadgeForm } from "@/app/components/badge/BadgeForm";
+import { BadgeForm } from "@/components/badge/BadgeForm";
 import { useLayout } from "@/providers/LayoutProvider";
 import toast from "react-hot-toast";
 

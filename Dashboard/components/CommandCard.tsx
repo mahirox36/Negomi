@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Command } from "../types/commands";
-import { ViewMode } from "../commands/page";
+import { ViewMode } from "../app/commands/page";
 
 interface CommandCardProps {
   command: Command;

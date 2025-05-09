@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Fuse from 'fuse.js';
-import { Command } from "../types/commands";
-import CommandCard from "../components/CommandCard";
-import PageWrapper from "../components/PageWrapper";
+import { Command } from "../../types/commands";
+import CommandCard from "../../components/CommandCard";
+import PageWrapper from "../../components/PageWrapper";
 import axios from "axios";
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
 
 export type FilterType = "all" | "admin" | "user" | "guild";
 export type ViewMode = "grid" | "list" | "compact";

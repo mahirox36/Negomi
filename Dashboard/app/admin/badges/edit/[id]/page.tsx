@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { BadgeForm } from "@/app/components/badge/BadgeForm";
+import { BadgeForm } from "@/components/badge/BadgeForm";
 import { motion } from "framer-motion";
-import { themeConfig } from "@/app/lib/theme";
+import { themeConfig } from "@/lib/theme";
 import toast from "react-hot-toast";
-import LoadingScreen from "@/app/components/LoadingScreen";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function EditBadgePage() {
   const params = useParams();

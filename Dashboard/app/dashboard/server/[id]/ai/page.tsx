@@ -3,9 +3,9 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLayout } from "@/providers/LayoutProvider";
-import DiscordSelect from "@/app/components/form/DiscordSelect";
-import {ToggleSwitch} from "@/app/components/form/ToggleSwitch";
-import SettingsSection from "@/app/components/dashboard/SettingsSection";
+import DiscordSelect from "@/components/form/DiscordSelect";
+import {ToggleSwitch} from "@/components/form/ToggleSwitch";
+import SettingsSection from "@/components/dashboard/SettingsSection";
 import axios from "axios";
 import toast from "react-hot-toast";
 

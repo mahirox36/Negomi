@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { BadgeForm } from "../../../components/badge/BadgeForm";
+import { BadgeForm } from "../../../../components/badge/BadgeForm";
 import toast from "react-hot-toast";
-import { themeConfig } from "@/app/lib/theme";
+import { themeConfig } from "@/lib/theme";
 
 export default function CreateBadgePage() {
   const router = useRouter();

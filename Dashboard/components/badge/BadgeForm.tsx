@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { BadgeRarity } from "./BadgeRarity";
 import { RequirementSection } from "./RequirementSection";
-import { ToggleSwitch } from "@/app/components/form/ToggleSwitch";
-import { ThemeType, themeConfig } from '@/app/lib/theme';
-import SettingsSection from "@/app/components/dashboard/SettingsSection";
+import { ToggleSwitch } from "@/components/form/ToggleSwitch";
+import { ThemeType, themeConfig } from '@/lib/theme';
+import SettingsSection from "@/components/dashboard/SettingsSection";
 
 interface BadgeFormData {
   name: string;
