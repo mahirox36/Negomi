@@ -13,13 +13,21 @@ class AutoRole(commands.Cog):
                 feature_name="auto_role",
                 guild_id=guild.id,
             )
-            if not data:
+            if not data.get_setting():
                 return
             if not data.enabled:
                 return
-            if member.bot and data.get_setting('botRoles') != None:
-                return await member.add_roles(guild.get_role(data.get_setting("botRoles"))) # type: ignore
-            await member.add_roles(guild.get_role(data.get_setting("userRoles"))) # type: ignore
+            if member.bot and data.get_setting('botRoles') is not None:
+                bot_role = guild.get_role(data.get_setting("botRoles"))
+                if bot_role:
+                    return await member.add_roles(bot_role)
+                else:
+                    return
+            user_role = guild.get_role(data.get_setting("userRoles"))
+            if user_role:
+                await member.add_roles(user_role)
+            else:
+                logger.info(f"User role with ID {data.get_setting('userRoles')} not found.")
         except:
             return
 
