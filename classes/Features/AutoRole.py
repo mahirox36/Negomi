@@ -18,16 +18,23 @@ class AutoRole(commands.Cog):
             if not data.enabled:
                 return
             if member.bot and data.get_setting('botRoles') is not None:
-                bot_role = guild.get_role(data.get_setting("botRoles"))
-                if bot_role:
-                    return await member.add_roles(bot_role)
+                bot_roles = guild.get_role(data.get_setting("botRoles"))
+                if bot_roles and isinstance(bot_roles, list):
+                    for bot_role in bot_roles:
+                        if bot_role not in member.roles:
+                            await member.add_roles(bot_role)
                 else:
                     return
-            user_role = guild.get_role(data.get_setting("userRoles"))
-            if user_role:
-                await member.add_roles(user_role)
+            user_roles = data.get_setting("userRoles")
+            if isinstance(user_roles, list):
+                for role_id in user_roles:
+                    user_role = guild.get_role(role_id)
+                    if user_role:
+                        await member.add_roles(user_role)
+                    else:
+                        logger.info(f"User role with ID {role_id} not found.")
             else:
-                logger.info(f"User role with ID {data.get_setting('userRoles')} not found.")
+                logger.info(f"Invalid userRoles setting: {user_roles}")
         except Exception as e:
             console.print_exception()
             logger.error(f"Error in AutoRole: {e}")
