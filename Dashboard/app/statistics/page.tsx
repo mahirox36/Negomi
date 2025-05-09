@@ -154,9 +154,24 @@ export default function StatisticsPage() {
           fetch("/api/v1/bot/stats", { credentials: "include" }).then(res => res.json()),
           fetch("/api/v1/guilds/guilds", { credentials: "include" }).then(res => res.json())
         ]);
-        
-        setStats(statsRes.data);
-        setGuilds(guildsRes.guilds);
+
+        console.log("Stats response:", statsRes);
+        console.log("Guilds response:", guildsRes);
+
+        if (statsRes) {
+          setStats(statsRes);
+        } else {
+          console.error("Stats response is missing 'data':", statsRes);
+          setError("Invalid stats response");
+        }
+
+        if (guildsRes && guildsRes.guilds) {
+          setGuilds(guildsRes.guilds);
+        } else {
+          console.error("Guilds response is missing 'guilds':", guildsRes);
+          setError("Invalid guilds response");
+        }
+
         setError(null);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -169,13 +184,28 @@ export default function StatisticsPage() {
     fetchData();
   }, []);
 
-  if (error || !stats) {
+  if (error) {
     return (
       <PageWrapper loading={false}>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-white text-xl text-center">
             <p>Error loading statistics</p>
             <p className="text-sm text-red-300 mt-2">{error}</p>
+            <p className="text-sm text-gray-400 mt-2">Please try refreshing the page or check your network connection.</p>
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (!stats) {
+    console.error("Stats object is null or undefined:", stats);
+    return (
+      <PageWrapper loading={false}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-white text-xl text-center">
+            <p>Error loading statistics</p>
+            <p className="text-sm text-red-300 mt-2">{error || "Unexpected error occurred."}</p>
           </div>
         </div>
       </PageWrapper>
