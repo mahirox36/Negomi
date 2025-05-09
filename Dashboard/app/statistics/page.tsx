@@ -152,7 +152,7 @@ export default function StatisticsPage() {
       try {
         const [statsRes, guildsRes] = await Promise.all([
           fetch("/api/v1/bot/stats", { credentials: "include" }).then(res => res.json()),
-          fetch("/api/v1/guilds", { credentials: "include" }).then(res => res.json())
+          fetch("/api/v1/guilds/guilds", { credentials: "include" }).then(res => res.json())
         ]);
         
         setStats(statsRes.data);

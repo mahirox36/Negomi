@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 router = APIRouter(tags=["guilds"])
 
 
-@router.get("/")
+@router.get("/guilds")
 async def get_guilds(request: Request):
     """Get summary of the top 10 most popular guilds by member count"""
     backend: APIServer = request.app.state.backend
