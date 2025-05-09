@@ -33,7 +33,7 @@ class timeCapsule(commands.Cog):
             target_date = datetime(year, month, day)
         except ValueError:
             return await ctx.send(embed=Embed.Error("Invalid date! Please enter a valid year, month, and day."))
-        if target_date <= now:
+        if target_date.replace(tzinfo=timezone.utc) <= now:
             return await ctx.send(embed=Embed.Error("The date must be in the future!"))
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
 
@@ -79,7 +79,7 @@ class timeCapsule(commands.Cog):
 
     async def check_time_capsules(self):
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
-        now = utils.utcnow()
+        now = utils.utcnow().replace(tzinfo=None)
         updated_data = []
 
         for capsule in feature.get_setting(default=[]):
