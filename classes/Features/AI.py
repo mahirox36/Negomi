@@ -142,7 +142,7 @@ class AI(commands.Cog):
 
     async def get_guild_settings(self, guild_id: int) -> dict:
         """Get guild-specific AI settings"""
-        feature = await Feature.get_guild_feature(
+        feature = await Feature.get_guild_feature_or_none(
             guild_id,
             "ai",
             default={
@@ -153,7 +153,13 @@ class AI(commands.Cog):
                 "cooldown_seconds": 5,  # Message cooldown
             }
         )
-        return feature.settings.get("settings", {})
+        return feature.settings.get("settings", {}) if feature else {
+                "public_channels": [],  # List of channel IDs
+                "active_threads": {},   # user_id: thread_id
+                "allowed_roles": [],    # List of role IDs
+                "allow_threads": True,  # Allow private threads
+                "cooldown_seconds": 5,  # Message cooldown
+            }
 
     async def check_cooldown(self, user_id: int, guild_id: int) -> bool:
         """Check if user is within cooldown period"""
