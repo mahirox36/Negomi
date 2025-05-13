@@ -115,7 +115,7 @@ class AI(commands.Cog):
 
         models = [
             model.model.split(":")[0]
-            for model in negomi.list().models
+            for model in (await negomi.list()).models
             if model.model is not None
         ]
         system = system.format(
@@ -135,7 +135,7 @@ class AI(commands.Cog):
         if from_ not in models:
             logger.info("Downloading llama3.2")
             await download_model(from_)
-        negomi.create(model="Negomi", from_=from_, system=system)
+        await negomi.create(model="Negomi", from_=from_, system=system)
         with open("Data/Features/AI/system.txt", "w", encoding="utf-8") as f:
             f.write(system)
         self.ready = True
@@ -272,7 +272,7 @@ class AI(commands.Cog):
             await self.adjust_personality_state(context)
 
             # Get emotionally appropriate response
-            response = self.conversation_manager.get_response(
+            response = await self.conversation_manager.get_response(
                 str(message.channel.id),
                 name,
                 content,
@@ -738,7 +738,7 @@ class AI(commands.Cog):
         await ctx.response.defer(ephemeral=True)
         message = target.content
         prompt = f"Please provide a concise summary of the following text:\n\n{message}"
-        response = generate(prompt, "llama3.2")
+        response = await generate(prompt, "llama3.2")
         if len(response) > 4096:
             split_texts = self.split_response(response)
             return await ctx.send(
@@ -760,7 +760,7 @@ class AI(commands.Cog):
     )
     async def ask(self, ctx: Interaction, message: str, ephemeral: bool = True):
         await ctx.response.defer(ephemeral=ephemeral)
-        response = generate(message, "llama3.2")
+        response = await generate(message, "llama3.2")
         if len(response) > 4096:
             split_texts = self.split_response(response)
             return await ctx.send(

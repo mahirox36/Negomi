@@ -2,6 +2,7 @@ import time
 from rich.traceback import install
 
 from nexon import BadgeManager
+from nexon.abc import GuildChannel
 from nexon.data.models import BotUser, GuildData
 from nexon.enums import Rarity
 
@@ -47,7 +48,7 @@ class DiscordBot(commands.Bot):
         
         self.setup_hook()
 
-    async def onBadgeEarned(self, user: Union['User', 'Member'], badge: nexon.Badge):
+    async def onBadgeEarned(self, user: Union['User', 'Member'], badge: nexon.Badge, channel: Optional[GuildChannel] = None) -> None:
         """Handle badge earning notifications with rich embeds and fallback mechanisms."""
         now = utils.utcnow()
 

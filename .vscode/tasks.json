@@ -4,7 +4,7 @@
     {
       "label": "Run Python App",
       "type": "shell",
-      "command": "start python main.py && PAUSE",
+      "command": "python main.py && PAUSE",
       "group": "none",
       "problemMatcher": []
     },

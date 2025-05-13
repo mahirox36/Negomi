@@ -15,7 +15,7 @@ from pathlib import Path
 from .system_template import system_template
 
 CheckerClient = ollama.Client(ip, timeout = 1)
-client = ollama.Client(ip)
+client = ollama.AsyncClient(ip)
 offline = False
 online = True
 
@@ -40,7 +40,7 @@ async def download_model(model_name: str) -> None:
     ) as progress:
         current_digest, tasks = '', {}
         
-        for status in client.pull(model_name, stream=True):
+        async for status in (await client.pull(model_name, stream=True)):
             digest = status.get('digest', '')
             
             if not digest:
@@ -181,7 +181,7 @@ class ConversationManager:
             logger.error(f"Error generating summary: {e}")
             return conversation_history
 
-    def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", 
+    async def get_response(self, channel_id: str, user: str, user_message: str, type: str = "public", 
                     guild_info: Optional[dict] = None, personality_state: Optional[dict] = None, 
                     mommy_mode: bool = False):
         """Process user message and get AI response with emotional intelligence."""
@@ -268,7 +268,7 @@ class ConversationManager:
                     # Higher extraversion = slightly higher temperature (more expressive)
                     temperature = min(1.0, 0.7 + (openness * 0.1) + (extraversion * 0.1))
                 
-                response = client.chat(
+                response = await client.chat(
                     model=self.model,
                     messages=conversation_history,
                     options={
@@ -297,20 +297,20 @@ class ConversationManager:
             logger.error(f"Error in get_response: {e}")
             return "An error occurred while processing the response."
 
-def generate(prompt, model: str="Negomi") -> str:
+async def generate(prompt, model: str="Negomi") -> str:
     try:
-        response = client.generate(model, prompt)
+        response = await client.generate(model, prompt)
         return response["response"]
     except Exception:
         return "Error: Unable to generate response - service offline"
 
-if __name__ == '__main__':
-    os.system("cls")
-    conversation_manager = ConversationManager()
-    while True:
-        text = input("--> ")
-        print("Mahiro: " + text)
-        if text.startswith("/bye"):
-            break
-        conversation_manager.get_response("test_user", "Mahiro", text)
-        print("\n")
+# if __name__ == '__main__':
+#     os.system("cls")
+#     conversation_manager = ConversationManager()
+#     while True:
+#         text = input("--> ")
+#         print("Mahiro: " + text)
+#         if text.startswith("/bye"):
+#             break
+#         conversation_manager.get_response("test_user", "Mahiro", text)
+#         print("\n")

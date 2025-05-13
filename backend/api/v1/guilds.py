@@ -810,35 +810,53 @@ async def get_available_fonts():
     }
 
 
-@router.get("/{guild_id}/welcome/animations")
-async def get_available_animations():
-    """Get list of available animation types"""
-    return {
-        "animations": [
-            {
-                "name": "Fade",
-                "value": "fade",
-                "preview_url": "https://example.com/animations/fade.gif",
-            },
-            {
-                "name": "Slide",
-                "value": "slide",
-                "preview_url": "https://example.com/animations/slide.gif",
-            },
-            {
-                "name": "Bounce",
-                "value": "bounce",
-                "preview_url": "https://example.com/animations/bounce.gif",
-            },
-            {
-                "name": "Scale",
-                "value": "scale",
-                "preview_url": "https://example.com/animations/scale.gif",
-            },
-            {
-                "name": "Rotate",
-                "value": "rotate",
-                "preview_url": "https://example.com/animations/rotate.gif",
-            },
-        ]
-    }
+# Reaction Roles
+# @router.get("/{guild_id}/reaction-roles")
+# async def get_reaction_roles(guild_id: int, request: Request):
+#     """Get all reaction roles for a guild"""
+#     backend: APIServer = request.app.state.backend
+#     try:
+#         feature = await Feature.get_guild_feature(guild_id, "reaction_role")
+#         if not feature:
+#             raise HTTPException(status_code=404, detail="Feature not found")
+
+#         reaction_roles = feature.get_setting("messages", {})
+#         return {"reaction_roles": reaction_roles}
+
+#     except Exception as e:
+#         backend.logger.error(f"Error fetching reaction roles: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to fetch reaction roles")
+# @router.post("/{guild_id}/reaction-roles")
+# async def create_reaction_role(
+#     guild_id: int, request: Request, reaction_role: ReactionRoleRequest
+# ):
+#     """Create a new reaction role"""
+#     backend: APIServer = request.app.state.backend
+#     try:
+#         feature = await Feature.get_guild_feature(guild_id, "reaction_role")
+#         if not feature:
+#             raise HTTPException(status_code=404, detail="Feature not found")
+
+#         # Validate input
+#         if not reaction_role.message_id or not reaction_role.reaction_id:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail="Message ID and Reaction ID are required",
+#             )
+
+#         # Save the reaction role
+#         await feature.set_setting(
+#             f"messages.{reaction_role.message_id}.reactions.{reaction_role.reaction_id}",
+#             {
+#                 "role_id": reaction_role.role_id,
+#                 "allow_unselect": reaction_role.allow_unselect,
+#             },
+#         )
+
+#         return JSONResponse(
+#             {"success": True, "message": "Reaction role created successfully"}
+#         )
+
+#     except Exception as e:
+#         backend.logger.error(f"Error creating reaction role: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to create reaction role")
