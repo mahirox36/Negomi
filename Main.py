@@ -47,7 +47,7 @@ class DiscordBot(commands.Bot):
         
         self.setup_hook()
 
-    async def onBadgeEarned(self, user: nexon.User, badge: nexon.Badge):
+    async def onBadgeEarned(self, user: Union['User', 'Member'], badge: nexon.Badge):
         """Handle badge earning notifications with rich embeds and fallback mechanisms."""
         now = utils.utcnow()
 

@@ -476,7 +476,13 @@ class ControlPanel(View):
             )
             return
 
-        feature = await Feature.get_guild_feature(interaction.guild.id, "temp_voice")
+        feature = await Feature.get_guild_feature_or_none(interaction.guild.id, "temp_voice")
+        if not feature:
+            await interaction.send(
+                embed=Embed.Error(f"Failed to delete the channel: Channel not found"),
+                ephemeral=True,
+            )
+            return
         data = feature.get_global("channels")
         channel_to_remove = next(
             (
@@ -1080,8 +1086,8 @@ class TempVoice(commands.Cog):
                 if not await self._update_voice_state(member, before, after):
                     return
 
-                feature = await Feature.get_guild_feature(guild.id, "temp_voice")
-                if not feature.get_setting():
+                feature = await Feature.get_guild_feature_or_none(guild.id, "temp_voice")
+                if not feature or not feature.get_setting():
                     return
                 
                 if not feature.enabled:

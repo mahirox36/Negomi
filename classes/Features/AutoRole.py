@@ -15,11 +15,10 @@ class AutoRole(commands.Cog):
                 feature_name="auto_role",
                 guild_id=guild.id,
             )
-            logger.info(f"AutoRole data retrieved: {data}")
+
 
             # Check if the feature is enabled and properly configured
             if not data.enabled or not data.get_setting():
-                logger.info("AutoRole is disabled or not configured.")
                 return
 
             # Handle bot roles if the member is a bot
@@ -30,7 +29,6 @@ class AutoRole(commands.Cog):
                     bot_roles = [role for role in bot_roles if role]  # Filter out None values
                     if bot_roles:
                         await member.add_roles(*bot_roles)
-                        logger.info(f"Assigned bot roles to {member}: {bot_roles}")
                 return
 
             # Handle user roles for non-bot members
@@ -40,7 +38,6 @@ class AutoRole(commands.Cog):
                 user_roles = [role for role in user_roles if role]  # Filter out None values
                 if user_roles:
                     await member.add_roles(*user_roles)
-                    logger.info(f"Assigned user roles to {member}: {user_roles}")
                 else:
                     logger.warning(f"No valid user roles found for {member}.")
             else:
