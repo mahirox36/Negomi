@@ -1,11 +1,13 @@
 import base64
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING, Optional
 from pydantic import BaseModel
 from nexon import ChannelType
 from nexon.channel import CategoryChannel, TextChannel
-
+from nexon.data.models import Messages
+from nexon.embeds import Embed
+from nexon.types.oauth2 import User
 from .badges import *
 from .baseModels import *
 from .layout import pages
@@ -17,6 +19,31 @@ if TYPE_CHECKING:
 
 router = APIRouter(tags=["guilds"])
 
+
+async def get_user(request: Request, guild_id: Optional[int] = None) -> User:
+    """Retrieve the authenticated user from the request and check if they are an admin of a specific guild"""
+    backend: APIServer = request.app.state.backend
+    access_token = await backend.verify_auth(request)
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    session = backend.oauth_sessions[access_token]
+    user = await session.fetch_user()
+
+    if guild_id is not None:
+        guild = await backend.fetch_guild(guild_id)
+        member = guild.get_member(int(user["id"]))
+        if not member:
+            raise HTTPException(
+                status_code=403,
+                detail="You are not a member of this server. Please join the server first.",
+            )
+        if not member.guild_permissions.administrator:
+            raise HTTPException(
+                status_code=403,
+                detail="You need administrator permissions to access this resource.",
+            )
+
+    return user
 
 @router.get("/guilds")
 async def get_guilds(request: Request):
@@ -168,8 +195,13 @@ async def is_admin(guild_id: int, request: Request):
 
 
 @router.get("/{guild_id}/channels_names")
-async def get_guild_channels_names(guild_id: int, request: Request):
+async def get_guild_channels_names(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+) -> list[str]:
     """Get channel names for a specific guild"""
+    # Ensure the user is accessed to trigger authentication
+    _ = user
+
     backend: APIServer = request.app.state.backend
     guild = await backend.fetch_guild(guild_id)
 
@@ -177,7 +209,9 @@ async def get_guild_channels_names(guild_id: int, request: Request):
 
 
 @router.get("/{guild_id}/channels")
-async def get_guild_channels(guild_id: int, request: Request):
+async def get_guild_channels(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
     """Get channels for a specific guild"""
     backend: APIServer = request.app.state.backend
     try:
@@ -210,7 +244,9 @@ async def get_guild_channels(guild_id: int, request: Request):
 
 
 @router.get("/{guild_id}/roles")
-async def get_guild_roles(guild_id: int, request: Request):
+async def get_guild_roles(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
     """Get roles for a specific guild"""
     backend: APIServer = request.app.state.backend
     try:
@@ -254,7 +290,9 @@ async def get_guild_roles(guild_id: int, request: Request):
 
 
 @router.get("/{guild_id}/categories")
-async def get_guild_categories(guild_id: int, request: Request):
+async def get_guild_categories(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
     """Get categories for a specific guild"""
     backend: APIServer = request.app.state.backend
     try:
@@ -311,16 +349,15 @@ async def filter_joined_guilds(request: Request, data: GuildsRequest):
 
 
 @router.get("/{guild_id}/settings/{page}")
-async def get_settings(guild_id: int, page: str, request: Request):
+async def get_settings(
+    guild_id: int, page: str, request: Request, user: User = Depends(get_user)
+):
     """Get saved settings for a specific page"""
     backend: APIServer = request.app.state.backend
     try:
         featureManager = await Feature.get_guild_feature(
             guild_id, page.replace("-", "_")
         )
-
-        # if not page in pages:
-        #     raise HTTPException(status_code=404, detail="Page not found")
 
         settings = featureManager.get_setting()
 
@@ -335,11 +372,13 @@ async def get_settings(guild_id: int, page: str, request: Request):
 
 
 @router.post("/{guild_id}/settings/{page}")
-async def save_settings(guild_id: int, page: str, request: Request):
+async def save_settings(
+    guild_id: int, page: str, request: Request, user: User = Depends(get_user)
+):
     """Save all settings for a specific page"""
     backend: APIServer = request.app.state.backend
     try:
-        if page.replace("-","_") == "temp_voice":
+        if page.replace("-", "_") == "temp_voice":
             settings = await request.json()
             # Handle special case for temp_voice settings
             channel_id = settings.get("categoryID")
@@ -376,7 +415,9 @@ async def save_settings(guild_id: int, page: str, request: Request):
 
 
 @router.delete("/{guild_id}/settings/{page}")
-async def reset_settings(guild_id: int, page: str):
+async def reset_settings(
+    guild_id: int, page: str, request: Request, user: User = Depends(get_user)
+):
     """Reset all settings for a specific page (does not delete the feature/class)"""
     try:
         feature = await Feature.get_guild_feature(guild_id, page.replace("-", "_"))
@@ -390,22 +431,42 @@ async def reset_settings(guild_id: int, page: str):
 
 
 @router.post("/{guild_id}/features/{class_name}")
-async def set_feature(guild_id: int, class_name: str, request: FeatureSetRequest):
+async def set_feature(
+    guild_id: int,
+    class_name: str,
+    feature_set_request: FeatureSetRequest,
+    request: Request,
+    user: User = Depends(get_user),
+):
     """Set a feature for a specific guild"""
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
-    await featureManager.set_setting(request.feature_name, request.value)
+    await featureManager.set_setting(
+        feature_set_request.feature_name, feature_set_request.value
+    )
     return {"success": True}
 
 
 @router.get("/{guild_id}/features/{class_name}")
-async def get_feature(guild_id: int, class_name: str, feature_name: str):
+async def get_feature(
+    guild_id: int,
+    class_name: str,
+    feature_name: str,
+    request: Request,
+    user: User = Depends(get_user),
+):
     """Get a feature for a specific guild"""
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     return {feature_name: await featureManager.get_setting(feature_name)}
 
 
 @router.delete("/{guild_id}/features/{class_name}")
-async def reset_feature(guild_id: int, class_name: str, feature_name: str):
+async def reset_feature(
+    guild_id: int,
+    class_name: str,
+    feature_name: str,
+    request: Request,
+    user: User = Depends(get_user),
+):
     """Reset a feature for a specific guild"""
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if await featureManager.delete_setting(feature_name):
@@ -415,7 +476,9 @@ async def reset_feature(guild_id: int, class_name: str, feature_name: str):
 
 
 @router.post("/{guild_id}/features/{class_name}/enable")
-async def enable_feature(guild_id: int, class_name: str):
+async def enable_feature(
+    guild_id: int, class_name: str, request: Request, user: User = Depends(get_user)
+):
     """Enable a class for a specific guild"""
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if not featureManager.enabled:
@@ -426,7 +489,9 @@ async def enable_feature(guild_id: int, class_name: str):
 
 
 @router.post("/{guild_id}/features/{class_name}/disable")
-async def disable_feature(guild_id: int, class_name: str):
+async def disable_feature(
+    guild_id: int, class_name: str, request: Request, user: User = Depends(get_user)
+):
     """Disable a class for a specific guild"""
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if featureManager.enabled:
@@ -437,48 +502,58 @@ async def disable_feature(guild_id: int, class_name: str):
 
 
 @router.get("/{guild_id}/features/{class_name}/status")
-async def get_feature_status(guild_id: int, class_name: str):
+async def get_feature_status(
+    guild_id: int, class_name: str, request: Request, user: User = Depends(get_user)
+):
     return {"enabled": (await Feature.get_guild_feature(guild_id, class_name)).enabled}
 
 
 @router.post("/{guild_id}/badges/create")
 async def create_badge(
-    guild_id: int, request: Request, badge_request: CreateBadgeRequest
+    guild_id: int,
+    request: Request,
+    badge_request: CreateBadgeRequest,
+    user: User = Depends(get_user),
 ):
     """Create a new badge"""
     return await createBadge(request, badge_request, guild_id)  # type: ignore
 
 
 @router.get("/{guild_id}/badges")
-async def get_badges(guild_id: int, request: Request):
+async def get_badges(guild_id: int, request: Request, user: User = Depends(get_user)):
     """Get all badges"""
     return await getBadges(request, guild_id)  # type: ignore
 
 
 @router.put("/{guild_id}/badges/{badge_id}")
 async def edit_badge(
-    guild_id: int, badge_id: int, request: Request, request_badge: CreateBadgeRequest
+    guild_id: int,
+    badge_id: int,
+    request: Request,
+    request_badge: CreateBadgeRequest,
+    user: User = Depends(get_user),
 ):
     """Edit an existing badge"""
     return await editBadge(badge_id, request, request_badge, guild_id)  # type: ignore
 
 
 @router.delete("/{guild_id}/badges/{badge_id}")
-async def delete_badge(guild_id: int, badge_id: int, request: Request):
+async def delete_badge(
+    guild_id: int, badge_id: int, request: Request, user: User = Depends(get_user)
+):
     """Delete a badge"""
     return await deleteBadge(badge_id, request, guild_id)  # type: ignore
 
 
 @router.get("/{guild_id}/badges/{badge_id}")
-async def get_badge(guild_id: int, badge_id: int, request: Request):
+async def get_badge(
+    guild_id: int, badge_id: int, request: Request, user: User = Depends(get_user)
+):
     """Get detailed information about a specific badge"""
     return await getBadge(badge_id, request, guild_id)  # type: ignore
 
 
-
-async def create_temp_voice_channel(
-    guild_id: int, request: Request, channel_id: str
-):
+async def create_temp_voice_channel(guild_id: int, request: Request, channel_id: str):
     """Create a temporary voice channel category setup"""
     backend: APIServer = request.app.state.backend
     try:
@@ -551,7 +626,7 @@ async def create_temp_voice_channel(
             name="➕ Create Voice Channel",
             category=category,
             reason="Temporary voice channel system setup",
-            overwrites=overwrites
+            overwrites=overwrites,
         )
 
         # Save settings
@@ -575,7 +650,9 @@ async def create_temp_voice_channel(
 
 
 @router.get("/{guild_id}/temp-voice")
-async def get_temp_voice_channel(guild_id: int, request: Request):
+async def get_temp_voice_channel(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
     """Get the temporary voice channel"""
     # backend: APIServer = request.app.state.backend
     feature = await Feature.get_guild_feature(guild_id, "temp_voice")
@@ -600,7 +677,9 @@ class WelcomePreviewResponse(BaseModel):
 
 
 @router.get("/{guild_id}/welcome/settings", response_model=WelcomeConfig)
-async def get_welcome_settings(request: Request, guild_id: int):
+async def get_welcome_settings(
+    request: Request, guild_id: int, user: User = Depends(get_user)
+):
     """Get welcome settings for a guild"""
     backend: APIServer = request.app.state.backend
     try:
@@ -634,7 +713,10 @@ async def get_welcome_settings(request: Request, guild_id: int):
 
 @router.post("/{guild_id}/welcome/settings")
 async def save_welcome_settings(
-    request: Request, guild_id: int, settings: WelcomeConfig
+    request: Request,
+    guild_id: int,
+    settings: WelcomeConfig,
+    user: User = Depends(get_user),
 ):
     """Save welcome settings for a guild"""
     backend: APIServer = request.app.state.backend
@@ -687,7 +769,9 @@ async def save_welcome_settings(
 
 
 @router.get("/{guild_id}/welcome/preview", response_model=WelcomePreviewResponse)
-async def get_welcome_preview(request: Request, guild_id: int):
+async def get_welcome_preview(
+    request: Request, guild_id: int, user: User = Depends(get_user)
+):
     """Generate a welcome message preview"""
     backend: APIServer = request.app.state.backend
     try:
@@ -728,7 +812,9 @@ async def get_welcome_preview(request: Request, guild_id: int):
 
 
 @router.post("/{guild_id}/welcome/test")
-async def test_welcome_message(guild_id: int, request: Request):
+async def test_welcome_message(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
     """Send a test welcome message"""
     backend: APIServer = request.app.state.backend
     try:
@@ -860,3 +946,249 @@ async def get_available_fonts():
 #     except Exception as e:
 #         backend.logger.error(f"Error creating reaction role: {str(e)}")
 #         raise HTTPException(status_code=500, detail="Failed to create reaction role")
+
+
+# Message Manager
+@router.post("/{guild_id}/messages/create")
+async def create_message(
+    guild_id: int,
+    request: Request,
+    message_request: MessageRequest,
+    user: User = Depends(get_user),
+):
+    """Create a new message in a specific channel"""
+    backend: APIServer = request.app.state.backend
+    try:
+        # Verify user has manage channel permissions
+        access_token = await backend.verify_auth(request)
+        if access_token is None:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        session = backend.oauth_sessions[access_token]
+        user = await session.fetch_user()
+        guild = await backend.fetch_guild(guild_id)
+        member = guild.get_member(int(user["id"]))
+
+        if not member:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this server"
+            )
+
+        messages = await Messages.create_message(
+            name=message_request.name,
+            user_id=int(user["id"]),
+            guild_id=guild_id,
+            channel_id=int(message_request.channel_id),
+            content=message_request.content,
+            embeds=message_request.embeds,
+        )
+
+        # Validate channel ID
+        channel = guild.get_channel(int(message_request.channel_id))
+        if not channel or not isinstance(channel, TextChannel):
+            raise HTTPException(status_code=404, detail="Channel not found")
+
+        return JSONResponse(
+            {"success": True, "message": "Message created successfully"}
+        )
+
+    except Exception as e:
+        backend.logger.error(f"Error creating message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create message")
+
+
+@router.get("/{guild_id}/messages")
+async def get_messages(guild_id: int, request: Request, user: User = Depends(get_user)):
+    """Get all messages for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    try:
+        messages = await Messages.get_messages_by_guild(guild_id)
+        return [message.to_dict() for message in messages]
+
+    except Exception as e:
+        backend.logger.error(f"Error fetching messages: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch messages")
+
+
+@router.delete("/{guild_id}/messages/{id}")
+async def delete_message(
+    guild_id: int, id: int, request: Request, user: User = Depends(get_user)
+):
+    """Delete a message by ID"""
+    backend: APIServer = request.app.state.backend
+    try:
+        message = await Messages.get_or_none(id=id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        if message.is_sent:
+            guild = await backend.fetch_guild(guild_id)
+            channel = guild.get_channel(int(message.channel_id))
+            if not channel or not isinstance(channel, TextChannel):
+                try:
+                    channel = await guild.fetch_channel(int(message.channel_id))
+                except:
+                    raise HTTPException(status_code=404, detail="Channel not found")
+            # Check if the bot has permission to delete messages
+            permissions = channel.permissions_for(channel.guild.me)
+            if not permissions.manage_messages:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Bot lacks permission to delete messages in this channel",
+                )
+            if not isinstance(channel, TextChannel):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Selected channel must be a text channel",
+                )
+            # Delete the message
+            try:
+                messageDiscord = await channel.fetch_message(message.message_id)
+                await messageDiscord.delete()
+            except nexon.NotFound:
+                pass
+            except Exception as e:
+                backend.logger.error(f"Error deleting message: {str(e)}")
+                raise HTTPException(status_code=500, detail="Failed to delete message")
+        await message.delete()
+
+        return JSONResponse(
+            {"success": True, "message": "Message deleted successfully"}
+        )
+    except Exception as e:
+        backend.logger.error(f"Error deleting message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete message")
+
+
+@router.get("/{guild_id}/messages/{id}")
+async def get_message(
+    guild_id: int, id: int, request: Request, user: User = Depends(get_user)
+):
+    """Get a message by ID"""
+    backend: APIServer = request.app.state.backend
+    try:
+        message = await Messages.get_or_none(id=id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        return message.to_dict()
+
+    except Exception as e:
+        backend.logger.error(f"Error fetching message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch message")
+
+
+@router.put("/{guild_id}/messages/{id}")
+async def update_message(
+    guild_id: int,
+    id: int,
+    request: Request,
+    message_request: MessageRequest,
+    user: User = Depends(get_user),
+):
+    """Update a message by ID"""
+    backend: APIServer = request.app.state.backend
+    try:
+        message = await Messages.get_or_none(id=id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        # Update the message content and embeds
+        message.content = message_request.content
+        message.embeds = message_request.embeds
+        await message.save()
+
+        if message.is_sent:
+            guild = await backend.fetch_guild(guild_id)
+            channel = guild.get_channel(int(message.channel_id))
+            if not channel or not isinstance(channel, TextChannel):
+                try:
+                    channel = await guild.fetch_channel(int(message.channel_id))
+                except:
+                    raise HTTPException(status_code=404, detail="Channel not found")
+            # Check if the bot has permission to edit messages
+            permissions = channel.permissions_for(channel.guild.me)
+            if not permissions.manage_messages:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Bot lacks permission to edit messages in this channel",
+                )
+            # Edit the message
+            if not isinstance(channel, TextChannel):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Selected channel must be a text channel",
+                )
+            messageDiscord = await channel.fetch_message(message.message_id)
+            await messageDiscord.edit(
+                content=message.content.format(
+                    server=guild.name, channel=channel.mention
+                ),
+                embeds=[
+                    Embed.from_dict(
+                        {**embed, "color": int(embed["color"].lstrip("#"), 16)}
+                        if "color" in embed and isinstance(embed["color"], str)
+                        else embed
+                    )
+                    for embed in (message.embeds or [])
+                ],
+            )
+
+        return JSONResponse(
+            {"success": True, "message": "Message updated successfully"}
+        )
+    except Exception as e:
+        backend.logger.error(f"Error updating message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update message")
+
+
+@router.post("/{guild_id}/messages/{id}/send")
+async def send_message(
+    guild_id: int, id: int, request: Request, user: User = Depends(get_user)
+):
+    """Send a message by ID"""
+    backend: APIServer = request.app.state.backend
+    try:
+        message = await Messages.get_or_none(id=id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        if message.is_sent:
+            raise HTTPException(status_code=400, detail="Message already sent")
+
+        guild = await backend.fetch_guild(int(guild_id))
+        channel = guild.get_channel(int(message.channel_id))
+        if not channel or not isinstance(channel, TextChannel):
+            raise HTTPException(status_code=404, detail="Channel not found")
+
+        # Check if the bot has permission to send messages
+        permissions = channel.permissions_for(channel.guild.me)
+        if not permissions.send_messages:
+            raise HTTPException(
+                status_code=403,
+                detail="Bot lacks permission to send messages in this channel",
+            )
+
+        # Send the message
+        message_id = await channel.send(
+            message.content.format(server=guild.name, channel=channel.mention),
+            embeds=[
+                Embed.from_dict(
+                    {**embed, "color": int(embed["color"].lstrip("#"), 16)}
+                    if "color" in embed and isinstance(embed["color"], str)
+                    else embed
+                )
+                for embed in message.embeds
+            ],
+        )
+
+        message.message_id = message_id.id
+        await message.save()
+
+        return JSONResponse({"success": True, "message": "Message sent successfully"})
+    except Exception as e:
+        backend.logger.error(
+            f"Error sending message with ID {id} in guild {guild_id}: {str(e)}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Failed to send message")
