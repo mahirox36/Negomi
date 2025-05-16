@@ -73,13 +73,7 @@ class WelcomeConfigManager:
                         "width": 2,
                         "enabled": False,
                     }
-                ],
-                "animations": {
-                    "enabled": False,
-                    "type": "fade",
-                    "duration": 2,
-                    "frames": 30,
-                },
+                ]
             },
         }
 
@@ -88,7 +82,12 @@ class WelcomeConfigManager:
         if guild_id in self.welcome_cache:
             return self.welcome_cache[guild_id]
 
-        feature = await Feature.get_guild_feature(guild_id, "Welcome")
+        feature = await Feature.get_guild_feature_or_none(guild_id, "Welcome")
+        if feature is None:
+            defaults = self.get_default_settings()
+            self.welcome_cache[guild_id] = defaults
+            return defaults
+
         config = feature.get_setting("welcome_config")
         if not config:
             defaults = self.get_default_settings()
@@ -170,15 +169,21 @@ class WelcomeConfigManager:
         # Create a deep copy to avoid modifying the original
         transformed_config = copy.deepcopy(config)
 
-        # Define the base canvas dimensions for the generated image
-        CANVAS_WIDTH = 800
-        CANVAS_HEIGHT = 400
+        # Dynamically set canvas size based on background image size
+        if "background_url" in transformed_config["image_settings"]:
+            background_url = transformed_config["image_settings"]["background_url"]
+            # Assume a function fetch_image_size(url) exists to get image dimensions
+            try:
+                CANVAS_WIDTH, CANVAS_HEIGHT = await self.fetch_image_size(background_url)
+            except Exception as e:
+                logger.error(f"Failed to fetch background image size: {e}")
+                CANVAS_WIDTH, CANVAS_HEIGHT = 800, 400  # Fallback to default size
 
-        # Convert avatar position from relative (0-1) to absolute pixels
+        # Ensure all settings are applied
         if "image_settings" in transformed_config:
             img_settings = transformed_config["image_settings"]
 
-            # Avatar position (convert from relative to absolute)
+            # Convert avatar position from relative to absolute pixels
             if "avatar_position" in img_settings:
                 rel_pos = img_settings["avatar_position"]
                 if (
@@ -186,14 +191,13 @@ class WelcomeConfigManager:
                     and len(rel_pos) == 2
                     and all(isinstance(p, (int, float)) for p in rel_pos)
                 ):
-                    # Check if values are relative (between 0-1) or already absolute
                     if all(0 <= p <= 1 for p in rel_pos):
                         img_settings["avatar_position"] = [
                             int(rel_pos[0] * CANVAS_WIDTH),
                             int(rel_pos[1] * CANVAS_HEIGHT),
                         ]
 
-            # Text elements
+            # Convert text elements
             if "text_elements" in img_settings:
                 for element in img_settings["text_elements"]:
                     if "position" in element:
@@ -203,17 +207,15 @@ class WelcomeConfigManager:
                             and len(rel_pos) == 2
                             and all(isinstance(p, (int, float)) for p in rel_pos)
                         ):
-                            # Check if values are relative (between 0-1) or already absolute
                             if all(0 <= p <= 1 for p in rel_pos):
                                 element["position"] = [
                                     int(rel_pos[0] * CANVAS_WIDTH),
                                     int(rel_pos[1] * CANVAS_HEIGHT),
                                 ]
 
-            # Custom elements (rectangles, etc.)
+            # Convert custom elements
             if "custom_elements" in img_settings:
                 for element in img_settings["custom_elements"]:
-                    # Convert position
                     if "position" in element:
                         rel_pos = element["position"]
                         if (
@@ -227,7 +229,6 @@ class WelcomeConfigManager:
                                     int(rel_pos[1] * CANVAS_HEIGHT),
                                 ]
 
-                    # Convert size
                     if "size" in element:
                         rel_size = element["size"]
                         if (
@@ -242,6 +243,25 @@ class WelcomeConfigManager:
                                 ]
 
         return transformed_config
+
+    async def fetch_image_size(self, url: str) -> Tuple[int, int]:
+        """Fetch the dimensions of an image from a URL."""
+        import aiohttp
+        from PIL import Image
+        import io
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        image_data = await response.read()
+                        with Image.open(io.BytesIO(image_data)) as img:
+                            return img.size
+        except Exception as e:
+            logger.error(f"Error fetching image size from {url}: {e}")
+
+        # Fallback to default size if fetching fails
+        return 800, 400
 
     async def validate_config(self, config: dict) -> Tuple[bool, str]:
         """Validate welcome configuration"""

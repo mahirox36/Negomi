@@ -55,85 +55,9 @@ class Welcome(commands.Cog):
                 async with channel.typing():
                     await self.send_welcome_message(member, channel, config)
 
-            # Update member cache in the database
-            feature = await Feature.get_guild_feature(member.guild.id, "Welcome")
-            members = feature.get_setting("members", [])
-            members.append(member.id)
-            await feature.set_setting("members", list(set(members)))
-
         except Exception as e:
             logger.error(f"Welcome error in {member.guild.id} for {member.id}: {e}")
 
-    @commands.Cog.listener()
-    async def on_member_remove(self, member: Member):
-        """Track member leaves with optimized caching."""
-        try:
-            feature = await Feature.get_guild_feature(member.guild.id, "Welcome")
-            members = feature.get_setting("members", [])
-            if member.id in members:
-                members.remove(member.id)
-                await feature.set_setting("members", members)
-
-        except Exception as e:
-            logger.error(f"Member remove error in {member.guild.id}: {e}")
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """Process missed welcomes with smart batching and rate limiting."""
-        try:
-            # Get active welcome guilds
-            feature = await Feature.get_global_feature("Welcome")
-            active_guilds = set(feature.get_global("guilds", []))
-            if not active_guilds:
-                return
-
-            for guild_id in active_guilds:
-                try:
-                    # Get guild and config
-                    guild = self.client.get_guild(guild_id)
-                    config = await self.config_manager.get_welcome_config(guild_id)
-                    if not guild or not config or not config.get("enabled"):
-                        continue
-
-                    # Validate channel
-                    channel_id = config.get("channel_id")
-                    if not isinstance(channel_id, int):
-                        continue
-                    channel = guild.get_channel(channel_id)
-                    if not channel or not isinstance(channel, TextChannel):
-                        continue
-
-                    # Process new members in batches
-                    feature = await Feature.get_guild_feature(guild_id, "Welcome")
-                    old_members = set(feature.get_setting("members", []))
-                    current_members = {m.id for m in guild.members}
-
-                    new_members = current_members - old_members
-                    if new_members:
-                        # Process in smaller batches to avoid rate limits
-                        for batch in [
-                            list(new_members)[i : i + 5]
-                            for i in range(0, len(new_members), 5)
-                        ]:
-                            for member_id in batch:
-                                member = guild.get_member(member_id)
-                                if member and not member.bot:
-                                    await self.send_welcome_message(
-                                        member, channel, config
-                                    )
-                                    await asyncio.sleep(1.5)  # Rate limit protection
-
-                            await asyncio.sleep(5)  # Batch cooldown
-
-                    # Update member cache
-                    await feature.set_setting("members", list(current_members))
-
-                except Exception as e:
-                    logger.error(f"Welcome ready error in guild {guild_id}: {e}")
-                    continue
-
-        except Exception as e:
-            logger.error(f"Welcome ready error: {e}")
 
     async def send_welcome_message(
         self,
