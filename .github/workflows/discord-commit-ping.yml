@@ -1,0 +1,33 @@
+name: Discord Commit Notifier
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          COMMITS=$(git log -1 --pretty=format:"%s by %an")
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          PAYLOAD="{
+            \"embeds\": [{
+              \"title\": \"📦 New Commit Pushed!\",
+              \"description\": \"[\`$(echo "$COMMITS")\`]($COMMIT_URL)\",
+              \"color\": 5814783,
+              \"footer\": {
+                \"text\": \"Branch: ${{ github.ref_name }}\"
+              },
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }"
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" $DISCORD_WEBHOOK
