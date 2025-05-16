@@ -476,7 +476,9 @@ class ControlPanel(View):
             )
             return
 
-        feature = await Feature.get_guild_feature_or_none(interaction.guild.id, "temp_voice")
+        feature = await Feature.get_guild_feature_or_none(
+            interaction.guild.id, "temp_voice"
+        )
         if not feature:
             await interaction.send(
                 embed=Embed.Error(f"Failed to delete the channel: Channel not found"),
@@ -1086,10 +1088,12 @@ class TempVoice(commands.Cog):
                 if not await self._update_voice_state(member, before, after):
                     return
 
-                feature = await Feature.get_guild_feature_or_none(guild.id, "temp_voice")
+                feature = await Feature.get_guild_feature_or_none(
+                    guild.id, "temp_voice"
+                )
                 if not feature or not feature.get_setting():
                     return
-                
+
                 if not feature.enabled:
                     return
 
@@ -1288,7 +1292,8 @@ class TempVoice(commands.Cog):
                 await channel.send(
                     embed=Embed.Warning(
                         "Only the Owner can change the settings of this channel, "
-                        "even if they leave. Screen sharing and video are enabled.",
+                        "even if they leave. Screen sharing and video are enabled.\n"
+                        f"To view the voice panel, use {self.control_panel.get_mention()}",
                         title="Channel Information",
                         author=author,
                     )
@@ -1297,7 +1302,8 @@ class TempVoice(commands.Cog):
                 await channel.send(
                     embed=Embed.Warning(
                         "Only the Owner can change the settings of this channel, "
-                        "even if they leave. Screen sharing and video are enabled.",
+                        "even if they leave. Screen sharing and video are enabled.\n"
+                        f"To view the voice panel, use {self.control_panel.get_mention()}",
                         title="Channel Information",
                     )
                 )

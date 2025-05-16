@@ -30,7 +30,7 @@ class Backup(commands.Cog):
     async def backup(self, ctx:init):
         pass
 
-    @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels")
+    @backup.subcommand(name="export", description="Export server configuration including roles, categories, and channels", cooldown=15)
     @cooldown(15)
     async def export(self, ctx: init, encrypt: bool = False, encryption_key: Optional[str] = None, include_assets: bool = False, creator_only: bool = False):
         await ctx.response.defer(ephemeral=False)
@@ -200,7 +200,7 @@ class Backup(commands.Cog):
             }
         return overwrites_data
 
-    @backup.subcommand(name="import", description="Import server configuration from a backup file")
+    @backup.subcommand(name="import", description="Import server configuration from a backup file", cooldown=15)
     async def imported(self, ctx: init, file: Attachment, encryption_key: Optional[str] = None):
         if not ctx.guild or not ctx.user or not ctx.channel:
             await ctx.send(embed=Embed.Error("This command can only be used in a server.", "Invalid Command"))

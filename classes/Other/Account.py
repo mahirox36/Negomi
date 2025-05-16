@@ -112,13 +112,6 @@ class UserInfoPanel(View):
         modal = BirthdayModal()
         await interaction.response.send_modal(modal)
 
-    @button(label="Request Data", style=ButtonStyle.green)
-    async def request_data(self, button: Button, interaction: Interaction):
-        # data = json.dumps(self.userData.user_data.to_dict(), indent=2)
-        # file = File(io.StringIO(data), filename=f"user_data_{self.user.id}.json")
-        # await interaction.response.send_message("Here's your data:", file=file, ephemeral=True)
-        await interaction.response.send_message("For now the Request Data is Down", ephemeral=True)
-
     @button(label="Delete Data", style=ButtonStyle.red)
     async def delete_data(self, button: Button, interaction: Interaction):
         embed = Embed(title="⚠️ Confirm Data Deletion", color=colors.Error.value)

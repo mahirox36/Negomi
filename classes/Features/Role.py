@@ -100,6 +100,11 @@ class Roles(commands.Cog):
             "Turquoise": Color("#40E0D0"),
             "Indigo": Color("#4B0082"),
             "Violet": Color("#EE82EE"),
+            "Khaki": Color("#F0E68C"),
+            "Lavender": Color("#E6E6FA"),
+            "Peach": Color("#FFDAB9"),
+            "Plum": Color("#DDA0DD"),
+            "Slate": Color("#708090"),
         }
 
     @slash_command(name="role")
@@ -119,7 +124,8 @@ class Roles(commands.Cog):
         user_roles = [r for r in data.values() if r.get("owner_id") == str(ctx.user.id)]
         return data, user_roles, max_roles
 
-    @role.subcommand(name="create", description="Create a custom role")
+    @role.subcommand(name="create", description="Create a custom role", cooldown=60)
+    @cooldown(60)
     async def create_role(
         self,
         ctx: Interaction,
@@ -276,7 +282,8 @@ class Roles(commands.Cog):
 
         await ctx.send(embed=Embed.Info(f"Created role: {name}"), ephemeral=True)
 
-    @role.subcommand(name="edit", description="Edit one of your custom roles")
+    @role.subcommand(name="edit", description="Edit one of your custom roles", cooldown=60)
+    @cooldown(60)
     async def role_edit(
         self,
         ctx: Interaction,
@@ -394,7 +401,8 @@ class Roles(commands.Cog):
         await role.edit(**updates)
         await ctx.send(embed=Embed.Info("Role updated successfully"), ephemeral=True)
 
-    @role.subcommand(name="add", description="Add someone to your custom role")
+    @role.subcommand(name="add", description="Add someone to your custom role", cooldown=10)
+    @cooldown(10)
     async def role_add(
         self,
         ctx: Interaction,
@@ -486,7 +494,8 @@ class Roles(commands.Cog):
                 ephemeral=True,
             )
 
-    @role.subcommand(name="remove", description="Remove someone from your custom role")
+    @role.subcommand(name="remove", description="Remove someone from your custom role", cooldown=10)
+    @cooldown(10)
     async def role_remove(
         self,
         ctx: Interaction,
@@ -545,7 +554,8 @@ class Roles(commands.Cog):
             ephemeral=True,
         )
 
-    @role.subcommand(name="delete", description="Delete one of your custom roles")
+    @role.subcommand(name="delete", description="Delete one of your custom roles", cooldown=60)
+    @cooldown(60)
     async def role_delete(
         self,
         ctx: Interaction,

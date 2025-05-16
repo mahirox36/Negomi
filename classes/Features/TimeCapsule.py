@@ -20,7 +20,8 @@ class timeCapsule(commands.Cog):
     async def capsule(self, ctx: init):
         pass
     
-    @capsule.subcommand("create", "Create a new Time Capsule, when the time comes it will be sent in your DM")
+    @capsule.subcommand("create", "Create a new Time Capsule, when the time comes it will be sent in your DM", cooldown=120)
+    @cooldown(120)
     async def create(self, ctx: init, message:str, year: int, month: int, day: int):
         await ctx.response.defer(ephemeral=True)
         if not ctx.user:
@@ -45,7 +46,8 @@ class timeCapsule(commands.Cog):
         await feature.save()
         await ctx.send(embed=Embed.Info(title="Saved",description="Your Time Capsule saved"))
     
-    @capsule.subcommand("list", "List of your time Capsules")
+    @capsule.subcommand("list", "List of your time Capsules", cooldown=5)
+    @cooldown(5)
     async def listTime(self, ctx: init):
         await ctx.response.defer(ephemeral=True)
         if not ctx.user:
