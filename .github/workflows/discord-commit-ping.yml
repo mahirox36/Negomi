@@ -23,7 +23,7 @@ jobs:
             \"embeds\": [{
               \"title\": \"📦 New Commit Pushed!\",
               \"description\": \"[\`$(echo "$COMMITS")\`]($COMMIT_URL)\",
-              \"color\": 5814783,
+              \"color\": 16738740,
               \"footer\": {
                 \"text\": \"Branch: ${{ github.ref_name }}\"
               },
