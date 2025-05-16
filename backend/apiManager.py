@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -24,7 +24,6 @@ from nexon.data.models import UserBadge
 from .features.cache import CacheManager
 from .features.storage import StorageManager
 from .tasks import start_tasks
-
 
 
 class APIConfig:
@@ -112,7 +111,8 @@ class APIServer:
 
         # Remove old timestamps
         self.rate_limit_store[ip] = [
-            ts for ts in self.rate_limit_store[ip]
+            ts
+            for ts in self.rate_limit_store[ip]
             if now - ts <= self.config.rate_limit_window
         ]
 
@@ -134,13 +134,13 @@ class APIServer:
 
     def _setup_middleware(self) -> None:
         """Setup CORS and other middleware"""
+
         @self.app.middleware("http")
         async def rate_limit_middleware(request: Request, call_next):
             client_ip = request.client.host if request.client else "unknown"
             if not await self._rate_limit_check(client_ip):
                 return JSONResponse(
-                    status_code=429,
-                    content={"detail": "Too many requests"}
+                    status_code=429, content={"detail": "Too many requests"}
                 )
             return await call_next(request)
 
@@ -169,7 +169,7 @@ class APIServer:
             port=self.config.port,
             log_config=None,
             loop="asyncio",
-            reload=debug
+            reload=debug,
         )
         self._server = uvicorn.Server(config)
         try:
@@ -226,25 +226,30 @@ class APIServer:
         """Get all bot commands with metadata"""
         commands = []
         for command in self.client.get_all_application_commands():
-            if command.integration_types:
+            try:
+                if hasattr(command, "children") and command.children: # type: ignore
+                    self._process_subcommands(command, commands)  # type: ignore
+                    continue
                 guild_installed = (
                     IntegrationType.guild_install in command.integration_types
+                    if command.integration_types
+                    else True
                 )
                 user_installed = (
                     IntegrationType.user_install in command.integration_types
+                    if command.integration_types
+                    else False
                 )
-            else:
-                guild_installed = True
-                user_installed = False
-            try:
-                base_data = {
-                    "name": command.name,
+                if command.parent_cog and len(command.parent_cog.application_commands) == 1:
+                    category = "Other"
+                elif command.parent_cog:
+                    category = command.parent_cog.__class__.__name__
+                else:
+                    category = "No Category"
+                command_data = {
+                    "name": command.qualified_name,
                     "description": command.description or "",
-                    "category": (
-                        command.parent_cog.__class__.__name__
-                        if command.parent_cog
-                        else "No Category"
-                    ),
+                    "category": category,
                     "admin_only": (
                         getattr(command, "default_member_permissions", None) is not None
                         and command.default_member_permissions is not None
@@ -255,23 +260,15 @@ class APIServer:
                     "examples": getattr(command, "examples", []),
                     "guild_installed": guild_installed,
                     "user_installed": user_installed,
+                    "usage": f"/{command.qualified_name}",
+                    "type": self._get_type(command),
                 }
-
-                if hasattr(command, "children"):
-                    self._process_subcommands(command, commands, base_data)
-                else:
-                    options = self._get_command_options(command)
-                    command_data = {
-                        **base_data,
-                        "usage": f"/{command.name} "
-                        + " ".join(f"[{opt}]" for opt in options),
-                        "type": self._get_type(command),
-                        "usage": self._get_usage(command, command.qualified_name),
-                    }
-                    commands.append(command_data)
+                commands.append(command_data)
 
             except Exception as e:
-                self.logger.error(f"Error processing command {command.name}: {str(e)}")
+                self.logger.error(
+                    f"Error processing command {command.qualified_name}: {str(e)}"
+                )
 
         return commands
 
@@ -290,25 +287,59 @@ class APIServer:
 
     def _process_subcommands(
         self,
-        command: Any,
+        Main_command: Union[SlashApplicationCommand, SlashApplicationSubcommand],
         commands_list: List[Dict[str, Any]],
-        base_data: Dict[str, Any],
-        parent_name: str = "",
+        parent_command: Optional[SlashApplicationCommand] = None,
     ) -> None:
         """Process subcommands recursively"""
-        for child_name, child in command.children.items():
-            current_name = f"{parent_name} {child_name}" if parent_name else child_name
-            full_command_name = f"{command.qualified_name} {current_name}"
 
-            if hasattr(child, "children") and child.children:
-                self._process_subcommands(child, commands_list, base_data, current_name)
+        for _, child in Main_command.children.items():
+            if child.children:
+                if isinstance(Main_command, SlashApplicationCommand):
+                    # If the child is a subcommand group, process its children
+                    self._process_subcommands(
+                        child, commands_list, Main_command
+                    )
+                else:
+                    # If the child is a subcommand, process its children
+                    self._process_subcommands(
+                        child, commands_list
+                    )
             else:
-
+                parent_cmd: SlashApplicationCommand = parent_command if parent_command else Main_command # type: ignore
+                if not parent_cmd.integration_types:
+                    guild_installed = True
+                    user_installed = False
+                else:
+                    guild_installed = (
+                        IntegrationType.guild_install in parent_cmd.integration_types
+                        if parent_cmd.integration_types
+                        else True
+                    )
+                    user_installed = (
+                        IntegrationType.user_install in parent_cmd.integration_types
+                        if parent_cmd.integration_types
+                        else False
+                    )
                 command_data = {
-                    **base_data,
-                    "name": full_command_name,
-                    "usage": self._get_usage(child, full_command_name),
-                    "description": child.description,
+                    "name": child.qualified_name,
+                    "description": child.description or "",
+                    "category": (
+                        parent_cmd.parent_cog.__class__.__name__
+                        if parent_cmd.parent_cog
+                        else "No Category"
+                    ),
+                    "admin_only": (
+                        getattr(parent_cmd, "default_member_permissions", None) is not None
+                        and parent_cmd.default_member_permissions is not None
+                    ),
+                    "guild_only": getattr(child, "guild_only", False),
+                    "permissions": [],
+                    "cooldown": getattr(child, "cooldown", None),
+                    "examples": getattr(child, "examples", []),
+                    "guild_installed": guild_installed,
+                    "user_installed": user_installed,
+                    "usage": f"/{child.qualified_name}",
                     "type": self._get_type(child),
                 }
                 commands_list.append(command_data)

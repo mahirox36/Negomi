@@ -226,6 +226,11 @@ async def get_server_sidebar():
                 "link": "basic-settings",
                 "icon": "fa-solid fa-cog",
             },
+            {
+                "name": "Messages",
+                "link": "messages",
+                "icon": "fa-solid fa-comment",
+            }
         ],
         "Features": [
             {"name": "AI", "link": "ai", "icon": "fa-solid fa-robot"},
