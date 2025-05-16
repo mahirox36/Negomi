@@ -32,6 +32,7 @@ export default function ServerLayoutClient({
   const pagesWithoutReset = [
     "/dashboard/server/[id]/overview",
     "/dashboard/server/[id]/badges",
+    "/dashboard/server/[id]/messages",
   ];
 
   const showResetButton = !pagesWithoutReset.some((path) =>
@@ -86,7 +87,7 @@ export default function ServerLayoutClient({
                 transition={{ duration: 0.2 }}
                 className="p-8"
               >
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-5xl mx-auto">
                   {children}
                 </div>
               </motion.div>

@@ -1,22 +1,24 @@
 "use client";
 
-import { ReactNode } from 'react';
-import { useUser } from '../contexts/UserContext';
-import LoadingScreen from './LoadingScreen';
-import Footer from './Footer';
+import { ReactNode } from "react";
+import { useUser } from "../contexts/UserContext";
+import LoadingScreen from "./LoadingScreen";
+import Footer from "./Footer";
 
 interface PageWrapperProps {
   children: ReactNode;
   requireAuth?: boolean;
   loading?: boolean;
   loadingMessage?: string;
+  footer?: boolean;
 }
 
-export default function PageWrapper({ 
-  children, 
+export default function PageWrapper({
+  children,
   requireAuth = false,
   loading = false,
-  loadingMessage
+  loadingMessage,
+  footer = true,
 }: PageWrapperProps) {
   const { user, isLoading } = useUser();
 
@@ -25,16 +27,14 @@ export default function PageWrapper({
   }
 
   if (requireAuth && !user) {
-    window.location.href = '/';
+    window.location.href = "/";
     return <LoadingScreen message="Redirecting..." />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <main className="pt-16">
-        {children}
-      </main>
-      <Footer />
+      <main className="pt-16">{children}</main>
+      {footer && <Footer />}
     </div>
   );
 }

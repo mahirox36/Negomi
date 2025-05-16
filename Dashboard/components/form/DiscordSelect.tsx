@@ -23,6 +23,7 @@ interface DiscordSelectProps {
   multiple?: boolean;
   searchable?: boolean;
   theme?: 'purple' | 'default';
+  permissionRestrictions?: boolean;
 }
 
 export default function DiscordSelect({
@@ -34,7 +35,8 @@ export default function DiscordSelect({
   placeholder = 'Select...',
   multiple = false,
   searchable = true,
-  theme = 'purple'
+  theme = 'purple',
+  permissionRestrictions = true,
 }: DiscordSelectProps) {
   const [options, setOptions] = useState<DiscordOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -282,7 +284,7 @@ export default function DiscordSelect({
     onClick?: (e: React.MouseEvent) => void,
     isDropdownItem?: boolean
   }) => {
-    const isDisabled = type === 'role' && option.is_assignable === false;
+    const isDisabled = type === 'role' && option.is_assignable === false && permissionRestrictions;
     const style = getOptionStyles(option, isDropdownItem);
     
     return (
@@ -411,33 +413,33 @@ export default function DiscordSelect({
             </div>
           ) : filteredOptions.length > 0 ? (
             filteredOptions.map((option) => {
-              const isDisabled = type === 'role' && option.is_assignable === false;
+              const isDisabled = type === 'role' && option.is_assignable === false && permissionRestrictions;
               return (
-                <div
-                  key={option.id}
-                  className={`px-4 py-2.5 group ${!isDisabled ? `${themeStyles.hoverItem} cursor-pointer text-sky-100` : 'cursor-not-allowed'}
-                    transition-colors flex items-center gap-3 relative`}
-                  onClick={() => !isDisabled && handleSelect(option.id)}
-                  role="option"
-                  aria-selected={selectedIds.includes(option.id)}
-                  tabIndex={isDisabled ? -1 : 0}
-                >
-                  <OptionItem option={option} isDropdownItem={true} />
-                  
-                  {multiple && !isDisabled && (
-                    <i className="fas fa-plus ml-auto text-purple-400 opacity-0 group-hover:opacity-70 transition-opacity" />
-                  )}
-                  
-                  {isDisabled && (
-                    <div className="tooltip absolute z-50 whitespace-nowrap p-2 rounded-md bg-gray-900 text-white text-xs
-                      transform -translate-x-1/2 right-4 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100
-                      border border-gray-700 shadow-lg"
-                      style={{top: '-10px'}}
-                    >
-                      This role cannot be assigned due to permission restrictions
-                    </div>
-                  )}
-                </div>
+          <div
+            key={option.id}
+            className={`px-4 py-2.5 group ${!isDisabled ? `${themeStyles.hoverItem} cursor-pointer text-sky-100` : 'cursor-not-allowed'}
+              transition-colors flex items-center gap-3 relative`}
+            onClick={() => !isDisabled && handleSelect(option.id)}
+            role="option"
+            aria-selected={selectedIds.includes(option.id)}
+            tabIndex={isDisabled ? -1 : 0}
+          >
+            <OptionItem option={option} isDropdownItem={true} />
+            
+            {multiple && !isDisabled && (
+              <i className="fas fa-plus ml-auto text-purple-400 opacity-0 group-hover:opacity-70 transition-opacity" />
+            )}
+            
+            {isDisabled && permissionRestrictions && (
+              <div className="tooltip absolute z-50 whitespace-nowrap p-2 rounded-md bg-gray-900 text-white text-xs
+                transform -translate-x-1/2 right-4 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100
+                border border-gray-700 shadow-lg"
+                style={{top: '-10px'}}
+              >
+                This role cannot be assigned due to permission restrictions
+              </div>
+            )}
+          </div>
               );
             })
           ) : (

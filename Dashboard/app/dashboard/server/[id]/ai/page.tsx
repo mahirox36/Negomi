@@ -219,6 +219,7 @@ export default function AISettings() {
                   multiple={true}
                   searchable={true}
                   theme="purple"
+                  permissionRestrictions={false}
                 />
                 <p className="text-xs text-white/50">Users must have at least one of these roles to use AI commands. Leave empty to allow all roles.</p>
               </div>
