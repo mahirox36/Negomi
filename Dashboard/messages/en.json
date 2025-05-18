@@ -1,0 +1,156 @@
+{
+  "using_dashboard": {
+    "direction": "ltr",
+    "introduction": {
+      "title": "Introduction",
+      "subtitle": "Your guide to customizing Negomi for your server"
+    },
+    "overview": {
+      "title": "Overview",
+      "text1": "The Negomi Dashboard is your control center for customizing the bot's behavior in your Discord server. This guide will walk you through accessing the dashboard, navigating its interface, and configuring key settings to enhance your server experience.",
+      "text2": "Whether you want to set up automatic roles, temporary voice channels, or customize AI interactions, the dashboard makes it simple and intuitive."
+    },
+    "accessing_dashboard": {
+      "title": "Accessing the Dashboard",
+      "step1": {
+        "title": "Log in with Discord",
+        "description": "Click the \"Login\" button in the top navigation bar and authenticate with your Discord account."
+      },
+      "step2": {
+        "title": "Select your server",
+        "description": "Once logged in, you'll see a list of servers where you have admin permissions and where Negomi is present. Click on the server you want to manage."
+      },
+      "step3": {
+        "title": "Navigate the server dashboard",
+        "description": "You'll be taken to the server overview page, where you can see statistics and access different settings categories from the sidebar."
+      },
+      "tip": {
+        "title": "Tip",
+        "text": "If you don't see your server in the list, make sure Negomi is invited to your server and that you have administrator permissions."
+      }
+    },
+    "dashboard_navigation": {
+      "title": "Dashboard Navigation",
+      "main_dashboard": {
+        "title": "Main Dashboard",
+        "description": "The main dashboard provides an overview of your personal usage statistics with Negomi:",
+        "item1": "Activity metrics and usage statistics",
+        "item2": "Your earned badges and achievements",
+        "item3": "List of servers you can manage"
+      },
+      "server_settings": {
+        "title": "Server Settings",
+        "description": "After selecting a server, you'll access server-specific settings:",
+        "item1": "Server overview and statistics",
+        "item2": "Settings categories in the sidebar",
+        "item3": "Access to all Negomi features"
+      }
+    },
+    "theme_customization": {
+      "title": "Theme Customization",
+      "text": "Negomi offers extensive theme customization options to match your server's aesthetic. You can customize colors, appearance, and more through the Basic Settings section.",
+      "badge_color_customization": {
+        "title": "Badge Color Customization",
+        "description": "Customize the colors of your badges to match your server's theme.",
+        "common": {
+          "title": "Common Badge Color",
+          "description": "Set the color for common badges. Default: #ff1493"
+        },
+        "uncommon": {
+          "title": "Uncommon Badge Color",
+          "description": "Set the color for uncommon badges. Default: #00ffb9"
+        },
+        "rare": {
+          "title": "Rare Badge Color",
+          "description": "Set the color for rare badges. Default: #ff4500"
+        },
+        "epic": {
+          "title": "Epic Badge Color",
+          "description": "Set the color for epic badges. Default: #32cd32"
+        },
+        "legendary": {
+          "title": "Legendary Badge Color",
+          "description": "Set the color for legendary badges. Default: #9400d3"
+        }
+      },
+      "note": {
+        "title": "Note",
+        "text": "Badge color changes will affect how badges appear throughout your server, including in profile displays and achievement announcements."
+      }
+    },
+    "key_features": {
+      "title": "Key Features & Settings",
+      "auto_role": {
+        "title": "Auto-Role",
+        "description": "Automatically assign roles to users and bots when they join your server.",
+        "item1": "Set specific roles for humans and bots separately",
+        "item2": "Select multiple roles to be assigned"
+      },
+      "temp_voice": {
+        "title": "Temp Voice",
+        "description": "Create temporary voice channels that users can customize.",
+        "item1": "Select category for temp channels",
+        "item2": "Channels auto-delete when empty",
+        "item3": "Set channel limits and permissions"
+      },
+      "ai_settings": {
+        "title": "AI Settings",
+        "description": "Configure Negomi's AI responses in your server.",
+        "item1": "Control which channels allow AI responses",
+        "item2": "Set cooldowns and rate limits",
+        "item3": "Role-based access permissions"
+      },
+      "custom_roles": {
+        "title": "Custom Roles",
+        "description": "Allow users to create and manage their own roles.",
+        "item1": "Control who can create custom roles",
+        "item2": "Set limits on colors and hoisting"
+      }
+    },
+    "saving_changes": {
+      "title": "Saving & Applying Changes",
+      "text": "When you make changes to settings, a save bar will appear at the bottom of the screen. Here's how to manage your changes:",
+      "save_changes": {
+        "title": "Save Changes",
+        "description": "Click the 'Save Changes' button to apply your new settings"
+      },
+      "revert_changes": {
+        "title": "Revert Changes",
+        "description": "Click 'Revert' to undo your changes before saving"
+      },
+      "reset_to_default": {
+        "title": "Reset to Default",
+        "description": "Reset all settings to their default values"
+      },
+      "important": {
+        "title": "Important",
+        "text": "Resetting to defaults cannot be undone. Make sure you really want to reset before confirming this action."
+      }
+    }
+  },
+  "docs": {
+    "title": "Documentation",
+    "description": "Negomi's documentation provides detailed information on all features and settings. You can access it from the dashboard or directly at [Negomi Docs](https://docs.negomi.xyz).",
+    "introduction": {
+      "title": "Introduction",
+      "sections": {
+        "overview": "Overview",
+        "accessing": "Accessing",
+        "dashboard_navigation": "Dashboard Navigation",
+        "theme_customization": "Theme Customization",
+        "key_features": "Key Features & Settings",
+        "saving_changes": "Saving & Applying Changes"
+      }
+    },
+    "badges": {
+      "title": "Badges",
+      "sections": {
+        "overview": "Overview",
+        "creating": "Creating Badges",
+        "properties": "Badge Properties",
+        "requirements": "Setting Requirements",
+        "managing": "Managing Badges"
+      }
+    }
+  }
+}
