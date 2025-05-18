@@ -246,6 +246,11 @@ async def get_server_sidebar():
                 "icon": "fa-solid fa-user-tag",
             },
             {
+                "name": "Reaction Roles",
+                "link": "reaction-roles",
+                "icon": "fa-solid fa-smile",
+            },
+            {
                 "name": "Temporary Voice",
                 "link": "temp-voice",
                 "icon": "fa-solid fa-headset",

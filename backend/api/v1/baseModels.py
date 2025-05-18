@@ -31,12 +31,6 @@ class FeatureSetRequest(BaseModel):
 class DiscordCallbackRequest(BaseModel):
     code: str
     
-class ReactionRoleRequest(BaseModel):
-    message_id: str
-    reaction_id: str
-    role_id: str
-    allow_unselect: bool = False
-
 class MessageRequest(BaseModel):
     name: str
     channel_id: str
