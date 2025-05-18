@@ -82,7 +82,7 @@ export default function MessageEditorPage() {
   const messageId = params.messageId as string;
   const isNewMessage = messageId === "new";
   const { setCurrentPath, setServerId } = useLayout();
-
+  
   const [message, setMessage] = useState<Message>({
     name: "",
     content: "",
@@ -844,12 +844,12 @@ export default function MessageEditorPage() {
               <div className="space-y-4">
                 {!isNewMessage && message.message_id && (
                   <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-4">
-                    <h4 className="text-yellow-300 font-medium mb-2">Editing Linked Message</h4>
-                    <p className="text-white/80">
-                      This message is linked to an existing Discord message (<span className="font-mono">{message.message_id}</span>).
-                      <br />
-                      <span className="text-yellow-200 font-semibold">When you save, the original message will be updated in Discord.</span>
-                    </p>
+                  <h4 className="text-yellow-300 font-medium mb-2">Editing Linked Message</h4>
+                  <p className="text-white/80">
+                    This message is linked to an existing Discord message (<span className="font-mono">{message.message_id}</span>).
+                    <br />
+                    <span className="text-yellow-200 font-semibold">When you save, the original message will be updated in Discord.</span>
+                  </p>
                   </div>
                 )}
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">

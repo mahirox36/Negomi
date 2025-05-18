@@ -57,30 +57,6 @@ interface EmbedData {
   timestamp?: string;
 }
 
-const defaultEmbed: EmbedData = {
-  title: "",
-  description: "",
-  color: "#5865F2",
-  fields: [],
-};
-
-const defaultMessage: Message = {
-  id: "",
-  name: "",
-  content: "",
-  channel_id: "",
-  embeds: [],
-  created_at: new Date().toISOString(),
-};
-
-const availableVariables = [
-  { label: "Server Name", value: "{server}" },
-  { label: "Channel Mention", value: "{channel}" },
-  { label: "Member Count", value: "{memberCount}" },
-  { label: "Current Date", value: "{date}" },
-  { label: "Current Time", value: "{time}" },
-];
-
 export default function MessagesPage() {
   const params = useParams();
   const router = useRouter();
@@ -377,16 +353,17 @@ export default function MessagesPage() {
               >
                 <i className="fas fa-list"></i>
               </button>
-            </div>
-
-            <select
+            </div>            <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as any)}
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="bg-black/60 border border-black/80 rounded-lg px-4 py-2 text-white font-normal focus:outline-none focus:ring-2 focus:ring-purple-500"
+              style={{ 
+                fontFamily: "inherit",
+              }}
             >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="alphabetical">Alphabetical</option>
+              <option value="newest" style={{fontFamily: "inherit"}}>Newest first</option>
+              <option value="oldest" style={{fontFamily: "inherit"}}>Oldest first</option>
+              <option value="alphabetical" style={{fontFamily: "inherit"}}>Alphabetical</option>
             </select>
           </div>
         </div>
@@ -488,7 +465,7 @@ export default function MessagesPage() {
 
                     <div className="relative">
                       {/* Glowing action buttons */}
-                      <div className="absolute inset-x-0 -bottom-6 h-12 bg-gradient-to-t from-black/40 to-transparent rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="absolute -inset-x-6 -bottom-6 h-12 bg-gradient-to-t from-black/40 to-transparent rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                       <div className="flex items-center justify-between border-t border-white/10 pt-4 relative z-10">
                         <div className="flex items-center gap-2">
