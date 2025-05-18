@@ -14,6 +14,7 @@ interface LayoutState {
   currentPath: string | null;
   serverId: string | null;
   isAdmin: boolean;
+  disableProviderSave?: boolean;
 }
 
 interface LayoutContextType extends LayoutState {
@@ -26,6 +27,8 @@ interface LayoutContextType extends LayoutState {
   saveChanges: () => Promise<void>;
   revertChanges: () => void;
   resetToDefaults: () => Promise<void>;
+  setDisableProviderSave: (value: boolean) => void;
+  setLoading: (value: boolean) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
@@ -174,11 +177,15 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const saveChanges = useCallback(async () => {
     if (!state.hasChanges || !state.serverId || !state.currentPath || !state.isAdmin) return;
 
+    // Skip provider save logic if disabled
+    if (state.disableProviderSave) {
+      window.dispatchEvent(new CustomEvent('getUnsavedSettings'));
+      return;
+    }
+
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      // Get current settings from the correct location in app state
-      // This will be from the React component that set hasChanges to true
       const settingsData = {};
       window.dispatchEvent(new CustomEvent('getUnsavedSettings', { 
         detail: { 
@@ -206,7 +213,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [state.hasChanges, state.serverId, state.currentPath, state.isAdmin, setHasChanges]);
+  }, [state.hasChanges, state.serverId, state.currentPath, state.isAdmin, state.disableProviderSave, setHasChanges]);
 
   const revertChanges = useCallback(() => {
     if (!state.hasChanges) return;
@@ -237,6 +244,14 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.serverId, state.currentPath, state.isAdmin]);
 
+  const setDisableProviderSave = useCallback((value: boolean) => {
+    setState(prev => ({ ...prev, disableProviderSave: value }));
+  }, []);
+
+  const setLoading = useCallback((value: boolean) => {
+    setState(prev => ({ ...prev, isLoading: value }));
+  }, []);
+
   return (
     <LayoutContext.Provider 
       value={{ 
@@ -249,7 +264,9 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
         fetchPageLayout,
         saveChanges,
         revertChanges,
-        resetToDefaults
+        resetToDefaults,
+        setDisableProviderSave,
+        setLoading
       }}
     >
       {children}

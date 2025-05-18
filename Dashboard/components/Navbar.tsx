@@ -27,7 +27,7 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  const isDashboard = pathname.includes("/dashboard");
+  const isDashboard = pathname.includes("/dashboard") || pathname.includes("/docs");
   const isAdminPage = pathname.includes("/admin");
 
   // Navigation items definition

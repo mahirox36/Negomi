@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { BadgeForm } from "../../../../components/badge/BadgeForm";
+import { BadgeForm } from "@/components/badge/BadgeForm";
 import toast from "react-hot-toast";
 import { themeConfig } from "@/lib/theme";
 

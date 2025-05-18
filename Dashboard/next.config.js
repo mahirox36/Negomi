@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+import createNextIntlPlugin from 'next-intl/plugin';
+
 const nextConfig = {
   assetPrefix: "",
   staticPageGenerationTimeout: 1000,
@@ -20,6 +22,8 @@ const nextConfig = {
       },
     ];
   },
+  reactStrictMode: true,
 };
 
-module.exports = nextConfig;
+const withNextIntl = createNextIntlPlugin();
+export default withNextIntl(nextConfig);

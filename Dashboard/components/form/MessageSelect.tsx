@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from "framer-motion";
+import toast from 'react-hot-toast';
 
 interface MessageOption {
   id: string;
@@ -43,6 +44,7 @@ export interface MessageSelectProps {
   loadingMessage?: string;
   renderCustomOption?: (message: MessageOption, isSelected: boolean) => React.ReactNode;
   disabled?: boolean;
+  allowUnsentMessages?: boolean; // Whether to allow selecting messages without message_id
 }
 
 const defaultThemeColors = {
@@ -119,7 +121,8 @@ export default function MessageSelect({
   emptyMessage = 'No messages available',
   loadingMessage = 'Loading messages...',
   renderCustomOption,
-  disabled = false
+  disabled = false,
+  allowUnsentMessages = false
 }: MessageSelectProps) {
   const [options, setOptions] = useState<MessageOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -345,6 +348,15 @@ export default function MessageSelect({
   }, [isOpen]);
 
   const handleSelect = (messageId: string) => {
+    const selectedMessage = options.find(m => m.id === messageId);
+    if (!selectedMessage) return;
+    
+    // Don't allow selecting unsent messages unless explicitly allowed
+    if (!allowUnsentMessages && !selectedMessage.message_id) {
+      toast.error("Cannot select unsent messages");
+      return;
+    }
+
     if (multiple) {
       const newValue = [...selectedIds, messageId];
       onChange(newValue);
@@ -357,10 +369,7 @@ export default function MessageSelect({
     
     // Call the onClick handler if provided
     if (onMessageClick) {
-      const selectedMessage = options.find(m => m.id === messageId);
-      if (selectedMessage) {
-        onMessageClick(selectedMessage);
-      }
+      onMessageClick(selectedMessage);
     }
     
     if (searchable && inputRef.current) {
@@ -623,14 +632,14 @@ export default function MessageSelect({
               </div>
             ) : sortedOptions.length > 0 ? (
               <AnimatePresence>
-                {sortedOptions.map((message) => (
-                  <motion.div
+                {sortedOptions.map((message) => (                  <motion.div
                     key={message.id}
                     variants={itemVariants}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className={`px-4 py-0.5 ${themeStyles.hoverItem} cursor-pointer
+                    className={`px-4 py-0.5 ${themeStyles.hoverItem} 
+                      ${(!allowUnsentMessages && !message.message_id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                       transition-colors relative border-b border-white/5 last:border-b-0`}
                     onClick={() => handleSelect(message.id)}
                     role="option"

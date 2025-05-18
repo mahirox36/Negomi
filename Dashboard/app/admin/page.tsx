@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useBackendCheck } from "../../hooks/useBackendCheck";
-import { themeConfig } from "../../lib/theme";
-import LoadingScreen from "../../components/LoadingScreen";
+import { useBackendCheck } from "@/hooks/useBackendCheck";
+import { themeConfig } from "@/lib/theme";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function AdminPage() {
   const { loading, error } = useBackendCheck(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import AdminSidebar from "../../components/AdminSidebar";
+import AdminSidebar from "@/components/AdminSidebar";
 import Link from "next/link";
 
 export default function AdminLayout({
