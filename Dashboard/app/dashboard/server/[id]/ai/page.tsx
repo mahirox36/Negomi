@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLayout } from "@/providers/LayoutProvider";
 import DiscordSelect from "@/components/form/DiscordSelect";
-import {ToggleSwitch} from "@/components/form/ToggleSwitch";
+import { ToggleSwitch } from "@/components/form/ToggleSwitch";
 import SettingsSection from "@/components/dashboard/SettingsSection";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -20,7 +20,7 @@ const defaultSettings: AISettings = {
   allow_threads: true,
   allowed_roles: [],
   cooldown_seconds: 5,
-  public_channels: []
+  public_channels: [],
 };
 
 export default function AISettings() {
@@ -29,7 +29,9 @@ export default function AISettings() {
   const { setHasChanges, setCurrentPath, setServerId } = useLayout();
 
   const [settings, setSettings] = useState<AISettings>({ ...defaultSettings });
-  const [originalSettings, setOriginalSettings] = useState<AISettings>({ ...defaultSettings });
+  const [originalSettings, setOriginalSettings] = useState<AISettings>({
+    ...defaultSettings,
+  });
   const [isEnabled, setIsEnabled] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,16 +158,20 @@ export default function AISettings() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-xl shadow-inner">
-            <i className="fas fa-robot text-2xl text-white/90"></i>
+      {/* Header */}
+      <div className="bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 -rotate-6">
+          <i className="fas fa-robot text-[180px] text-white"></i>
+        </div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-500/40 to-fuchsia-500/40 rounded-xl shadow-inner border border-white/10">
+            <i className="fas fa-robot text-3xl text-white/90"></i>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
               AI Settings
             </h1>
-            <p className="text-lg text-white/70 mt-1">
+            <p className="text-lg text-white/70 mt-1 max-w-2xl">
               Configure AI behavior and access controls
             </p>
           </div>
@@ -175,7 +181,11 @@ export default function AISettings() {
       <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10">
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isEnabled ? "bg-green-500" : "bg-orange-500"} animate-pulse`}></div>
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isEnabled ? "bg-green-500" : "bg-orange-500"
+              } animate-pulse`}
+            ></div>
             <span className="text-sm font-medium text-white/90">
               {isEnabled ? "Active" : "Inactive"}
             </span>
@@ -204,7 +214,9 @@ export default function AISettings() {
           >
             <div className="space-y-6">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white/90">Allowed Roles</label>
+                <label className="text-sm font-medium text-white/90">
+                  Allowed Roles
+                </label>
                 <DiscordSelect
                   type="role"
                   guildId={serverId}
@@ -221,11 +233,16 @@ export default function AISettings() {
                   theme="purple"
                   permissionRestrictions={false}
                 />
-                <p className="text-xs text-white/50">Users must have at least one of these roles to use AI commands. Leave empty to allow all roles.</p>
+                <p className="text-xs text-white/50">
+                  Users must have at least one of these roles to use AI
+                  commands. Leave empty to allow all roles.
+                </p>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white/90">Public Channels</label>
+                <label className="text-sm font-medium text-white/90">
+                  Public Channels
+                </label>
                 <DiscordSelect
                   type="channel"
                   guildId={serverId}
@@ -241,7 +258,10 @@ export default function AISettings() {
                   searchable={true}
                   theme="purple"
                 />
-                <p className="text-xs text-white/50">AI will only respond in these channels. Leave empty to allow all channels.</p>
+                <p className="text-xs text-white/50">
+                  AI will only respond in these channels. Leave empty to allow
+                  all channels.
+                </p>
               </div>
             </div>
           </SettingsSection>
@@ -256,12 +276,18 @@ export default function AISettings() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-white/90">Allow in Threads</h4>
-                  <p className="text-xs text-white/50">Enable AI responses in thread channels</p>
+                  <h4 className="text-sm font-medium text-white/90">
+                    Allow in Threads
+                  </h4>
+                  <p className="text-xs text-white/50">
+                    Enable AI responses in thread channels
+                  </p>
                 </div>
                 <ToggleSwitch
                   checked={settings.allow_threads}
-                  onChange={(value) => handleSettingChange("allow_threads", value)}
+                  onChange={(value) =>
+                    handleSettingChange("allow_threads", value)
+                  }
                   theme="purple"
                 />
               </div>
@@ -275,15 +301,24 @@ export default function AISettings() {
               iconColor="text-orange-300"
             >
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white/90">Cooldown (seconds)</label>
+                <label className="text-sm font-medium text-white/90">
+                  Cooldown (seconds)
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={settings.cooldown_seconds}
-                  onChange={(e) => handleSettingChange("cooldown_seconds", parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    handleSettingChange(
+                      "cooldown_seconds",
+                      parseInt(e.target.value) || 0
+                    )
+                  }
                   className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 />
-                <p className="text-xs text-white/50">Time users must wait between AI responses (0 for no cooldown)</p>
+                <p className="text-xs text-white/50">
+                  Time users must wait between AI responses (0 for no cooldown)
+                </p>
               </div>
             </SettingsSection>
           </div>

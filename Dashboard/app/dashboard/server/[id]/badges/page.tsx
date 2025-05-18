@@ -84,16 +84,19 @@ export default function BadgesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-xl shadow-inner">
-            <i className="fas fa-crown text-2xl text-white/90"></i>
+      <div className="bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 -rotate-6">
+          <i className="fas fa-medal text-[180px] text-white"></i>
+        </div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-500/40 to-fuchsia-500/40 rounded-xl shadow-inner border border-white/10">
+            <i className="fas fa-medal text-3xl text-white/90"></i>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
               Server Badges
             </h1>
-            <p className="text-lg text-white/70 mt-1">
+            <p className="text-lg text-white/70 mt-1 max-w-2xl">
               Create and manage achievement badges for your server members
             </p>
           </div>

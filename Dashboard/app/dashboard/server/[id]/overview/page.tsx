@@ -66,7 +66,7 @@ export default function Overview() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <motion.div 
+        <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="rounded-full h-12 w-12 border-4 border-white/10 border-t-white/90"
@@ -89,13 +89,17 @@ export default function Overview() {
       className="space-y-8 pb-8 max-w-7xl mx-auto"
     >
       {/* Server Header */}
+      {/* Server Header */}
       <motion.div
         variants={itemVariants}
-        className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
+        className="bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10 relative overflow-hidden"
       >
-        <div className="flex items-center gap-6">
+        <div className="absolute top-0 right-0 opacity-10 -rotate-6">
+          <i className="fas fa-server text-[180px] text-white"></i>
+        </div>
+        <div className="flex items-center gap-6 relative z-10">
           {guild.icon_url ? (
-            <div className="w-24 h-24 rounded-2xl shadow-lg overflow-hidden border border-white/20">
+            <div className="w-20 h-20 rounded-xl shadow-lg overflow-hidden border border-white/20">
               <img
                 src={guild.icon_url}
                 alt={guild.name}
@@ -103,27 +107,29 @@ export default function Overview() {
               />
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-white/20">
-              <i className="fas fa-server text-4xl text-white/50"></i>
+            <div className="w-20 h-20 flex items-center justify-center bg-gradient-to-br from-purple-500/40 to-fuchsia-500/40 rounded-xl shadow-inner border border-white/10">
+              <i className="fas fa-server text-3xl text-white/90"></i>
             </div>
           )}
           <div>
-            <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
               {guild.name}
             </h1>
-            <div className="flex items-center gap-4 mt-2">
-              <div className="flex items-center gap-2 text-white/70">
+            <div className="flex items-center gap-4 mt-2 text-lg text-white/70">
+              <div className="flex items-center gap-2">
                 <i className="fas fa-users"></i>
                 <span>{formatNumber(guild.member_count)} members</span>
               </div>
-              <div className="flex items-center gap-2 text-white/70">
+              <div className="flex items-center gap-2">
                 <i className="fas fa-clock"></i>
                 <span>Created {formatDate(guild.created_at * 1000)}</span>
               </div>
               {guild.boost_level > 0 && (
-                <div className="flex items-center gap-2 text-purple-400">
+                <div className="flex items-center gap-2 text-fuchsia-400">
                   <i className="fas fa-rocket"></i>
-                  <span>Level {guild.boost_level} ({guild.boost_count} boosts)</span>
+                  <span>
+                    Level {guild.boost_level} ({guild.boost_count} boosts)
+                  </span>
                 </div>
               )}
             </div>
@@ -137,28 +143,28 @@ export default function Overview() {
           icon="fa-message"
           title="Total Messages"
           value={formatNumber(guild.statistics.total_messages)}
-          gradient="from-blue-500/10 to-cyan-600/10"
+          gradient="from-purple-500/10 to-fuchsia-600/10"
           variants={itemVariants}
         />
         <StatCard
           icon="fa-terminal"
           title="Commands Used"
           value={formatNumber(guild.statistics.total_commands_used)}
-          gradient="from-pink-500/10 to-rose-500/10"
+          gradient="from-blue-500/10 to-cyan-600/10"
           variants={itemVariants}
         />
         <StatCard
           icon="fa-users"
           title="Active Members"
           value={formatNumber(guild.statistics.active_members)}
-          gradient="from-orange-500/10 to-red-600/10"
+          gradient="from-green-500/10 to-emerald-600/10"
           variants={itemVariants}
         />
         <StatCard
           icon="fa-chart-simple"
           title="Avg Messages/Member"
           value={formatNumber(guild.statistics.average_messages_per_member)}
-          gradient="from-indigo-500/10 to-purple-500/10"
+          gradient="from-yellow-500/10 to-amber-600/10"
           variants={itemVariants}
         />
       </div>
@@ -202,7 +208,9 @@ export default function Overview() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
               <i className="fas fa-chart-simple text-lg text-white/90"></i>
             </div>
-            <h3 className="text-lg font-semibold text-white">Content Statistics</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Content Statistics
+            </h3>
           </div>
           <div className="space-y-3">
             <StatRow
@@ -219,7 +227,8 @@ export default function Overview() {
               icon="fa-chart-line"
               label="Avg. Characters/Message"
               value={formatNumber(
-                guild.statistics.total_characters / guild.statistics.total_messages
+                guild.statistics.total_characters /
+                  guild.statistics.total_messages
               )}
             />
           </div>
@@ -234,7 +243,9 @@ export default function Overview() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
               <i className="fas fa-shield text-lg text-white/90"></i>
             </div>
-            <h3 className="text-lg font-semibold text-white">Server Information</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Server Information
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <StatBox

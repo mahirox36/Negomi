@@ -281,11 +281,14 @@ export default function MessagesPage() {
       variants={containerVariants}
     >
       {/* Header Section */}
-      <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10">
+      <div className="bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 -rotate-6 pointer-events-none -z-10">
+          <i className="fas fa-envelope text-[180px] text-white"></i>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-xl shadow-inner">
-              <i className="fas fa-envelope text-2xl text-white/90"></i>
+            <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-500/40 to-fuchsia-500/40 rounded-xl shadow-inner border border-white/10">
+              <i className="fas fa-envelope text-3xl text-white/90"></i>
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
@@ -353,17 +356,24 @@ export default function MessagesPage() {
               >
                 <i className="fas fa-list"></i>
               </button>
-            </div>            <select
+            </div>{" "}
+            <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as any)}
               className="bg-black/60 border border-black/80 rounded-lg px-4 py-2 text-white font-normal focus:outline-none focus:ring-2 focus:ring-purple-500"
-              style={{ 
+              style={{
                 fontFamily: "inherit",
               }}
             >
-              <option value="newest" style={{fontFamily: "inherit"}}>Newest first</option>
-              <option value="oldest" style={{fontFamily: "inherit"}}>Oldest first</option>
-              <option value="alphabetical" style={{fontFamily: "inherit"}}>Alphabetical</option>
+              <option value="newest" style={{ fontFamily: "inherit" }}>
+                Newest first
+              </option>
+              <option value="oldest" style={{ fontFamily: "inherit" }}>
+                Oldest first
+              </option>
+              <option value="alphabetical" style={{ fontFamily: "inherit" }}>
+                Alphabetical
+              </option>
             </select>
           </div>
         </div>

@@ -38,7 +38,13 @@ interface Message {
 export default function ReactionRoles() {
   const params = useParams();
   const serverId = params.id as string;
-  const { setHasChanges, setCurrentPath, setServerId, setDisableProviderSave, setLoading } = useLayout();
+  const {
+    setHasChanges,
+    setCurrentPath,
+    setServerId,
+    setDisableProviderSave,
+    setLoading,
+  } = useLayout();
   const hasInitialFetch = useRef(false);
 
   // State management
@@ -46,7 +52,9 @@ export default function ReactionRoles() {
   const [isSaving, setIsSaving] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const [reactionRoles, setReactionRoles] = useState<ReactionRoleSettings[]>([]);
+  const [reactionRoles, setReactionRoles] = useState<ReactionRoleSettings[]>(
+    []
+  );
   const [currentReactionRole, setCurrentReactionRole] = useState<ReactionRole>({
     emoji: "",
     role_id: "",
@@ -107,7 +115,7 @@ export default function ReactionRoles() {
         }
         setLoading(false);
         setHasChanges(false);
-        toast.success('Changes saved successfully');
+        toast.success("Changes saved successfully");
       } catch (error) {
         console.error("Failed to save settings:", error);
         toast.error("Failed to save settings");
@@ -117,9 +125,9 @@ export default function ReactionRoles() {
       }
     };
 
-    window.addEventListener('getUnsavedSettings', handleSaveSettings);
+    window.addEventListener("getUnsavedSettings", handleSaveSettings);
     return () => {
-      window.removeEventListener('getUnsavedSettings', handleSaveSettings);
+      window.removeEventListener("getUnsavedSettings", handleSaveSettings);
     };
   }, [selectedMessage, settings, serverId, fetchData]);
 
@@ -136,7 +144,13 @@ export default function ReactionRoles() {
 
     fetchData();
     hasInitialFetch.current = true;
-  }, [serverId, fetchData, setCurrentPath, setServerId, setDisableProviderSave]);
+  }, [
+    serverId,
+    fetchData,
+    setCurrentPath,
+    setServerId,
+    setDisableProviderSave,
+  ]);
 
   // Handle message selection
   // Ensure both messageId and message.id are treated as strings for comparison
@@ -145,7 +159,10 @@ export default function ReactionRoles() {
     console.log("Current messages:", messages);
 
     if (Array.isArray(messageId)) {
-      console.error("Expected a single string, but received an array:", messageId);
+      console.error(
+        "Expected a single string, but received an array:",
+        messageId
+      );
       return;
     }
 
@@ -184,13 +201,17 @@ export default function ReactionRoles() {
 
   // Add reaction role
   const handleAddReaction = () => {
-    if (!currentReactionRole.emoji || !currentReactionRole.role_id || !selectedMessage) {
+    if (
+      !currentReactionRole.emoji ||
+      !currentReactionRole.role_id ||
+      !selectedMessage
+    ) {
       toast.error("Please select both an emoji and a role");
       return;
     }
 
     // Check for duplicate emoji
-    if (settings.reactions.some(r => r.emoji === currentReactionRole.emoji)) {
+    if (settings.reactions.some((r) => r.emoji === currentReactionRole.emoji)) {
       toast.error("This emoji is already used for another role");
       return;
     }
@@ -210,7 +231,7 @@ export default function ReactionRoles() {
   // Remove reaction role
   const handleRemoveReaction = (emoji: string) => {
     if (confirmDelete === emoji) {
-      const newReactions = settings.reactions.filter(r => r.emoji !== emoji);
+      const newReactions = settings.reactions.filter((r) => r.emoji !== emoji);
       setSettings({ ...settings, reactions: newReactions });
       setConfirmDelete(null);
       toast.success("Reaction role removed");
@@ -255,14 +276,15 @@ export default function ReactionRoles() {
         </div>
         <div className="flex items-center gap-4 relative z-10">
           <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-500/40 to-fuchsia-500/40 rounded-xl shadow-inner border border-white/10">
-            <i className="fas fa-hands-clapping text-2xl text-white/90"></i>
+            <i className="fas fa-hands-clapping text-3xl text-white/90"></i>
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
               Reaction Roles
             </h1>
             <p className="text-lg text-white/70 mt-1 max-w-2xl">
-              Let users assign themselves roles by reacting to messages with emojis
+              Let users assign themselves roles by reacting to messages with
+              emojis
             </p>
           </div>
         </div>
@@ -290,16 +312,18 @@ export default function ReactionRoles() {
             emptyMessage="No messages available"
             loadingMessage="Loading messages..."
           />
-          
+
           {selectedMessage && (
             <div className="mt-6 bg-black/30 rounded-lg p-4 border border-white/10">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-medium text-white/90">Message Preview</h3>
+                <h3 className="text-lg font-medium text-white/90">
+                  Message Preview
+                </h3>
                 <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
                   ID: {selectedMessage.id}
                 </span>
               </div>
-              <MessagePreview 
+              <MessagePreview
                 content={selectedMessage.content}
                 embeds={selectedMessage.embeds || []}
               />
@@ -330,7 +354,7 @@ export default function ReactionRoles() {
                         {settings.reactions.length}
                       </span>
                     </h3>
-                    
+
                     <div className="space-y-3">
                       {settings.reactions.map((reaction) => (
                         <div
@@ -342,8 +366,12 @@ export default function ReactionRoles() {
                               <span className="text-2xl">{reaction.emoji}</span>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm text-white/50">Assigns role:</span>
-                              <span className="text-white font-medium">@{getRoleName(reaction.role_id)}</span>
+                              <span className="text-sm text-white/50">
+                                Assigns role:
+                              </span>
+                              <span className="text-white font-medium">
+                                @{getRoleName(reaction.role_id)}
+                              </span>
                             </div>
                           </div>
                           <button
@@ -354,7 +382,9 @@ export default function ReactionRoles() {
                                 : "bg-white/5 text-white/70 hover:bg-red-500/20 hover:text-red-300"
                             }`}
                           >
-                            {confirmDelete === reaction.emoji ? "Confirm Remove" : "Remove"}
+                            {confirmDelete === reaction.emoji
+                              ? "Confirm Remove"
+                              : "Remove"}
                           </button>
                         </div>
                       ))}
@@ -366,24 +396,33 @@ export default function ReactionRoles() {
                 <div className="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
-                      <label className="block text-sm font-medium text-white/80 mb-1">Select Emoji</label>
+                      <label className="block text-sm font-medium text-white/80 mb-1">
+                        Select Emoji
+                      </label>
                       <EmojiPicker
                         value={currentReactionRole.emoji}
                         onChange={(emoji: string) =>
-                          setCurrentReactionRole({ ...currentReactionRole, emoji })
+                          setCurrentReactionRole({
+                            ...currentReactionRole,
+                            emoji,
+                          })
                         }
                         placeholder="Choose an emoji..."
                         theme="purple"
                       />
                     </div>
                     <div className="relative">
-                      <label className="block text-sm font-medium text-white/80 mb-1">Select Role</label>
+                      <label className="block text-sm font-medium text-white/80 mb-1">
+                        Select Role
+                      </label>
                       <DiscordSelect
                         type="role"
                         guildId={serverId}
                         value={currentReactionRole.role_id}
                         onChange={(value: string | string[]) => {
-                          const roleId = Array.isArray(value) ? value[0] : value;
+                          const roleId = Array.isArray(value)
+                            ? value[0]
+                            : value;
                           setCurrentReactionRole({
                             ...currentReactionRole,
                             role_id: roleId,
@@ -396,11 +435,16 @@ export default function ReactionRoles() {
                   </div>
                   <button
                     onClick={handleAddReaction}
-                    disabled={!currentReactionRole.emoji || !currentReactionRole.role_id}
+                    disabled={
+                      !currentReactionRole.emoji || !currentReactionRole.role_id
+                    }
                     className={`w-full mt-4 px-4 py-3 rounded-lg text-white font-medium transition-all flex items-center justify-center gap-2
-                      ${(!currentReactionRole.emoji || !currentReactionRole.role_id) 
-                        ? 'bg-white/10 text-white/50 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:opacity-90'}`}
+                      ${
+                        !currentReactionRole.emoji ||
+                        !currentReactionRole.role_id
+                          ? "bg-white/10 text-white/50 cursor-not-allowed"
+                          : "bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:opacity-90"
+                      }`}
                   >
                     <i className="fas fa-plus"></i>
                     <span>Add Reaction Role</span>
@@ -445,34 +489,57 @@ export default function ReactionRoles() {
                   <div className="space-y-5">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-white/5">
                       <div>
-                        <h4 className="font-medium text-white/90">Allow Users to Unselect</h4>
-                        <p className="text-sm text-white/60">Users can remove reactions to lose the role</p>
+                        <h4 className="font-medium text-white/90">
+                          Allow Users to Unselect
+                        </h4>
+                        <p className="text-sm text-white/60">
+                          Users can remove reactions to lose the role
+                        </p>
                       </div>
                       <ToggleSwitch
                         checked={settings.allow_unselect}
-                        onChange={(value: boolean) => updateSettings("allow_unselect", value)}
+                        onChange={(value: boolean) =>
+                          updateSettings("allow_unselect", value)
+                        }
                       />
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-white/5">
                       <div>
-                        <h4 className="font-medium text-white/90">Remove Reaction After Selection</h4>
-                        <p className="text-sm text-white/60">Bot removes user's reaction after role is assigned</p>
+                        <h4 className="font-medium text-white/90">
+                          Remove Reaction After Selection
+                        </h4>
+                        <p className="text-sm text-white/60">
+                          Bot removes user's reaction after role is assigned
+                        </p>
                       </div>
                       <ToggleSwitch
                         checked={settings.remove_reactions}
-                        onChange={(value: boolean) => updateSettings("remove_reactions", value)}
+                        onChange={(value: boolean) =>
+                          updateSettings("remove_reactions", value)
+                        }
                       />
                     </div>
 
                     <div className="p-3 rounded-lg bg-black/30 border border-white/5">
-                      <h4 className="font-medium text-white/90 mb-2">Max Roles Per User</h4>
-                      <p className="text-sm text-white/60 mb-3">Limit how many reaction roles each user can select</p>
+                      <h4 className="font-medium text-white/90 mb-2">
+                        Max Roles Per User
+                      </h4>
+                      <p className="text-sm text-white/60 mb-3">
+                        Limit how many reaction roles each user can select
+                      </p>
                       <TextInput
                         type="number"
                         min="0"
-                        value={settings.max_reactions_per_user?.toString() || ""}
-                        onChange={(e) => updateSettings("max_reactions_per_user", e.target.value ? parseInt(e.target.value) : null)}
+                        value={
+                          settings.max_reactions_per_user?.toString() || ""
+                        }
+                        onChange={(e) =>
+                          updateSettings(
+                            "max_reactions_per_user",
+                            e.target.value ? parseInt(e.target.value) : null
+                          )
+                        }
                         placeholder="No limit"
                       />
                     </div>
@@ -480,27 +547,44 @@ export default function ReactionRoles() {
                 ) : (
                   <div className="space-y-5">
                     <div className="p-3 rounded-lg bg-black/30 border border-white/5">
-                      <h4 className="font-medium text-white/90 mb-2">Cooldown Period</h4>
-                      <p className="text-sm text-white/60 mb-3">Time in seconds before a user can select another reaction</p>
+                      <h4 className="font-medium text-white/90 mb-2">
+                        Cooldown Period
+                      </h4>
+                      <p className="text-sm text-white/60 mb-3">
+                        Time in seconds before a user can select another
+                        reaction
+                      </p>
                       <TextInput
                         type="number"
                         min="0"
                         value={settings.cooldown?.toString() || ""}
-                        onChange={(e) => updateSettings("cooldown", e.target.value ? parseInt(e.target.value) : null)}
+                        onChange={(e) =>
+                          updateSettings(
+                            "cooldown",
+                            e.target.value ? parseInt(e.target.value) : null
+                          )
+                        }
                         placeholder="No cooldown"
                       />
                     </div>
 
                     <div className="p-3 rounded-lg bg-black/30 border border-white/5">
-                      <h4 className="font-medium text-white/90 mb-2">Required Roles</h4>
-                      <p className="text-sm text-white/60 mb-3">Users must have one of these roles to use the reactions</p>
+                      <h4 className="font-medium text-white/90 mb-2">
+                        Required Roles
+                      </h4>
+                      <p className="text-sm text-white/60 mb-3">
+                        Users must have one of these roles to use the reactions
+                      </p>
                       <DiscordSelect
                         type="role"
                         guildId={serverId}
                         value={settings.require_roles || []}
                         onChange={(value: string | string[]) => {
                           const roles = Array.isArray(value) ? value : [value];
-                          updateSettings("require_roles", roles.length ? roles : null);
+                          updateSettings(
+                            "require_roles",
+                            roles.length ? roles : null
+                          );
                         }}
                         placeholder="No required roles"
                         multiple={true}
@@ -509,15 +593,22 @@ export default function ReactionRoles() {
                     </div>
 
                     <div className="p-3 rounded-lg bg-black/30 border border-white/5">
-                      <h4 className="font-medium text-white/90 mb-2">Forbidden Roles</h4>
-                      <p className="text-sm text-white/60 mb-3">Users with these roles cannot use the reactions</p>
+                      <h4 className="font-medium text-white/90 mb-2">
+                        Forbidden Roles
+                      </h4>
+                      <p className="text-sm text-white/60 mb-3">
+                        Users with these roles cannot use the reactions
+                      </p>
                       <DiscordSelect
                         type="role"
                         guildId={serverId}
                         value={settings.forbidden_roles || []}
                         onChange={(value: string | string[]) => {
                           const roles = Array.isArray(value) ? value : [value];
-                          updateSettings("forbidden_roles", roles.length ? roles : null);
+                          updateSettings(
+                            "forbidden_roles",
+                            roles.length ? roles : null
+                          );
                         }}
                         placeholder="No forbidden roles"
                         multiple={true}
@@ -526,7 +617,8 @@ export default function ReactionRoles() {
                     </div>
                   </div>
                 )}
-              </div>              {/* Settings section ends here */}
+              </div>{" "}
+              {/* Settings section ends here */}
             </SettingsSection>
           </div>
 
@@ -542,14 +634,18 @@ export default function ReactionRoles() {
               <div className="bg-black/30 border border-white/5 rounded-xl p-6 relative">
                 <div className="flex flex-col space-y-4">
                   <div className="relative">
-                    <MessagePreview 
+                    <MessagePreview
                       content={selectedMessage.content}
                       embeds={selectedMessage.embeds || []}
                     />
-                    
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       {settings.reactions.map((reaction) => (
-                        <div key={reaction.emoji} className="tooltip" data-tip={`Role: ${getRoleName(reaction.role_id)}`}>
+                        <div
+                          key={reaction.emoji}
+                          className="tooltip"
+                          data-tip={`Role: ${getRoleName(reaction.role_id)}`}
+                        >
                           <span className="text-2xl cursor-pointer hover:scale-110 transition-transform inline-block">
                             {reaction.emoji}
                           </span>
@@ -557,7 +653,7 @@ export default function ReactionRoles() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 p-4 rounded-lg border border-white/5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
@@ -566,7 +662,8 @@ export default function ReactionRoles() {
                       <div>
                         <h4 className="text-white font-medium">How it works</h4>
                         <p className="text-sm text-white/70">
-                          Users can click on the emoji reactions to get or remove the associated role
+                          Users can click on the emoji reactions to get or
+                          remove the associated role
                         </p>
                       </div>
                     </div>
