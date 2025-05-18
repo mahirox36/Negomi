@@ -229,17 +229,12 @@ async def get_server_sidebar():
             {
                 "name": "Messages",
                 "link": "messages",
-                "icon": "fa-solid fa-comment",
-            }
+                "icon": "fa-solid fa-envelope",
+            },
         ],
         "Features": [
             {"name": "AI", "link": "ai", "icon": "fa-solid fa-robot"},
             {"name": "Auto Role", "link": "auto-role", "icon": "fa-solid fa-user-plus"},
-            # {
-            #     "name": "Backup",
-            #     "link": "backup",
-            #     "icon": "fa-solid fa-hdd"
-            # },
             {
                 "name": "Custom Roles",
                 "link": "custom-roles",
@@ -248,7 +243,7 @@ async def get_server_sidebar():
             {
                 "name": "Reaction Roles",
                 "link": "reaction-roles",
-                "icon": "fa-solid fa-smile",
+                "icon": "fa-solid fa-hands-clapping",
             },
             {
                 "name": "Temporary Voice",
