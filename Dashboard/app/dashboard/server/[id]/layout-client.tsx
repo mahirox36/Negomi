@@ -33,6 +33,7 @@ export default function ServerLayoutClient({
     "/dashboard/server/[id]/overview",
     "/dashboard/server/[id]/badges",
     "/dashboard/server/[id]/messages",
+    "/dashboard/server/[id]/reaction-roles",
   ];
 
   const showResetButton = !pagesWithoutReset.some((path) =>

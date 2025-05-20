@@ -15,6 +15,7 @@ import MessageSelect from "@/components/form/MessageSelect";
 
 interface ReactionRole {
   emoji: string;
+  url?: string;
   role_id: string;
 }
 
@@ -55,6 +56,9 @@ export default function ReactionRoles() {
   const [reactionRoles, setReactionRoles] = useState<ReactionRoleSettings[]>(
     []
   );
+  const [roles, setRoles] = useState<
+    { id: string; name: string; color?: string; icon?: string }[]
+  >([]);
   const [currentReactionRole, setCurrentReactionRole] = useState<ReactionRole>({
     emoji: "",
     role_id: "",
@@ -76,17 +80,21 @@ export default function ReactionRoles() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [messagesRes, reactionRolesRes] = await Promise.all([
+      const [messagesRes, reactionRolesRes, rolesRes] = await Promise.all([
         axios.get(`/api/v1/guilds/${serverId}/messages`, {
           withCredentials: true,
         }),
         axios.get(`/api/v1/guilds/${serverId}/reaction-roles`, {
           withCredentials: true,
         }),
+        axios.get(`/api/v1/guilds/${serverId}/roles`, {
+          withCredentials: true,
+        }),
       ]);
 
       setMessages(messagesRes.data);
       setReactionRoles(reactionRolesRes.data);
+      setRoles(rolesRes.data || []);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Failed to load messages and reaction roles");
@@ -250,8 +258,19 @@ export default function ReactionRoles() {
 
   // Role name resolver
   const getRoleName = (roleId: string) => {
-    // This would be implemented with a Discord API call or cache
-    return `Role ${roleId.substring(0, 6)}...`;
+    console.log("Roles:", roles);
+    console.log("Role ID:", roleId);
+    const role = roles.find((r) => r.id === roleId);
+    console.log("Found role:", role);
+    return role ? role.name : `Role ${roleId.substring(0, 6)}...`;
+  };
+  const getRoleColor = (roleId: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    return role ? role.color : "#ffffff"; // Default to white if not found
+  };
+  const getRoleIcon = (roleId: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    return role ? role.icon : null; // Default to null if not found
   };
 
   if (isLoading) {
@@ -344,55 +363,6 @@ export default function ReactionRoles() {
               iconColor="text-fuchsia-300"
             >
               <div className="space-y-6">
-                {/* Reaction Role List First */}
-                {settings.reactions.length > 0 && (
-                  <div className="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
-                    <h3 className="text-lg font-medium text-white/90 mb-4 flex items-center gap-2">
-                      <i className="fas fa-list text-fuchsia-300"></i>
-                      <span>Current Reaction Roles</span>
-                      <span className="text-xs bg-fuchsia-500/20 text-fuchsia-300 px-2 py-0.5 rounded-full ml-2">
-                        {settings.reactions.length}
-                      </span>
-                    </h3>
-
-                    <div className="space-y-3">
-                      {settings.reactions.map((reaction) => (
-                        <div
-                          key={reaction.emoji}
-                          className="flex items-center justify-between p-4 rounded-lg bg-black/30 border border-white/5 transition-all hover:border-white/10"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 flex items-center justify-center bg-purple-500/10 rounded-full">
-                              <span className="text-2xl">{reaction.emoji}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm text-white/50">
-                                Assigns role:
-                              </span>
-                              <span className="text-white font-medium">
-                                @{getRoleName(reaction.role_id)}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveReaction(reaction.emoji)}
-                            className={`px-3 py-1.5 rounded text-sm transition-all ${
-                              confirmDelete === reaction.emoji
-                                ? "bg-red-500 text-white"
-                                : "bg-white/5 text-white/70 hover:bg-red-500/20 hover:text-red-300"
-                            }`}
-                          >
-                            {confirmDelete === reaction.emoji
-                              ? "Confirm Remove"
-                              : "Remove"}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Add New Reaction Form */}
                 <div className="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
@@ -401,14 +371,16 @@ export default function ReactionRoles() {
                       </label>
                       <EmojiPicker
                         value={currentReactionRole.emoji}
-                        onChange={(emoji: string) =>
+                        onChange={(emoji: string, url?: string) =>
                           setCurrentReactionRole({
                             ...currentReactionRole,
                             emoji,
+                            url,
                           })
                         }
                         placeholder="Choose an emoji..."
                         theme="purple"
+                        guildId={serverId}
                       />
                     </div>
                     <div className="relative">
@@ -451,6 +423,75 @@ export default function ReactionRoles() {
                   </button>
                 </div>
               </div>
+              {settings.reactions.length > 0 && (
+                <div className="bg-black/20 rounded-xl p-6 border border-white/5">
+                  <h3 className="text-lg font-medium text-white/90 mb-4 flex items-center gap-2">
+                    <i className="fas fa-list text-fuchsia-300"></i>
+                    <span>Current Reaction Roles</span>
+                    <span className="text-xs bg-fuchsia-500/20 text-fuchsia-300 px-2 py-0.5 rounded-full ml-2">
+                      {settings.reactions.length}
+                    </span>
+                  </h3>
+
+                  <div className="space-y-3">
+                    {settings.reactions.map((reaction) => (
+                      <div
+                        key={reaction.emoji}
+                        className="flex items-center justify-between p-4 rounded-lg bg-black/30 border border-white/5 transition-all hover:border-white/10"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 flex items-center justify-center bg-purple-500/10 rounded-full">
+                            {/* <span className="text-2xl">{reaction.emoji}</span> */}
+                            {reaction.url ? (
+                              <img
+                                src={reaction.url}
+                                alt={reaction.emoji}
+                                className="w-6 h-6"
+                              />
+                            ) : (
+                              <span className="text-2xl">{reaction.emoji}</span>
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm text-white/50">
+                              Assigns role:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {getRoleIcon(reaction.role_id) && (
+                                <img
+                                  src={getRoleIcon(reaction.role_id)!}
+                                  alt="Role Icon"
+                                  className="w-5 h-5 rounded-full"
+                                />
+                              )}
+                              <span
+                                className="font-medium"
+                                style={{
+                                  color: getRoleColor(reaction.role_id),
+                                }}
+                              >
+                                @{getRoleName(reaction.role_id)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveReaction(reaction.emoji)}
+                          className={`px-3 py-1.5 rounded text-sm transition-all ${
+                            confirmDelete === reaction.emoji
+                              ? "bg-red-500 text-white"
+                              : "bg-white/5 text-white/70 hover:bg-red-500/20 hover:text-red-300"
+                          }`}
+                        >
+                          {confirmDelete === reaction.emoji
+                            ? "Confirm Remove"
+                            : "Remove"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </SettingsSection>
 
             {/* Step 3: Settings */}
