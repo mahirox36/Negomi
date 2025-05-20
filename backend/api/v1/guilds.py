@@ -20,6 +20,7 @@ from typing import List, Union
 if TYPE_CHECKING:
     from classes.Features.Welcome import Welcome
     from backend.apiManager import APIServer
+import re
 
 router = APIRouter(tags=["guilds"])
 
@@ -314,6 +315,30 @@ async def get_guild_categories(
     except Exception as e:
         backend.logger.error(f"Error fetching categories: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch categories")
+
+#get server emojis
+@router.get("/{guild_id}/emojis")
+async def get_guild_emojis(
+    guild_id: int, request: Request, user: User = Depends(get_user)
+):
+    """Get emojis for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    try:
+        guild = await backend.fetch_guild(guild_id)
+        emojis = [
+            {
+                "id": str(emoji.id),
+                "name": emoji.name,
+                "url": str(emoji.url),
+                "animated": emoji.animated,
+            }
+            for emoji in guild.emojis
+        ]
+        return emojis
+
+    except Exception as e:
+        backend.logger.error(f"Error fetching emojis: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch emojis")
 
 
 @router.get("/{guild_id}/joined")
@@ -1209,7 +1234,7 @@ async def create_reaction_roles(
     reaction_role_request: ReactionRoleRequest,
     user: User = Depends(get_user),
 ):
-    """Create reaction roles with enhanced validation and support for custom emojis"""
+    """Create or update reaction roles with enhanced validation and support for custom emojis. Adds missing reactions if already present."""
     backend: APIServer = request.app.state.backend
     try:
         message_id = reaction_role_request.message_id
@@ -1242,16 +1267,40 @@ async def create_reaction_roles(
                 detail="Bot lacks permission to add reactions in this channel",
             )
 
-        # Add reactions to the message
+        # Add only missing reactions to the message
         if not isinstance(channel, TextChannel):
             raise HTTPException(
                 status_code=400,
                 detail="Selected channel must be a text channel",
             )
         message_discord = await channel.fetch_message(message.message_id)
+        # Get current reactions on the message
+        current_reactions = set()
+        for r in message_discord.reactions:
+            if not isinstance(r.emoji, str) and hasattr(r.emoji, "id") and r.emoji.id:
+                # Custom emoji
+                current_reactions.add(f"<{'a' if getattr(r.emoji, 'animated', False) else ''}:{r.emoji.name}:{r.emoji.id}>")
+            else:
+                # Unicode emoji
+                current_reactions.add(str(r.emoji))
+
         for reaction in reactions:
             emoji = reaction["emoji"]
-            await message_discord.add_reaction(emoji)
+            # Support custom emojis from the guild
+            emoji_str = emoji
+            if isinstance(emoji, str) and emoji.startswith("<") and emoji.endswith(">"):
+                match = re.match(r"<a?:\w+:(\d+)>", emoji)
+                if match:
+                    emoji_id = int(match.group(1))
+                    custom_emoji = next((e for e in guild.emojis if e.id == emoji_id), None)
+                    if custom_emoji:
+                        emoji_str = f"<{'a' if custom_emoji.animated else ''}:{custom_emoji.name}:{custom_emoji.id}>"
+                        if emoji_str not in current_reactions:
+                            await message_discord.add_reaction(custom_emoji)
+                        continue
+            # For unicode emoji
+            if emoji_str not in current_reactions:
+                await message_discord.add_reaction(emoji)
 
         # Create or update the reaction roles
         feature = await Feature.get_guild_feature(guild_id, "reaction_roles")
@@ -1263,8 +1312,8 @@ async def create_reaction_roles(
             None,
         )
         if existing_entry:
-            # Update the existing entry with new data
-            existing_entry["reactions"].extend(reactions)
+            # Update the existing entry with new data (replace reactions, not extend)
+            existing_entry["reactions"] = reactions
             existing_entry["allow_unselect"] = reaction_role_request.allow_unselect
             existing_entry["max_reactions_per_user"] = (
                 reaction_role_request.max_reactions_per_user
@@ -1278,6 +1327,7 @@ async def create_reaction_roles(
             reaction_roles.append(
                 {
                     "message_id": message.id,
+                    "channel_id": message.channel_id,
                     "reactions": reactions,
                     "allow_unselect": reaction_role_request.allow_unselect,
                     "max_reactions_per_user": reaction_role_request.max_reactions_per_user,
@@ -1291,7 +1341,7 @@ async def create_reaction_roles(
         await feature.set_setting("reaction_roles", reaction_roles)
 
         return JSONResponse(
-            {"success": True, "message": "Reaction roles created successfully"}
+            {"success": True, "message": "Reaction roles created or updated successfully"}
         )
     except Exception as e:
         backend.logger.error(f"Error creating reaction roles: {str(e)}")
@@ -1439,50 +1489,3 @@ async def delete_reaction_role_by_emoji(
     except Exception as e:
         backend.logger.error(f"Error deleting reaction role: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete reaction role")
-
-
-@router.put("/{guild_id}/reaction-roles/{message_id}")
-async def update_reaction_roles(
-    guild_id: int,
-    message_id: int,
-    request: Request,
-    reaction_role_request: ReactionRoleRequest,
-    user: User = Depends(get_user),
-):
-    """Update reaction roles for a specific message"""
-    backend: APIServer = request.app.state.backend
-    try:
-        feature = await Feature.get_guild_feature(guild_id, "reaction_roles")
-        reaction_roles = feature.get_setting("reaction_roles") or []
-
-        # Find the message entry
-        message_entry = next(
-            (entry for entry in reaction_roles if entry["message_id"] == message_id),
-            None,
-        )
-
-        if not message_entry:
-            raise HTTPException(
-                status_code=404, detail="Reaction roles not found for this message"
-            )
-
-        # Update the entry with new data
-        message_entry["reactions"] = reaction_role_request.reactions
-        message_entry["allow_unselect"] = reaction_role_request.allow_unselect
-        message_entry["max_reactions_per_user"] = (
-            reaction_role_request.max_reactions_per_user
-        )
-        message_entry["require_roles"] = reaction_role_request.require_roles
-        message_entry["forbidden_roles"] = reaction_role_request.forbidden_roles
-        message_entry["cooldown"] = reaction_role_request.cooldown
-        message_entry["remove_reactions"] = reaction_role_request.remove_reactions
-
-        # Save updated reaction roles
-        await feature.set_setting("reaction_roles", reaction_roles)
-
-        return JSONResponse(
-            {"success": True, "message": "Reaction roles updated successfully"}
-        )
-    except Exception as e:
-        backend.logger.error(f"Error updating reaction roles: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update reaction roles")

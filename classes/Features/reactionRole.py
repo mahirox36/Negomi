@@ -119,12 +119,10 @@ class ReactionRole(commands.Cog):
             return
 
         reaction_roles = feature.get_setting("reaction_roles", [])
-        # Fetch the message from the database using the channel ID and payload message ID
         message = await Messages.get(message_id=payload.message_id)
         if not message:
             return
 
-        # Filter reaction roles that match the message ID
         reaction_role = next(
             (rr for rr in reaction_roles if str(rr["message_id"]) == str(message.id)),
             None,
@@ -136,12 +134,14 @@ class ReactionRole(commands.Cog):
             (
                 r
                 for r in reaction_role["reactions"]
-                if str(r["emoji"]) == str(reaction_id)
+                if str(r.get("emoji")) == str(reaction_id)
+                or r.get("url") == str(payload.emoji.url)
             ),
             None,
         )
         if not reaction_config:
             return
+
         message = await channel.fetch_message(payload.message_id)
         can_react, error_message = await self._validate_user_reaction(
             user, reaction_role, guild, channel, message
@@ -308,7 +308,9 @@ class ReactionRole(commands.Cog):
             return
 
         Logger = Logs.Logger(guild=guild, user=user, cog=self)
-        reaction_id = reaction.id
+        reaction_id = (
+            reaction.name if payload.emoji.is_unicode_emoji() else reaction.id
+        )
 
         channel = guild.get_channel(payload.channel_id)
         if not channel:
@@ -345,7 +347,8 @@ class ReactionRole(commands.Cog):
             (
                 r
                 for r in reaction_role["reactions"]
-                if str(r["emoji"]) == str(reaction_id)
+                if str(r.get("emoji")) == str(reaction_id)
+                or r.get("url") == str(payload.emoji.url)
             ),
             None,
         )
