@@ -621,57 +621,6 @@ export default function ReactionRoles() {
               {/* Settings section ends here */}
             </SettingsSection>
           </div>
-
-          {/* Visual Preview */}
-          {settings.reactions.length > 0 && (
-            <SettingsSection
-              title="Preview"
-              description="See how your reaction roles will look"
-              icon="fa-eye"
-              iconBgColor="bg-teal-500/20"
-              iconColor="text-teal-300"
-            >
-              <div className="bg-black/30 border border-white/5 rounded-xl p-6 relative">
-                <div className="flex flex-col space-y-4">
-                  <div className="relative">
-                    <MessagePreview
-                      content={selectedMessage.content}
-                      embeds={selectedMessage.embeds || []}
-                    />
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {settings.reactions.map((reaction) => (
-                        <div
-                          key={reaction.emoji}
-                          className="tooltip"
-                          data-tip={`Role: ${getRoleName(reaction.role_id)}`}
-                        >
-                          <span className="text-2xl cursor-pointer hover:scale-110 transition-transform inline-block">
-                            {reaction.emoji}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 p-4 rounded-lg border border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-                        <i className="fas fa-info text-purple-300"></i>
-                      </div>
-                      <div>
-                        <h4 className="text-white font-medium">How it works</h4>
-                        <p className="text-sm text-white/70">
-                          Users can click on the emoji reactions to get or
-                          remove the associated role
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </SettingsSection>
-          )}
         </>
       )}
     </div>

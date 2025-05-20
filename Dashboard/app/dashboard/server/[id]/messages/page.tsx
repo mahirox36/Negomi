@@ -394,6 +394,8 @@ export default function MessagesPage() {
                   key={message.id}
                   custom={index}
                   variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
                   className="group relative bg-gradient-to-br from-white/10 to-white/5 overflow-hidden rounded-xl border border-white/10 hover:border-purple-500/40 transition-all hover:shadow-xl hover:shadow-purple-500/20 backdrop-blur-sm"
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 >

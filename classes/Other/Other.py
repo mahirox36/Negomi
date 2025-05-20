@@ -22,6 +22,11 @@ class Other(commands.Cog):
             "Nuh Uh","Yea Uh","Bling-bang-bang, bling-bang-bang-born",
             "UwU","OwO",":3"
         ]
+        self.jokes_links = ["https://official-joke-api.appspot.com/random_joke", #setup and punchline
+                            "https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit", #sometimes it's joke and sometimes it's setup and delivery
+                            "https://api.chucknorris.io/jokes/random", # value is joke
+                            "https://geek-jokes.sameerkumar.website/api" # it gives u string (that's the joke)
+                            ]
     
     @slash_command("fun",description="Fun Commands")
     async def fun(self,ctx:init):
@@ -35,11 +40,26 @@ class Other(commands.Cog):
         await ctx.send("UwU")
     @fun.subcommand(name="joke",description="Get a Random Joke")
     async def joke(self,ctx:init):
-        joke= get("https://official-joke-api.appspo t.com/random_joke").json()
-        phrase      = joke["setup"]
-        punchline   = joke["punchline"]
-        ID          = joke["id"]
-        await ctx.send(embed=Embed.Info(title=phrase,description=f"||{punchline}||",footer=f"id: {ID}"))
+        joke_url = random.choice(self.jokes_links)
+        joke = get(joke_url).json()
+        if joke_url == self.jokes_links[0]:
+            setup = joke['setup']
+            punchline = joke['punchline']
+            embed = Embed(title="Joke", description=f"##{setup}\n\n||{punchline}||", colour=int(colors.Info.value))
+        elif joke_url == self.jokes_links[1]:
+            if joke['type'] == 'single':
+                embed = Embed(title="Joke", description=joke['joke'], colour=int(colors.Info.value))
+            else:
+                setup = joke['setup']
+                delivery = joke['delivery']
+                embed = Embed(title="Joke", description=f"##{setup}\n\n||{delivery}||", colour=int(colors.Info.value))
+        elif joke_url == self.jokes_links[2]:
+            embed = Embed(title="Joke", description=joke['value'], colour=int(colors.Info.value))
+        elif joke_url == self.jokes_links[3]:
+            embed = Embed(title="Joke", description=joke, colour=int(colors.Info.value))
+        else:
+            embed = Embed(title="Joke", description="No joke found!", colour=int(colors.Error.value))
+        await ctx.send(embed=embed)
 
     @fun.subcommand(name="meme",description="Get a random Meme")
     async def meme(self,ctx:init):

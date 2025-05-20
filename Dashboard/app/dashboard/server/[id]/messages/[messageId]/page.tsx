@@ -73,6 +73,13 @@ const availableVariables = [
   { label: "Member Count", value: "{memberCount}" },
   { label: "Current Date", value: "{date}" },
   { label: "Current Time", value: "{time}" },
+  { label: "Boost Count", value: "{boostCount}" },
+  { label: "Role Count", value: "{roleCount}" },
+  { label: "Channel Count", value: "{channelCount}" },
+  { label: "Emoji Count", value: "{emojiCount}" },
+  { label: "Server Owner", value: "{owner}" },
+  { label: "Verification Level", value: "{verificationLevel}" },
+  { label: "Server Created At", value: "{createdAt}" },
 ];
 
 export default function MessageEditorPage() {
@@ -862,6 +869,13 @@ export default function MessageEditorPage() {
                     <li>{"{memberCount}"} - Shows the total server members</li>
                     <li>{"{date}"} - Current date</li>
                     <li>{"{time}"} - Current time</li>
+                    <li>{"{boostCount}"} - Total server boosts</li>
+                    <li>{"{roleCount}"} - Total server roles</li>
+                    <li>{"{channelCount}"} - Total server channels</li>
+                    <li>{"{emojiCount}"} - Total server emojis</li>
+                    <li>{"{owner}"} - Server owner name</li>
+                    <li>{"{verificationLevel}"} - Server verification level</li>
+                    <li>{"{createdAt}"} - Server creation date</li>
                   </ul>
                 </div>
 

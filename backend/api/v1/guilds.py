@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
 from typing import TYPE_CHECKING, Optional
 from pydantic import BaseModel
-from nexon import ChannelType
+from nexon import ChannelType, utils
 from nexon.channel import CategoryChannel, TextChannel
 from nexon.data.models import Messages
 from nexon.embeds import Embed
@@ -1074,8 +1074,19 @@ async def update_message(
             messageDiscord = await channel.fetch_message(message.message_id)
             await messageDiscord.edit(
                 content=message.content.format(
-                    server=guild.name, channel=channel.mention
-                ),
+                server=guild.name,
+                channel=channel.mention,
+                memberCount=guild.member_count,
+                date=f"<t:{int(utils.utcnow().timestamp())}:d>",
+                time=f"<t:{int(utils.utcnow().timestamp())}:t>",
+                boostCount=guild.premium_subscription_count,
+                roleCount=len(guild.roles),
+                channelCount=len(guild.channels),
+                emojiCount=len(guild.emojis),
+                owner=guild.owner.display_name if guild.owner else "Unknown",
+                verificationLevel=str(guild.verification_level),
+                createdAt=f"<t:{int(guild.created_at.timestamp())}:R>",
+            ),
                 embeds=[
                     Embed.from_dict(
                         {**embed, "color": int(embed["color"].lstrip("#"), 16)}
@@ -1123,7 +1134,20 @@ async def send_message(
 
         # Send the message
         message_id = await channel.send(
-            message.content.format(server=guild.name, channel=channel.mention),
+            message.content.format(
+                server=guild.name,
+                channel=channel.mention,
+                memberCount=guild.member_count,
+                date=f"<t:{int(utils.utcnow().timestamp())}:d>",
+                time=f"<t:{int(utils.utcnow().timestamp())}:t>",
+                boostCount=guild.premium_subscription_count,
+                roleCount=len(guild.roles),
+                channelCount=len(guild.channels),
+                emojiCount=len(guild.emojis),
+                owner=guild.owner.display_name if guild.owner else "Unknown",
+                verificationLevel=str(guild.verification_level),
+                createdAt=f"<t:{int(guild.created_at.timestamp())}:R>",
+            ),
             embeds=[
                 Embed.from_dict(
                     {**embed, "color": int(embed["color"].lstrip("#"), 16)}
@@ -1152,23 +1176,29 @@ async def send_message(
 class ReactionRoleRequest(BaseModel):
     message_id: int = Field(..., description="ID of the message to add reactions to")
     reactions: List[dict] = Field(
-        ..., description="List of reaction-role pairs, e.g., [{'emoji': '😊', 'role_id': 123456789}]"
+        ...,
+        description="List of reaction-role pairs, e.g., [{'emoji': '😊', 'role_id': 123456789}]",
     )
     allow_unselect: bool = False
     max_reactions_per_user: Optional[int] = Field(
-        None, description="Maximum number of reactions a user can select for this message"
+        None,
+        description="Maximum number of reactions a user can select for this message",
     )
     require_roles: Optional[List[int]] = Field(
-        None, description="List of role IDs required for a user to interact with the reactions"
+        None,
+        description="List of role IDs required for a user to interact with the reactions",
     )
     forbidden_roles: Optional[List[int]] = Field(
-        None, description="List of role IDs that prevent a user from interacting with the reactions"
+        None,
+        description="List of role IDs that prevent a user from interacting with the reactions",
     )
     cooldown: Optional[int] = Field(
-        None, description="Cooldown time in seconds before a user can interact with the reactions again"
+        None,
+        description="Cooldown time in seconds before a user can interact with the reactions again",
     )
     remove_reactions: Optional[bool] = Field(
-        None, description="Whether to remove reaction that the user have selected from the message after a user interacts with them"
+        None,
+        description="Whether to remove reaction that the user have selected from the message after a user interacts with them",
     )
 
 
@@ -1236,7 +1266,9 @@ async def create_reaction_roles(
             # Update the existing entry with new data
             existing_entry["reactions"].extend(reactions)
             existing_entry["allow_unselect"] = reaction_role_request.allow_unselect
-            existing_entry["max_reactions_per_user"] = reaction_role_request.max_reactions_per_user
+            existing_entry["max_reactions_per_user"] = (
+                reaction_role_request.max_reactions_per_user
+            )
             existing_entry["require_roles"] = reaction_role_request.require_roles
             existing_entry["forbidden_roles"] = reaction_role_request.forbidden_roles
             existing_entry["cooldown"] = reaction_role_request.cooldown
@@ -1304,7 +1336,9 @@ async def delete_reaction_role(
             channel = guild.get_channel(int(message_entry["channel_id"]))
             if not channel or not isinstance(channel, TextChannel):
                 try:
-                    channel = await guild.fetch_channel(int(message_entry["channel_id"]))
+                    channel = await guild.fetch_channel(
+                        int(message_entry["channel_id"])
+                    )
                 except:
                     raise HTTPException(status_code=404, detail="Channel not found")
 
@@ -1332,7 +1366,10 @@ async def delete_reaction_role(
         await feature.set_setting("reaction_roles", reaction_roles)
 
         return JSONResponse(
-            {"success": True, "message": "Reaction roles and reactions deleted successfully"}
+            {
+                "success": True,
+                "message": "Reaction roles and reactions deleted successfully",
+            }
         )
     except Exception as e:
         backend.logger.error(f"Error deleting reaction role: {str(e)}")
@@ -1394,11 +1431,58 @@ async def delete_reaction_role_by_emoji(
         await message_discord.clear_reaction(emoji)
 
         return JSONResponse(
-            {"success": True, "message": "Reaction role and reaction deleted successfully"}
+            {
+                "success": True,
+                "message": "Reaction role and reaction deleted successfully",
+            }
         )
     except Exception as e:
         backend.logger.error(f"Error deleting reaction role: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete reaction role")
 
 
+@router.put("/{guild_id}/reaction-roles/{message_id}")
+async def update_reaction_roles(
+    guild_id: int,
+    message_id: int,
+    request: Request,
+    reaction_role_request: ReactionRoleRequest,
+    user: User = Depends(get_user),
+):
+    """Update reaction roles for a specific message"""
+    backend: APIServer = request.app.state.backend
+    try:
+        feature = await Feature.get_guild_feature(guild_id, "reaction_roles")
+        reaction_roles = feature.get_setting("reaction_roles") or []
 
+        # Find the message entry
+        message_entry = next(
+            (entry for entry in reaction_roles if entry["message_id"] == message_id),
+            None,
+        )
+
+        if not message_entry:
+            raise HTTPException(
+                status_code=404, detail="Reaction roles not found for this message"
+            )
+
+        # Update the entry with new data
+        message_entry["reactions"] = reaction_role_request.reactions
+        message_entry["allow_unselect"] = reaction_role_request.allow_unselect
+        message_entry["max_reactions_per_user"] = (
+            reaction_role_request.max_reactions_per_user
+        )
+        message_entry["require_roles"] = reaction_role_request.require_roles
+        message_entry["forbidden_roles"] = reaction_role_request.forbidden_roles
+        message_entry["cooldown"] = reaction_role_request.cooldown
+        message_entry["remove_reactions"] = reaction_role_request.remove_reactions
+
+        # Save updated reaction roles
+        await feature.set_setting("reaction_roles", reaction_roles)
+
+        return JSONResponse(
+            {"success": True, "message": "Reaction roles updated successfully"}
+        )
+    except Exception as e:
+        backend.logger.error(f"Error updating reaction roles: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update reaction roles")
