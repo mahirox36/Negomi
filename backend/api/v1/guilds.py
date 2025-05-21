@@ -997,6 +997,11 @@ async def delete_message(
         message = await Messages.get_or_none(id=id)
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
+        # check if the message is avalialbe or not found in discord:
+        messageDiscord = await backend.fetch_message(message.message_id, message.channel_id)
+        if not messageDiscord:
+            message.message_id = 0
+            await message.save()
 
         if message.is_sent:
             guild = await backend.fetch_guild(guild_id)
@@ -1047,6 +1052,24 @@ async def get_message(
         message = await Messages.get_or_none(id=id)
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
+        if not message.message_id:
+            return message.to_dict()
+
+        guild = await backend.fetch_guild(guild_id)
+        channel = guild.get_channel(int(message.channel_id))
+        if not channel or not isinstance(channel, TextChannel):
+            try:
+                channel = await guild.fetch_channel(int(message.channel_id))
+            except:
+                message.message_id = 0
+            await message.save()
+            return message.to_dict()
+
+        try:
+            await channel.fetch_message(message.message_id)
+        except nexon.NotFound:
+            message.message_id = 0
+            await message.save()
 
         return message.to_dict()
 

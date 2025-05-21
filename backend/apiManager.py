@@ -20,10 +20,11 @@ from nexon import (
     SlashApplicationSubcommand,
 )
 from nexon.data.models import UserBadge
-
+from nexon.abc import GuildChannel
 from .features.cache import CacheManager
 from .features.storage import StorageManager
 from .tasks import start_tasks
+from modules.Nexon import TextChannel, VoiceChannel
 
 
 class APIConfig:
@@ -399,3 +400,16 @@ class APIServer:
             except Exception as e:
                 raise HTTPException(status_code=404, detail="Channel not found")
         return channel
+
+    async def fetch_message(self, message_id: int, channel_id: int):
+        try:
+            channel = await self.fetch_channel(channel_id)
+            if not isinstance(channel, (TextChannel, VoiceChannel)):
+                raise HTTPException(
+                    status_code=400, detail="Cannot fetch message from a private channel"
+                )
+            else:
+                message = await channel.fetch_message(message_id)
+        except Exception as e:
+            return False
+        return message
