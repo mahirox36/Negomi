@@ -96,11 +96,16 @@ async def createBadge(
         # Ensure name isn't empty after sanitization
         if not sanitized_name:
             sanitized_name = "badge"
+        if len(f"{sanitized_name}_badge") > 32:
+            sanitized_name = f"{sanitized_name[:32 - 6]}_badge"
+        else:
+            sanitized_name = f"{sanitized_name}_badge"
+        
 
         # Try to create emoji with error handling
         try:
             emoji = await guild.create_custom_emoji(
-                name=f"{sanitized_name}_badge",
+                name=sanitized_name,
                 image=image,
                 reason=f"Creating New Badge Called {badge_request.name}",
             )

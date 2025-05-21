@@ -202,6 +202,11 @@ class APIServer:
         if not access_token:
             raise HTTPException(status_code=401, detail="Not authenticated")
 
+        # Check if user is cached
+        cached_user = self.cache.get_cached_user(access_token)
+        if cached_user:
+            return access_token
+
         # Get or create OAuth session
         if access_token not in self.oauth_sessions:
             oauth_token = OAuth2Token(

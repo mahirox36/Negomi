@@ -224,6 +224,13 @@ export function BadgeForm({
             }
             ${preview ? "h-[200px]" : "h-[120px]"}`}
                 >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                   {preview ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <img
