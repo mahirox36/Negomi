@@ -83,7 +83,7 @@
       "auto_role": {
         "title": "Auto-Role",
         "description": "Automatically assign roles to users and bots when they join your server.",
-        "item1": "Set specific roles for humans and bots separately",
+        "item1": "Set specific roles for users and bots separately",
         "item2": "Select multiple roles to be assigned"
       },
       "temp_voice": {
@@ -150,6 +150,207 @@
         "properties": "Badge Properties",
         "requirements": "Setting Requirements",
         "managing": "Managing Badges"
+      }
+    }
+  },
+  "badges": {
+    "direction": "ltr",
+    "title": "Badges",
+    "subtitle": "Learn how to create and manage badges for your community",
+    "overview": {
+      "title": "Overview",
+      "description": "Badges are achievement-based rewards that users can earn by meeting specific requirements. They help encourage engagement and recognize user contributions within your community.",
+      "recognition": {
+        "title": "Recognition",
+        "description": "Reward active members and encourage participation"
+      },
+      "customizable": {
+        "title": "Customizable",
+        "description": "Create unique badges with custom icons and requirements"
+      }
+    },
+    "creating": {
+      "title": "Creating Badges",
+      "description": "Create new badges through the admin dashboard by following these steps:",
+      "steps": [
+        {
+          "title": "Navigate to Admin > Badges section",
+          "description": "Go to the badges section in the admin dashboard."
+        },
+        {
+          "title": "Click 'Create Badge' button",
+          "description": "Press the button to start creating a new badge."
+        },
+        {
+          "title": "Fill in badge details and properties",
+          "description": "Provide the necessary details for the badge."
+        },
+        {
+          "title": "Set requirements for earning the badge",
+          "description": "Define the conditions users must meet to earn the badge."
+        },
+        {
+          "title": "Save your changes",
+          "description": "Save the badge to make it available."
+        }
+      ],
+      "tip": {
+        "title": "Pro Tip",
+        "description": "Use clear, descriptive names and icons that represent the achievement they symbolize."
+      }
+    },
+    "properties": {
+      "title": "Badge Properties",
+      "description": "Each badge has several properties that determine its appearance and behavior:",
+      "basic": {
+        "title": "Basic Properties",
+        "items": [
+          "Name - Unique identifier for the badge",
+          "Description - Explains how to earn the badge",
+          "Icon - Visual representation"
+        ]
+      },
+      "advanced": {
+        "title": "Advanced Settings",
+        "items": [
+          "Rarity Level - Determines badge value",
+          "Hidden Status - Controls visibility",
+          "Requirements - Conditions for earning"
+        ]
+      }
+    },
+    "requirements": {
+      "title": "Setting Requirements",
+      "description": "Requirements define the conditions users must meet to earn a badge:",
+      "types": {
+        "title": "Requirement Types",
+        "description": "Different types of conditions that can be set",
+        "items": [
+          { "icon": "fas fa-message text-blue-400", "text": "Message Count" },
+          { "icon": "fas fa-clock text-yellow-400", "text": "Time in Server" },
+          { "icon": "fas fa-users text-purple-400", "text": "Invites" },
+          { "icon": "fas fa-star text-green-400", "text": "Reputation Points" }
+        ]
+      },
+      "comparison": {
+        "title": "Comparison Options",
+        "description": "Ways to compare values",
+        "items": [
+          { "icon": "fas fa-equals text-blue-400", "text": "Equal to" },
+          {
+            "icon": "fas fa-not-equal text-yellow-400",
+            "text": "Not equal to"
+          },
+          {
+            "icon": "fas fa-greater-than text-red-400",
+            "text": "Greater than"
+          },
+          { "icon": "fas fa-less-than text-yellow-400", "text": "Less than" },
+          {
+            "icon": "fas fa-greater-than-equal text-teal-400",
+            "text": "Equal or greater than"
+          },
+          {
+            "icon": "fas fa-less-than-equal text-orange-400",
+            "text": "Equal or less than"
+          }
+        ]
+      },
+      "note": {
+        "title": "Note",
+        "description": "Multiple requirements can be combined to create more complex achievement conditions."
+      }
+    },
+    "criteria": {
+      "title": "Criteria Types",
+      "description": "Below is a detailed explanation of the various criteria types that can be used to define badge requirements:",
+      "types": {
+        "message_based": {
+          "title": "Message-Based Criteria",
+          "icon": "fas fa-envelope",
+          "description": "Criteria related to messages sent or received.",
+          "item1": "MESSAGE_COUNT - Total number of messages sent.",
+          "item2": "MESSAGE_SENT - if a message is sent by the user.",
+          "item3": "MESSAGE_EDIT_COUNT - Number of messages edited.",
+          "item4": "MESSAGE_DELETE_COUNT - Number of messages deleted."
+        },
+        "reaction_based": {
+          "title": "Reaction-Based Criteria",
+          "icon": "fas fa-smile",
+          "description": "Criteria related to reactions given or received.",
+          "item1": "REACTION_RECEIVED - Reactions received on messages.",
+          "item2": "REACTION_GIVEN - Reactions given by the user.",
+          "item3": "UNIQUE_EMOJI_COUNT - Number of unique emojis used.",
+          "item4": "SPECIFIC_EMOJI - Usage of a specific emoji."
+        },
+        "content_based": {
+          "title": "Content-Based Criteria",
+          "icon": "fas fa-file-alt",
+          "description": "Criteria related to the content of messages.",
+          "items": [
+            "CONTENT_LENGTH - Length of the message content.",
+            "CONTENT_MATCH - Messages matching specific content.",
+            "LINK_SHARED - Number of links shared in messages.",
+            "GIF_SENT - GIFs sent by the user.",
+            "GIF_COUNT - Total number of GIFs sent."
+          ]
+        },
+        "attachment_based": {
+          "title": "Attachment-Based Criteria",
+          "icon": "fas fa-paperclip",
+          "description": "Criteria related to attachments in messages.",
+          "item1": "ATTACHMENT_SENT - Attachments sent by the user.",
+          "item2": "ATTACHMENT_COUNT - Total number of attachments sent."
+        },
+        "mention_based": {
+          "title": "Mention-Based Criteria",
+          "icon": "fas fa-at",
+          "description": "Criteria related to mentions in messages.",
+          "item1": "MENTION_COUNT - Total number of mentions.",
+          "item2": "UNIQUE_MENTION_COUNT - Number of unique users mentioned."
+        },
+        "command_interaction": {
+          "title": "Command and Interaction Criteria",
+          "icon": "fas fa-terminal",
+          "description": "Criteria related to commands and interactions.",
+          "item1": "COMMAND_USE - Specific commands used by the user.",
+          "item2": "ALL_COMMANDS - Total commands used.",
+          "item3": "SPECIFIC_USER_INTERACTION - Interaction with specific users."
+        },
+        "time_activity": {
+          "title": "Time and Activity Criteria",
+          "icon": "fas fa-clock",
+          "description": "Criteria related to time and activity.",
+          "item1": "TIME_BASED - Activity during specific time periods.",
+          "item2": "INACTIVE_DURATION - Duration of inactivity.",
+          "item3": "CHANNEL_ACTIVITY - Activity in specific channels."
+        }
+      },
+      "note": {
+        "title": "Note",
+        "description": "These criteria can be combined to create complex and engaging badge requirements."
+      }
+    },
+    "managing": {
+      "title": "Managing Badges",
+      "description": "Effectively manage your badges through the admin dashboard:",
+      "actions": [
+        {
+          "title": "Edit",
+          "description": "Modify existing badge properties and requirements"
+        },
+        {
+          "title": "Delete",
+          "description": "Remove badges that are no longer needed"
+        },
+        {
+          "title": "Monitor",
+          "description": "Track badge distribution and engagement"
+        }
+      ],
+      "important": {
+        "title": "Important",
+        "description": "Changes to badge requirements will not affect badges that have already been earned."
       }
     }
   }

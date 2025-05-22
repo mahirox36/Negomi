@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   }
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children, lang = "en" }: { children: ReactNode; lang?: string }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang={lang} className={inter.className}>
       <head>
         <link 
           rel="stylesheet" 
@@ -54,6 +54,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </RootProvider>
       </body>
     </html>
-  )
+  );
 }
 

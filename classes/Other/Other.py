@@ -5,10 +5,12 @@ import ast
 import math
 import operator
 from better_profanity import profanity
+import aiohttp
 
 class Other(commands.Cog):
     def __init__(self, client:commands.Bot):
         self.client = client
+        self.session = aiohttp.ClientSession()  # Create a single session for reuse
         self.eight_ball_responses = [
             "It is certain.","It is decidedly so.","Without a doubt.",
             "Yes – definitely.","You may rely on it.","As I see it, yes.",
@@ -28,6 +30,10 @@ class Other(commands.Cog):
                             "https://geek-jokes.sameerkumar.website/api" # it gives u string (that's the joke)
                             ]
     
+    def cog_unload(self):
+        # Ensure the session is closed when the cog is unloaded
+        self.client.loop.create_task(self.session.close())
+
     @slash_command("fun",description="Fun Commands")
     async def fun(self,ctx:init):
         pass
@@ -40,8 +46,10 @@ class Other(commands.Cog):
         await ctx.send("UwU")
     @fun.subcommand(name="joke",description="Get a Random Joke")
     async def joke(self,ctx:init):
+        await ctx.response.defer()
         joke_url = random.choice(self.jokes_links)
-        joke = get(joke_url).json()
+        async with self.session.get(joke_url) as response:
+            joke = await response.json()
         if joke_url == self.jokes_links[0]:
             setup = joke['setup']
             punchline = joke['punchline']
