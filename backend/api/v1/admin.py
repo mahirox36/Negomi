@@ -122,11 +122,11 @@ async def get_admin_guilds(request: Request):
         return {
             "guilds": [
                 {
-                    "id": guild.id,
+                    "id": str(guild.id),
                     "name": guild.name,
                     "member_count": guild.member_count,
                     "icon_url": str(guild.icon.url) if guild.icon else None,
-                    "owner_id": guild.owner_id,
+                    "owner_id": str(guild.owner_id),
                     "boost_level": guild.premium_tier,
                     "boost_count": guild.premium_subscription_count,
                     "verification_level": str(guild.verification_level),
