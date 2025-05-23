@@ -64,7 +64,7 @@ async def get_user(request: Request, guild_id: Optional[int] = None) -> User:
 async def get_guilds(request: Request):
     """Get summary of the top 10 most popular guilds by member count, excluding a specific guild"""
     backend: APIServer = request.app.state.backend
-    excluded_guild_id = 333949691962196000
+    excluded_guild_id = 333949691962195969
     guilds = sorted(
         [g for g in backend.client.guilds if g.id != excluded_guild_id],
         key=lambda g: g.member_count if g.member_count is not None else 0,
