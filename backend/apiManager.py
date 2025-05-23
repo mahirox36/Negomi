@@ -343,7 +343,6 @@ class APIServer:
         try:
             session = self.oauth_sessions[access_token]
             user = await session.fetch_user()
-            self.logger.info(f"Fetched user from session: {user}")
 
             # Convert user object to dictionary and cache it
             self.cache.cache_user(access_token, user) # type: ignore
