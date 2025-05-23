@@ -62,10 +62,11 @@ async def get_user(request: Request, guild_id: Optional[int] = None) -> User:
 
 @router.get("/guilds")
 async def get_guilds(request: Request):
-    """Get summary of the top 10 most popular guilds by member count"""
+    """Get summary of the top 10 most popular guilds by member count, excluding a specific guild"""
     backend: APIServer = request.app.state.backend
+    excluded_guild_id = 333949691962196000
     guilds = sorted(
-        backend.client.guilds,
+        [g for g in backend.client.guilds if g.id != excluded_guild_id],
         key=lambda g: g.member_count if g.member_count is not None else 0,
         reverse=True,
     )[:10]
