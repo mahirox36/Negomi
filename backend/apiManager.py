@@ -84,7 +84,6 @@ class APIServer:
         DEFAULT_OAUTH_SCOPES = [
             "identify",
             "guilds",
-            "email",
         ]
         if debug:
             self.oauth_client = OAuth2Client(
