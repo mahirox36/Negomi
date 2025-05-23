@@ -72,7 +72,7 @@ async def createBadge(
         image = None
 
         for attempt in range(max_retries):
-            image = download_image_to_bytes(badge_request.icon_url)
+            image = await download_image_to_bytes(badge_request.icon_url)
             if image:
                 break
 
@@ -239,7 +239,7 @@ async def editBadge(
                     await emoji.delete()
 
             # Create new emoji
-            image = download_image_to_bytes(request_badge.icon_url)
+            image = await download_image_to_bytes(request_badge.icon_url)
             if not image:
                 raise Exception("No image found")
             new_emoji = await guild.create_custom_emoji(

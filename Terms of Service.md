@@ -1,6 +1,6 @@
 # Terms of Service for Negomi<3
 
-**Last Updated:** May 5, 2025
+**Last Updated:** May 24, 2025
 
 ## Introduction
 
@@ -138,15 +138,23 @@ Use of the Bot is also subject to [Discord's Terms of Service](https://discord.c
 
 These Terms shall be governed by and construed in accordance with the laws of the Saudi Arabia, without regard to its conflict of law provisions.
 
-## 14. Severability
+## 14. Children’s Use
+
+Negomi<3 is not intended for use by individuals under the age of 13, or under the minimum age required by your country’s laws if higher. By using the Bot, you affirm that you meet the minimum age requirement. If we discover that the Bot has been used by someone under the required age without verified parental consent, we reserve the right to delete any associated data and terminate their access.
+
+## 15. Severability
 
 If any provision of these Terms is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect.
 
-## 15. Waiver
+## 16. Waiver
 
 The failure to exercise or enforce any right or provision of these Terms shall not constitute a waiver of such right or provision.
 
-## 16. Contact Information
+## 17. Non-Affiliation Disclaimer
+
+Negomi<3 is an independent project and is not affiliated with, endorsed by, or sponsored by Discord Inc., or any other third-party services referenced or used by the Bot. All trademarks, logos, and brand names are the property of their respective owners.
+
+## 18. Contact Information
 
 For questions, concerns, or data requests regarding these Terms:
 

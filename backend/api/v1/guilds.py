@@ -16,6 +16,8 @@ from nexon import Feature
 from nexon.data.models import MemberData
 from pydantic import BaseModel, Field
 from typing import List, Union
+from nexon import Logs
+
 
 if TYPE_CHECKING:
     from classes.Features.Welcome import Welcome
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
 import re
 
 router = APIRouter(tags=["guilds"])
+# check if 
 
 
 async def get_user(request: Request, guild_id: Optional[int] = None) -> User:
@@ -31,12 +34,18 @@ async def get_user(request: Request, guild_id: Optional[int] = None) -> User:
     access_token = await backend.verify_auth(request)
     if not access_token:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    session = backend.oauth_sessions[access_token]
-    user = await session.fetch_user()
+
+    # Use cached user data
+    cached_user = await backend.cache.get_cached_user(access_token)
+    if cached_user:
+        user = User(**cached_user)  # Convert cached data to User object
+    else:
+        session = backend.oauth_sessions[access_token]
+        user = await session.fetch_user()
 
     if guild_id is not None:
         guild = await backend.fetch_guild(guild_id)
-        member = guild.get_member(int(user["id"]))
+        member = guild.get_member(int(user["id"] if isinstance(user, dict) else user.id))
         if not member:
             raise HTTPException(
                 status_code=403,
@@ -316,7 +325,8 @@ async def get_guild_categories(
         backend.logger.error(f"Error fetching categories: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch categories")
 
-#get server emojis
+
+# get server emojis
 @router.get("/{guild_id}/emojis")
 async def get_guild_emojis(
     guild_id: int, request: Request, user: User = Depends(get_user)
@@ -407,6 +417,10 @@ async def save_settings(
     """Save all settings for a specific page"""
     backend: APIServer = request.app.state.backend
     try:
+        await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Update Settings", {"page": page})
         if page.replace("-", "_") == "temp_voice":
             settings = await request.json()
             # Handle special case for temp_voice settings
@@ -448,6 +462,11 @@ async def reset_settings(
     guild_id: int, page: str, request: Request, user: User = Depends(get_user)
 ):
     """Reset all settings for a specific page (does not delete the feature/class)"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Reset Settings", {"page": page})
     try:
         feature = await Feature.get_guild_feature(guild_id, page.replace("-", "_"))
         await feature.reset_settings()
@@ -468,6 +487,11 @@ async def set_feature(
     user: User = Depends(get_user),
 ):
     """Set a feature for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Update class settings", {"class_name": class_name, "feature_set": feature_set_request})
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     await featureManager.set_setting(
         feature_set_request.feature_name, feature_set_request.value
@@ -497,6 +521,11 @@ async def reset_feature(
     user: User = Depends(get_user),
 ):
     """Reset a feature for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Reset class settings", {"class_name": class_name})
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if await featureManager.delete_setting(feature_name):
         return {"success": True}
@@ -509,6 +538,11 @@ async def enable_feature(
     guild_id: int, class_name: str, request: Request, user: User = Depends(get_user)
 ):
     """Enable a class for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Enabled class", {"class_name": class_name})
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if not featureManager.enabled:
         await featureManager.enable()
@@ -522,6 +556,11 @@ async def disable_feature(
     guild_id: int, class_name: str, request: Request, user: User = Depends(get_user)
 ):
     """Disable a class for a specific guild"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Disabled settings", {"class_name": class_name})
     featureManager = await Feature.get_guild_feature(guild_id, class_name)
     if featureManager.enabled:
         await featureManager.disable()
@@ -545,6 +584,11 @@ async def create_badge(
     user: User = Depends(get_user),
 ):
     """Create a new badge"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Created a Badge", {"badge": badge_request.model_dump()})
     return await createBadge(request, badge_request, guild_id)  # type: ignore
 
 
@@ -563,6 +607,11 @@ async def edit_badge(
     user: User = Depends(get_user),
 ):
     """Edit an existing badge"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Updated a Badge", {"badge": request_badge.model_dump()})
     return await editBadge(badge_id, request, request_badge, guild_id)  # type: ignore
 
 
@@ -571,6 +620,11 @@ async def delete_badge(
     guild_id: int, badge_id: int, request: Request, user: User = Depends(get_user)
 ):
     """Delete a badge"""
+    backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Deleted a Badge", {"id": badge_id})
     return await deleteBadge(badge_id, request, guild_id)  # type: ignore
 
 
@@ -847,11 +901,6 @@ async def test_welcome_message(
     """Send a test welcome message"""
     backend: APIServer = request.app.state.backend
     try:
-        # Verify auth
-        access_token = await backend.verify_auth(request)
-        if not access_token:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
         cog: Optional["Welcome"] = backend.client.get_cog("Welcome")  # type: ignore
         if not cog:
             raise HTTPException(status_code=503, detail="Welcome system not available")
@@ -936,13 +985,6 @@ async def create_message(
     """Create a new message in a specific channel"""
     backend: APIServer = request.app.state.backend
     try:
-        # Verify user has manage channel permissions
-        access_token = await backend.verify_auth(request)
-        if access_token is None:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
-        session = backend.oauth_sessions[access_token]
-        user = await session.fetch_user()
         guild = await backend.fetch_guild(guild_id)
         member = guild.get_member(int(user["id"]))
 
@@ -951,7 +993,7 @@ async def create_message(
                 status_code=403, detail="You are not a member of this server"
             )
 
-        messages = await Messages.create_message(
+        message = await Messages.create_message(
             name=message_request.name,
             user_id=int(user["id"]),
             guild_id=guild_id,
@@ -965,6 +1007,10 @@ async def create_message(
         if not channel or not isinstance(channel, TextChannel):
             raise HTTPException(status_code=404, detail="Channel not found")
 
+        await Logs.Logger(
+                await backend.fetch_guild(guild_id),
+                await backend.fetch_user(int(user["id"])),
+            ).info("User Created a Message", {"id": message.id,"message": message_request.model_dump()})
         return JSONResponse(
             {"success": True, "message": "Message created successfully"}
         )
@@ -993,12 +1039,18 @@ async def delete_message(
 ):
     """Delete a message by ID"""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Deleted a Message", {"id": id})
     try:
         message = await Messages.get_or_none(id=id)
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
         # check if the message is avalialbe or not found in discord:
-        messageDiscord = await backend.fetch_message(message.message_id, message.channel_id)
+        messageDiscord = await backend.fetch_message(
+            message.message_id, message.channel_id
+        )
         if not messageDiscord:
             message.message_id = 0
             await message.save()
@@ -1088,6 +1140,10 @@ async def update_message(
 ):
     """Update a message by ID"""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Updated a Message", {"id": id, "message": message_request.model_dump()})
     try:
         message = await Messages.get_or_none(id=id)
         if not message:
@@ -1122,19 +1178,19 @@ async def update_message(
             messageDiscord = await channel.fetch_message(message.message_id)
             await messageDiscord.edit(
                 content=message.content.format(
-                server=guild.name,
-                channel=channel.mention,
-                memberCount=guild.member_count,
-                date=f"<t:{int(utils.utcnow().timestamp())}:d>",
-                time=f"<t:{int(utils.utcnow().timestamp())}:t>",
-                boostCount=guild.premium_subscription_count,
-                roleCount=len(guild.roles),
-                channelCount=len(guild.channels),
-                emojiCount=len(guild.emojis),
-                owner=guild.owner.display_name if guild.owner else "Unknown",
-                verificationLevel=str(guild.verification_level),
-                createdAt=f"<t:{int(guild.created_at.timestamp())}:R>",
-            ),
+                    server=guild.name,
+                    channel=channel.mention,
+                    memberCount=guild.member_count,
+                    date=f"<t:{int(utils.utcnow().timestamp())}:d>",
+                    time=f"<t:{int(utils.utcnow().timestamp())}:t>",
+                    boostCount=guild.premium_subscription_count,
+                    roleCount=len(guild.roles),
+                    channelCount=len(guild.channels),
+                    emojiCount=len(guild.emojis),
+                    owner=guild.owner.display_name if guild.owner else "Unknown",
+                    verificationLevel=str(guild.verification_level),
+                    createdAt=f"<t:{int(guild.created_at.timestamp())}:R>",
+                ),
                 embeds=[
                     Embed.from_dict(
                         {**embed, "color": int(embed["color"].lstrip("#"), 16)}
@@ -1159,6 +1215,10 @@ async def send_message(
 ):
     """Send a message by ID"""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Sent a Message", {"id": id})
     try:
         message = await Messages.get_or_none(id=id)
         if not message:
@@ -1259,6 +1319,10 @@ async def create_reaction_roles(
 ):
     """Create or update reaction roles with enhanced validation and support for custom emojis. Adds missing reactions if already present."""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Deleted a Message", {"message_id": reaction_role_request.message_id, "reaction_role": reaction_role_request.model_dump()})
     try:
         message_id = reaction_role_request.message_id
         reactions = reaction_role_request.reactions
@@ -1302,7 +1366,9 @@ async def create_reaction_roles(
         for r in message_discord.reactions:
             if not isinstance(r.emoji, str) and hasattr(r.emoji, "id") and r.emoji.id:
                 # Custom emoji
-                current_reactions.add(f"<{'a' if getattr(r.emoji, 'animated', False) else ''}:{r.emoji.name}:{r.emoji.id}>")
+                current_reactions.add(
+                    f"<{'a' if getattr(r.emoji, 'animated', False) else ''}:{r.emoji.name}:{r.emoji.id}>"
+                )
             else:
                 # Unicode emoji
                 current_reactions.add(str(r.emoji))
@@ -1315,7 +1381,9 @@ async def create_reaction_roles(
                 match = re.match(r"<a?:\w+:(\d+)>", emoji)
                 if match:
                     emoji_id = int(match.group(1))
-                    custom_emoji = next((e for e in guild.emojis if e.id == emoji_id), None)
+                    custom_emoji = next(
+                        (e for e in guild.emojis if e.id == emoji_id), None
+                    )
                     if custom_emoji:
                         emoji_str = f"<{'a' if custom_emoji.animated else ''}:{custom_emoji.name}:{custom_emoji.id}>"
                         if emoji_str not in current_reactions:
@@ -1364,7 +1432,10 @@ async def create_reaction_roles(
         await feature.set_setting("reaction_roles", reaction_roles)
 
         return JSONResponse(
-            {"success": True, "message": "Reaction roles created or updated successfully"}
+            {
+                "success": True,
+                "message": "Reaction roles created or updated successfully",
+            }
         )
     except Exception as e:
         backend.logger.error(f"Error creating reaction roles: {str(e)}")
@@ -1393,6 +1464,10 @@ async def delete_reaction_role(
 ):
     """Delete all reaction roles for a specific message ID and remove the reactions"""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Deleted a Reaction Roles", {"message_id": message_id})
     try:
         feature = await Feature.get_guild_feature(guild_id, "reaction_roles")
         reaction_roles = feature.get_setting("reaction_roles") or []
@@ -1459,6 +1534,10 @@ async def delete_reaction_role_by_emoji(
 ):
     """Delete a specific reaction role for a message by emoji and remove the reaction"""
     backend: APIServer = request.app.state.backend
+    await Logs.Logger(
+            await backend.fetch_guild(guild_id),
+            await backend.fetch_user(int(user["id"])),
+        ).info("User Deleted a Specifc Emoji Role", {"message_id": message_id, "emoji": emoji})
     try:
         feature = await Feature.get_guild_feature(guild_id, "reaction_roles")
         reaction_roles = feature.get_setting("reaction_roles") or []
@@ -1512,3 +1591,15 @@ async def delete_reaction_role_by_emoji(
     except Exception as e:
         backend.logger.error(f"Error deleting reaction role: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete reaction role")
+
+
+# Getting Logs
+
+@router.get("/{guild_id}/logs")
+async def get_logs(
+    guild_id: int,
+    request: Request,
+    user: User = Depends(get_user),
+):
+    """Get all logs from a speific guild"""
+    return list(await Logs.get_logs_by_guild(guild_id))

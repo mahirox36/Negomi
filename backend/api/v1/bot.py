@@ -6,6 +6,7 @@ import psutil
 from typing import TYPE_CHECKING, Optional
 from modules.DiscordConfig import overwriteOwner
 from nexon.data.models import Feature, MetricsCollector
+from modules.Nexon import aio_open
 import base64
 import time
 import logging
@@ -119,9 +120,9 @@ async def get_terms_and_services(request: Request):
     if terms_and_services:
         return terms_and_services
     else:
-        with open("Terms of Service.md", "r") as file:
+        async with aio_open("Terms of Service.md", "r") as file:
             # exclude the first line
-            terms_and_services = "\n".join(file.read().splitlines()[2:])
+            terms_and_services = "\n".join((await file.read()).splitlines()[2:])
         return terms_and_services
 
 
@@ -132,8 +133,8 @@ async def get_privacy_policy(request: Request):
     if privacy_policy:
         return privacy_policy
     else:
-        with open("Privacy Policy.md", "r") as file:
-            privacy_policy = "\n".join(file.read().splitlines()[2:])
+        async with aio_open("Privacy Policy.md", "r") as file:
+            privacy_policy = "\n".join((await file.read()).splitlines()[2:])
         return privacy_policy
 
 

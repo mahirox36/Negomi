@@ -45,10 +45,15 @@ class DiscordBot(commands.Bot):
         BadgeManager().set_badge_earned_callback(self.onBadgeEarned)
 
         self.daily_task.start()
-        
+
         self.setup_hook()
 
-    async def onBadgeEarned(self, user: Union['User', 'Member'], badge: nexon.Badge, channel: Optional[GuildChannel] = None) -> None:
+    async def onBadgeEarned(
+        self,
+        user: Union["User", "Member"],
+        badge: nexon.Badge,
+        channel: Optional[GuildChannel] = None,
+    ) -> None:
         """Handle badge earning notifications with rich embeds and fallback mechanisms."""
         now = utils.utcnow()
 
@@ -126,7 +131,6 @@ class DiscordBot(commands.Bot):
         if not rarity:
             return 0x7289DA  # Discord Blurple default
         settings = await Feature.get_guild_feature(guild_id, "basic_settings")
-        print(settings.settings)
         colors = {
             "common": settings.get_setting("commonColor", 0xFF1493),
             "uncommon": settings.get_setting("uncommonColor", 0x00FFB9),
@@ -136,7 +140,6 @@ class DiscordBot(commands.Bot):
             "mythic": settings.get_setting("mythicColor", 0x00FFFF),
             "unique": settings.get_setting("uniqueColor", 0x8B0000),
         }
-        print(colors)
 
         # Convert any hex string colors to integers
         for key, value in colors.items():
@@ -149,39 +152,14 @@ class DiscordBot(commands.Bot):
 
         return colors.get(rarity.name.lower(), 0xFF1493)
 
-    async def on_interaction(self, interaction: Interaction) -> None:
-        if (
-            interaction.type == InteractionType.application_command
-            and interaction.data is not None
-        ):
-            command_id = interaction.data.get("id")
-            if command_id is not None:
-                command = self.get_application_command(int(command_id))
-                if command is None:
-                    return await super().on_interaction(interaction)
-        else:
-            return await super().on_interaction(interaction)
-        if not interaction.guild:
-            return await super().on_interaction(interaction)
-        # cog_name = command.parent_cog.__class__.__name__
-        # if cog_name and FeatureManager(interaction.guild.id, cog_name).is_disabled():
-        #     await interaction.response.send_message(
-        #         embed=Embed.Error("This Feature is disabled", "Feature Disabled"),ephemeral=True
-        #     )
-        #     return
-
-        await super().on_interaction(interaction)
-
     async def cleanup(self):
-        """Cleanup bot resources including IPC"""
-        
         await self.change_presence(
             activity=nexon.Activity(
                 type=nexon.ActivityType.watching, name="Under Maintenance"
             ),
             status=nexon.Status.dnd,
         )
-        
+
         if self._cleanup_done.is_set():
             return
 
@@ -290,14 +268,27 @@ class DiscordBot(commands.Bot):
         if not get:
             return None
 
+    async def on_connect(self) -> None:
+        """Handler for when the bot connects to Discord."""
+        self.logger.info("Bot connected to Discord")
+        self.add_all_application_commands()
+        await self.sync_application_commands(
+            guild_id=None,
+            associate_known=self._rollout_associate_known,
+            delete_unknown=self._rollout_delete_unknown,
+            update_known=self._rollout_update_known,
+            register_new=self._rollout_register_new,
+        )
+        database_url = f"postgres://{config.database.username}:{config.database.password}@{config.database.host}:{config.database.port}/{config.database.db_name}"
+        async with aio_open(".env", "w") as env_file:
+            await env_file.write(f"DATABASE_URL={database_url}\n")
+        if not await nexon.is_db_initialized():
+            await nexon.init_db()
+
     async def on_ready(self) -> None:
         """Handler for when the bot is ready."""
         if not hasattr(self, "_ready_called"):
             self._ready_called = True
-            database_url = f"postgres://{config.database.username}:{config.database.password}@{config.database.host}:{config.database.port}/{config.database.db_name}"
-            with open(".env", "w") as env_file:
-                env_file.write(f"DATABASE_URL={database_url}\n")
-            await nexon.init_db()
             await self.change_presence(
                 activity=nexon.Activity(
                     type=nexon.ActivityType.watching, name=Presence
@@ -313,16 +304,16 @@ class DiscordBot(commands.Bot):
 
             if send_to_owner_enabled:
                 await self._send_startup_message()
-    
+
     async def on_guild_remove(self, guild: nexon.Guild) -> None:
         """Handler for when the bot leaves a guild."""
         self.logger.debug(f"Left guild: {guild.name} ({guild.id})")
-        isDeleteDataInstantly = (await Feature.get_guild_feature(
-            guild.id, "basic_settings"
-        )).get_setting("isDeleteDataInstantly", False)
+        isDeleteDataInstantly = (
+            await Feature.get_guild_feature(guild.id, "basic_settings")
+        ).get_setting("isDeleteDataInstantly", False)
         if isDeleteDataInstantly:
             await Feature.delete_guild_features(guild.id)
-            guild_data= await GuildData.get_or_none(id= guild.id)
+            guild_data = await GuildData.get_or_none(id=guild.id)
             if guild_data:
                 await guild_data.delete()
         else:
@@ -348,7 +339,7 @@ class DiscordBot(commands.Bot):
 
         except Exception as e:
             self.logger.warning(f"Failed to follow channel: {str(e)}")
-        
+
         # Cancel any existing deletion requests for the guild
         guild_data = await GuildData.get_or_none(id=guild.id)
         if guild_data and guild_data.is_pending_deletion():
@@ -474,7 +465,7 @@ class DiscordBot(commands.Bot):
 
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
         self.logger.error(f"Traceback in {event_method}: {traceback.format_exc()}")
-    
+
     @loop(hours=23)
     async def daily_task(self):
         """Daily task to check for expired badges and send notifications."""
@@ -482,12 +473,10 @@ class DiscordBot(commands.Bot):
         try:
             threshold = utils.utcnow() - timedelta(days=3)
             await Feature.filter(deletion_requested_at__lte=threshold).delete()
-            await GuildData.filter(
-                deletion_requested_at__lte=threshold
-            ).delete()
+            await GuildData.filter(deletion_requested_at__lte=threshold).delete()
         except Exception as e:
             self.logger.error(f"Error in daily task: {str(e)}")
-    
+
     @daily_task.before_loop
     async def before_daily_task(self):
         await self.wait_until_ready()

@@ -110,6 +110,8 @@ class AI(commands.Cog):
     async def on_ready(self):
         global system
 
+        await self.conversation_manager.load_histories()
+
         # Initialize or load AI personality
         self.personality = await AIPersonality.get_default()
 
@@ -136,8 +138,8 @@ class AI(commands.Cog):
             logger.info("Downloading llama3.2")
             await download_model(from_)
         await negomi.create(model="Negomi", from_=from_, system=system)
-        with open("Data/Features/AI/system.txt", "w", encoding="utf-8") as f:
-            f.write(system)
+        async with aio_open("Data/Features/AI/system.txt", "w", encoding="utf-8") as f:
+            await f.write(system)
         self.ready = True
 
     async def get_guild_settings(self, guild_id: int) -> dict:
@@ -629,6 +631,7 @@ class AI(commands.Cog):
             )
 
         # Check guild settings
+        Logger = Logs.Logger(guild=ctx.guild, user=ctx.user, cog=self, command="ai chat")
         guild_settings = await self.get_guild_settings(ctx.guild.id)
 
         # Check if threads are allowed
@@ -643,6 +646,12 @@ class AI(commands.Cog):
             if isinstance(ctx.user, Member):
                 member_roles = [role.id for role in ctx.user.roles]
             if not any(role_id in guild_settings["allowed_roles"] for role_id in member_roles):
+                await Logger.debug(
+                    f"User {ctx.user.name} does not have permission to create AI threads",
+                    context={
+                        "channel": ctx.channel,
+                    }
+                )
                 return await ctx.send(
                     embed=Embed.Error("You don't have permission to create AI threads", title="AI Error")
                 )
@@ -655,7 +664,7 @@ class AI(commands.Cog):
 
         thread = await ctx.channel.create_thread(
             name=f"AI Chat with {ctx.user.name}",
-            type=ChannelType.private_thread,  # type: ignore
+            type=ChannelType.private_thread,
         )
 
         # Update active threads in guild settings
@@ -768,7 +777,34 @@ class AI(commands.Cog):
                 ephemeral=ephemeral,
             )
         await ctx.send(embed=Embed.Info(response, title=""), ephemeral=ephemeral)
-
+    
+    @slash_command(
+        "test",
+        "Test command for AI.",
+        integration_types=[
+            IntegrationType.user_install,
+        ],
+        contexts=[
+            InteractionContextType.guild,
+            InteractionContextType.bot_dm,
+            InteractionContextType.private_channel,
+        ],
+    )
+    async def test(self, ctx: Interaction):
+        print(0 / 0)
+    
+    #error handler
+    async def cog_application_command_error(self, ctx: Interaction, error: ApplicationError):
+        command_name = ctx.application_command.qualified_name if ctx.application_command else "Unknown Command"
+        Logger = Logs.Logger(guild=ctx.guild, user=ctx.user, cog=self, command=command_name)
+        await Logger.error(
+            f"Error occurred in AI commands: {error}",
+            context={
+                "guild": ctx.guild.name if ctx.guild else "non-guild",
+                "user": ctx.user.name if ctx.user else "bot",
+                "channel": ctx.channel.name if ctx.channel and not isinstance(ctx.channel, PartialMessageable) else "DM",
+            },
+        )
 
 def setup(client):
     client.add_cog(AI(client))

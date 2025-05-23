@@ -8,7 +8,7 @@ from json import dumps, loads
 import logging
 from nexon import utils
 logger = logging.getLogger(__name__)
-
+from aiofiles import open as aio_open
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 from .DiscordConfig import ip
 from pathlib import Path
@@ -67,30 +67,29 @@ class ConversationManager:
         self.keep_recent = 12  # Keep more recent messages
         self.model = model
         self.memory_decay_rate = 0.95  # Rate at which old memories fade
-        self.load_histories()
 
-    def load_histories(self):
+    async def load_histories(self):
         """Load conversation histories from JSON file."""
         try:
             self.history_file.parent.mkdir(parents=True, exist_ok=True)
             
             if self.history_file.exists():
-                with open(self.history_file, 'r', encoding='utf-8') as f:
-                    self.conversation_histories = loads(f.read())
+                async with aio_open(self.history_file, 'r', encoding='utf-8') as f:
+                    self.conversation_histories = loads(await f.read())
                 logger.info("Successfully loaded conversation histories")
         except Exception as e:
             logger.error(f"Error loading conversation histories: {e}")
             self.conversation_histories = {}
 
-    def save_histories(self):
+    async def save_histories(self):
         """Save conversation histories to JSON file."""
         try:
-            with open(self.history_file, 'w', encoding='utf-8') as f:
-                f.write(dumps(self.conversation_histories, indent=4, ensure_ascii=False))
+            async with aio_open(self.history_file, 'w', encoding='utf-8') as f:
+                await f.write(dumps(self.conversation_histories, indent=4, ensure_ascii=False))
         except Exception as e:
             logger.error(f"Error saving conversation histories: {e}")
 
-    def archive_conversation(self, user_id):
+    async def archive_conversation(self, user_id):
         """Archive a conversation to a dated log file."""
         if user_id in self.conversation_histories:
             current_datetime = utils.utcnow()
@@ -99,11 +98,11 @@ class ConversationManager:
             
             log_path = Path(f"logs/{date}")
             log_path.mkdir(parents=True, exist_ok=True)
-            
-            with open(log_path / f"output_for_{self.model}_{timed}.json", "w", encoding='utf-8') as f:
-                f.write(dumps(self.conversation_histories[user_id], indent=4, ensure_ascii=False))
 
-    def summarize_conversation(self, conversation_history):
+            async with aio_open(log_path / f"output_for_{self.model}_{timed}.json", "w", encoding='utf-8') as f:
+                await f.write(dumps(self.conversation_histories[user_id], indent=4, ensure_ascii=False))
+
+    async def summarize_conversation(self, conversation_history):
         """
         Create a concise summary of the conversation while maintaining system messages
         and keeping recent context.
@@ -149,7 +148,7 @@ class ConversationManager:
 
         try:
             # Get the summary and ensure it doesn't leak internal details
-            summary = generate(summary_prompt)
+            summary = await generate(summary_prompt)
             
             # Create new summary message with clear internal marker
             summary_message = {
@@ -251,7 +250,7 @@ class ConversationManager:
             # Summarize if needed
             try:
                 if len(non_system_messages) > self.summary_threshold:
-                    conversation_history = self.summarize_conversation(conversation_history)
+                    conversation_history = await self.summarize_conversation(conversation_history)
                     self.conversation_histories[channel_id] = conversation_history
             except httpx.ConnectTimeout as e:
                 logger.error(f"Error in ollama.chat: {e}")
@@ -290,7 +289,7 @@ class ConversationManager:
             # Add cleaned response to history if valid
             if text and text != "Error: No response generated.":
                 conversation_history.append({'role': 'assistant', 'content': text})
-                self.save_histories()
+                await self.save_histories()
 
             return text
         except Exception as e:

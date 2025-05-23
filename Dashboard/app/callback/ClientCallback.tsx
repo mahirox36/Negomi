@@ -35,8 +35,8 @@ export default function ClientCallback() {
 
         const { user, accessToken } = response.data;
         
-        // Store access token in cookie
-        document.cookie = `accessToken=${accessToken}; path=/; max-age=604800; SameSite=Strict`;
+        // Store access token in cookie with proper attributes
+        document.cookie = `accessToken=${accessToken}; path=/; max-age=604800; SameSite=Strict; Secure; HttpOnly`;
         
         setUser(user);
         router.push("/dashboard");

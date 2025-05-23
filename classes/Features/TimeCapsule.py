@@ -110,6 +110,17 @@ class timeCapsule(commands.Cog):
         # Update the feature settings with remaining capsules
         await feature.replace_settings(updated_data)
     
+    async def cog_application_command_error(self, ctx: Interaction, error: ApplicationError):
+        command_name = ctx.application_command.qualified_name if ctx.application_command else "Unknown Command"
+        Logger = Logs.Logger(guild=None, user=ctx.user, cog=self, command=command_name)
+        await Logger.error(
+            f"Error occurred in TimeCapsule commands: {error}",
+            context={
+                "guild": ctx.guild.name if ctx.guild else "non-guild",
+                "user": ctx.user.name if ctx.user else "bot",
+                "channel": ctx.channel.name if ctx.channel and not isinstance(ctx.channel, PartialMessageable) else "DM",
+            },
+        )
     
 
 def setup(client):

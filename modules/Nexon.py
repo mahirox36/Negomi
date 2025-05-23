@@ -7,7 +7,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 
-from nexon import MemberData, UserData, Feature, ScopeType, utils, Logs
+from nexon import MemberData, UserData, Feature, ScopeType, utils, Logs, ApplicationError
 from .DiscordConfig import *
 from .utils import extract_emojis, get_by_percent, remove_numbers, emoji, IDManager
 from rich.console import Console
@@ -61,18 +61,19 @@ from nexon import (
 )
 # Other Stuff Like UI, application_checks, commands
 from nexon.ui import View, Button, TextInput, Modal, ChannelSelect, RoleSelect, Item, MentionableSelect, UserSelect, StringSelect, button
-from nexon.ext.application_checks import * # type: ignore
+from nexon.ext.application_checks import *
 from nexon.ext import commands
 from nexon.ext.commands import Bot
 from nexon import utils
 import sys
-import requests as r2quest
 from io import BytesIO
 from typing import Optional
+from aiofiles import open as aio_open
 from PIL import Image, ImageSequence
+import aiohttp
 MISSING: Any = utils.MISSING
 
-def download_image_to_bytes(url: str) -> Optional[bytes]:
+async def download_image_to_bytes(url: str) -> Optional[bytes]:
     """
     Downloads an image (GIF or other formats) from the given URL, resizes it to 128x128,
     compresses it below 256 KB, and returns it as bytes.
@@ -84,11 +85,15 @@ def download_image_to_bytes(url: str) -> Optional[bytes]:
         Optional[bytes]: The resized and compressed image data in bytes, or None if the process fails.
     """
     try:
-        response = r2quest.get(url, stream=True, timeout=10)
-        response.raise_for_status()
+        # Use an async HTTP client for the request
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                content = await response.read()
 
         # Open the image
-        image = Image.open(BytesIO(response.content))
+        image = Image.open(BytesIO(content))
 
         img_byte_arr = BytesIO()
 
@@ -170,7 +175,7 @@ def download_image_to_bytes(url: str) -> Optional[bytes]:
         img_byte_arr.seek(0)
         return img_byte_arr.getvalue()
 
-    except r2quest.RequestException as e:
+    except aiohttp.ClientError as e:
         logger.error(f"Failed to download image from {url}: {e}")
     except Exception as e:
         logger.error(f"Failed to process image: {e}")

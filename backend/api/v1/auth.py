@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from backend.features.cache import get_cached_guilds, get_cached_user
 from modules.DiscordConfig import overwriteOwner, config
 from typing import TYPE_CHECKING, Optional
 
@@ -8,7 +9,7 @@ from nexon.data.models import UserBadge, Badge
 from .baseModels import *
 import time
 from nexon.OAuth2 import OAuth2Client, OAuth2Session, OAuth2Token
-from nexon.types.oauth2 import Guild, OAuth2Scope
+from nexon.types.oauth2 import Guild, OAuth2Scope, User
 import asyncio
 import logging
 
@@ -17,38 +18,6 @@ if TYPE_CHECKING:
 
 router = APIRouter(tags=["auth"])
 logger = logging.getLogger(__name__)
-
-# Cache structure to store guild data with timestamps
-guild_cache = {}
-CACHE_EXPIRE_TIME = 3600  # 1 hour in seconds
-CACHE_CLEANUP_INTERVAL = 1800  # 30 minutes
-
-
-async def get_cached_guilds(backend: "APIServer", access_token: str) -> List[Guild]:
-    current_time = time.time()
-    cache_key = f"guilds_{access_token}"
-
-    # Check if cached data exists and is still valid
-    if cache_key in guild_cache:
-        cached_data = guild_cache[cache_key]
-        if current_time - cached_data["timestamp"] < CACHE_EXPIRE_TIME:
-            return cached_data["guilds"]
-
-    # If no cache or expired, fetch new data
-    oauth_token = OAuth2Token(
-        {
-            "access_token": access_token,
-            "token_type": "Bearer",
-        }
-    )
-    session = OAuth2Session(backend.oauth_client, oauth_token)
-
-    guilds = await session.fetch_guilds()
-
-    # Update cache
-    guild_cache[cache_key] = {"timestamp": current_time, "guilds": guilds}
-
-    return guilds
 
 
 async def check_owner(request: Request):
@@ -107,12 +76,7 @@ async def get_user(request: Request):
     backend: APIServer = request.app.state.backend
     try:
         access_token = await backend.verify_auth(request)
-        if access_token is None:
-            raise HTTPException(status_code=401, detail="Access token is missing")
-        session = backend.oauth_sessions[access_token]
-
-        # Get user data from OAuth session
-        user = await session.fetch_user()
+        user = await get_cached_user(backend, access_token)
         return {"user": user}
 
     except HTTPException as e:
@@ -127,26 +91,24 @@ async def get_user_dashboard(request: Request):
     backend: APIServer = request.app.state.backend
     try:
         access_token = await backend.verify_auth(request)
+        
         if access_token is None:
             raise HTTPException(status_code=401, detail="Access token is missing")
-        session = backend.oauth_sessions[access_token]
-
-        # Get user data
-        user = await session.fetch_user()
+        
+        user = await get_cached_user(backend, access_token)
 
         # Get guilds
-        guilds = await session.fetch_guilds()
+        guilds = await get_cached_guilds(backend, access_token)
         admin_guilds = [g for g in guilds if (int(g["permissions"]) & 0x8) == 0x8]
 
         # Get user data from bot
         bot_user = await backend.client.fetch_user(int(user["id"]))
         user_data = await bot_user.get_data()
-        
+
         # Get Users Badges
         badges = [
             await badge.to_dict() for badge in await UserBadge.get_user_badges(user_data.id)
         ]
-        
 
         # Calculate activity metrics
         now = datetime.now(user_data.created_at.tzinfo)
@@ -204,8 +166,14 @@ async def get_user_dashboard(request: Request):
         return JSONResponse(dashboard_data)
 
     except HTTPException as e:
+        backend.logger.error(f"HTTPException in /user/dashboard: {e.detail}")
         return JSONResponse(
             status_code=e.status_code, content={"detail": str(e.detail)}
+        )
+    except Exception as e:
+        backend.logger.error(f"Unexpected error in /user/dashboard: {str(e)}")
+        return JSONResponse(
+            status_code=500, content={"detail": "An unexpected error occurred."}
         )
 
 

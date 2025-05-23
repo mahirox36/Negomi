@@ -1,5 +1,4 @@
 from modules.Nexon import *
-from requests import get
 import random
 import ast
 import math
@@ -53,14 +52,14 @@ class Other(commands.Cog):
         if joke_url == self.jokes_links[0]:
             setup = joke['setup']
             punchline = joke['punchline']
-            embed = Embed(title="Joke", description=f"##{setup}\n\n||{punchline}||", colour=int(colors.Info.value))
+            embed = Embed(title="Joke", description=f"## {setup}\n\n||{punchline}||", colour=int(colors.Info.value))
         elif joke_url == self.jokes_links[1]:
             if joke['type'] == 'single':
                 embed = Embed(title="Joke", description=joke['joke'], colour=int(colors.Info.value))
             else:
                 setup = joke['setup']
                 delivery = joke['delivery']
-                embed = Embed(title="Joke", description=f"##{setup}\n\n||{delivery}||", colour=int(colors.Info.value))
+                embed = Embed(title="Joke", description=f"## {setup}\n\n||{delivery}||", colour=int(colors.Info.value))
         elif joke_url == self.jokes_links[2]:
             embed = Embed(title="Joke", description=joke['value'], colour=int(colors.Info.value))
         elif joke_url == self.jokes_links[3]:
@@ -71,8 +70,8 @@ class Other(commands.Cog):
 
     @fun.subcommand(name="meme",description="Get a random Meme")
     async def meme(self,ctx:init):
-        response = get("https://meme-api.com/gimme")
-        meme_data = response.json()
+        async with self.session.get("https://meme-api.com/gimme") as response:
+            meme_data = await response.json()
 
         title = meme_data['title']
         image_url = meme_data['url']

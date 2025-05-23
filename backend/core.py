@@ -6,7 +6,6 @@ from typing import Optional
 from contextlib import AsyncExitStack
 from nexon.ext import commands
 from .apiManager import APIServer, APIConfig
-from .features.cache import CacheManager
 from .features.storage import StorageManager, StorageConfig
 from modules.Nexon import config, debug, utils
 
@@ -16,10 +15,8 @@ class DashboardCog(commands.Cog):
         self.logger = logging.getLogger("bot")
         self._exit_stack = AsyncExitStack()
         self._initialized = False
-        
         # Initialize managers with enhanced error handling
         try:
-            self.cache = CacheManager()
             
             storage_config = StorageConfig(
                 endpoint=config.cloudflare.endpoint,
@@ -37,7 +34,6 @@ class DashboardCog(commands.Cog):
             )
             self.api = APIServer(
                 config=api_config,
-                cache=self.cache,
                 storage=self.storage,
                 client=self.client
             )
@@ -55,7 +51,6 @@ class DashboardCog(commands.Cog):
                 raise RuntimeError("Dashboard components not properly initialized")
                 
             # Register cleanup handlers
-            await self._exit_stack.enter_async_context(self.cache)
             await self._exit_stack.enter_async_context(self.storage)
                 
         except Exception as e:
@@ -80,7 +75,7 @@ class DashboardCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        """Start dashboard API server when bot is ready"""
+        """Start dashboard API server when bot is ready"""     
         if not self._initialized:
             self.logger.error("Cannot start dashboard - not properly initialized")
             return
