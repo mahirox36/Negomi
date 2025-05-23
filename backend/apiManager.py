@@ -325,7 +325,7 @@ class APIServer:
         if cached_user:
             # Validate cached user data
             if "id" in cached_user and "username" in cached_user:
-                self.logger.info("User found in cache")
+                self.logger.debug("User found in cache")
                 return access_token
             else:
                 self.logger.warning("Cached user data is invalid")
