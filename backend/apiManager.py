@@ -250,6 +250,11 @@ class APIServer:
 
     async def start(self) -> None:
         """Start the FastAPI server with graceful shutdown and cache initialization"""
+        # Check if the server is already running
+        if self._server and not self._server.should_exit:
+            self.logger.warning("API server is already running. Skipping start.")
+            return
+
         # NEW: Start the cache system
         await cache_manager.start_background_tasks()
         self.logger.info("Advanced cache system initialized")
@@ -269,10 +274,10 @@ class APIServer:
             loop="asyncio",
             reload=debug,
         )
-        self._server = uvicorn.Server(config)
         try:
+            self._server = uvicorn.Server(config)
             self.logger.info(
-                f"Starting API server on {self.config.host}:{self.config.port}"
+            f"Starting API server on {self.config.host}:{self.config.port}"
             )
             await self._server.serve()
         except Exception as e:

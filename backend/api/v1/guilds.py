@@ -7,6 +7,7 @@ from nexon import ChannelType, utils
 from nexon.channel import CategoryChannel, TextChannel
 from nexon.data.models import Messages
 from nexon.embeds import Embed
+from nexon.errors import Forbidden
 from nexon.types.oauth2 import User
 from .badges import *
 from .baseModels import *
@@ -726,7 +727,12 @@ async def create_temp_voice_channel(guild_id: int, request: Request, channel_id:
 
     except HTTPException as e:
         raise e
+    except Forbidden as e:
+        raise HTTPException(
+            status_code=403, detail="Failed to configure temporary voice system due: Missing Permissions"
+        )
     except Exception as e:
+        
         backend.logger.error(f"Error configuring temp voice: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to configure temporary voice system"
