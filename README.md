@@ -1,4 +1,4 @@
-# Negomi Discord Bot 0.9
+# Negomi Discord Bot 0.10
 
 ## 🤖 Add Bot
 
@@ -20,7 +20,7 @@ To add the bot to your server, click the link below:
 
 ## 🗺️ Development Roadmap
 
-### Version 0.10 - Expansion Phase
+### Version 0.11 - Expansion Phase
 
 - Overall Progress: ███░░░░░░░░░░░░░░░░░ 12% (4/31)
 - Currently Working On:
@@ -73,12 +73,6 @@ To add the bot to your server, click the link below:
   - [x] Notification System
   - [x] Statistics & Analytics
 
-### Version 0.11 - Enhancement Phase
-
-- Server Economy System with virtual currency and rewards
-- Engaging Custom Mini-games
-- Expanded Dashboard Management Tools
-- Enhanced Level System Features
 
 ## 💡 Got Ideas or Issues?
 
