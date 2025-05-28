@@ -88,9 +88,7 @@ export default function ServerLayoutClient({
                 transition={{ duration: 0.2 }}
                 className="p-8"
               >
-                <div className="max-w-5xl mx-auto">
-                  {children}
-                </div>
+                <div className="max-w-5xl mx-auto">{children}</div>
               </motion.div>
             </div>
           </main>
@@ -104,21 +102,21 @@ export default function ServerLayoutClient({
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
-            transition={{ 
+            transition={{
               type: "spring",
               stiffness: 300,
               damping: 25,
-              duration: 0.5
+              duration: 0.5,
             }}
             className="fixed bottom-8 inset-x-0 mx-auto w-fit py-4 px-6 rounded-lg backdrop-blur-lg border border-white/10 shadow-2xl bg-black/30"
           >
-            <motion.div 
+            <motion.div
               className="flex items-center gap-6"
               initial={{ x: -20 }}
               animate={{ x: 0 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
             >
-              <motion.div 
+              <motion.div
                 className="flex items-center gap-2 text-white/80"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 5 }}
@@ -128,19 +126,61 @@ export default function ServerLayoutClient({
               </motion.div>
               <div className="flex gap-3">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={saveChanges}
-                  className="px-4 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-md transition-colors font-medium text-sm flex items-center gap-2"
+                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                  onClick={async () => {
+                    if (isLoading) return;
+                    await saveChanges();
+                    toast.success("Changes saved successfully!", {
+                      icon: "💾",
+                      style: {
+                        background: "#1f2937",
+                        color: "#d1fae5",
+                        border: "1px solid #10b981",
+                      },
+                    });
+                  }}
+                  disabled={isLoading}
+                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all
+      ${
+        isLoading
+          ? "bg-emerald-700/40 text-white/70 cursor-not-allowed"
+          : "bg-emerald-600/80 hover:bg-emerald-600 text-white"
+      }`}
                 >
-                  <i className="fas fa-save"></i>
-                  Save Changes
+                  {isLoading ? (
+                    <>
+                      <motion.div
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                        initial={{ rotate: 0 }}
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          repeat: Infinity,
+                          ease: "linear",
+                          duration: 1,
+                        }}
+                      />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save"></i>
+                      Save Changes
+                    </>
+                  )}
                 </motion.button>
+
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
                   onClick={revertChanges}
-                  className="px-4 py-2 bg-gray-700/80 hover:bg-gray-700 text-white rounded-md transition-colors font-medium text-sm flex items-center gap-2"
+                  disabled={isLoading}
+                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all
+      ${
+        isLoading
+          ? "bg-gray-700/40 text-white/70 cursor-not-allowed"
+          : "bg-gray-700/80 hover:bg-gray-700 text-white"
+      }`}
                 >
                   <i className="fas fa-undo"></i>
                   Revert

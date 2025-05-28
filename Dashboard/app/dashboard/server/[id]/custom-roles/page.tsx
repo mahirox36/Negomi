@@ -146,6 +146,7 @@ export default function CustomRole() {
       if (event.detail && event.detail.callback) {
         event.detail.callback(settings);
       }
+      setOriginalSettings(settings);
     };
 
     // Handle reverting changes from the layout provider

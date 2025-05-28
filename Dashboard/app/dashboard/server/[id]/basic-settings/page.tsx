@@ -72,6 +72,7 @@ export default function BasicSettings() {
       if (event.detail && event.detail.callback) {
         event.detail.callback(settings);
       }
+      setOriginalSettings(settings);
     };
 
     const handleRevertChanges = () => {

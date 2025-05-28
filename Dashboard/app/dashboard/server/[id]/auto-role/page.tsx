@@ -88,6 +88,7 @@ export default function AutoRole() {
       if (event.detail && event.detail.callback) {
         event.detail.callback(settings);
       }
+      setOriginalSettings(settings);
     };
 
     const handleRevertChanges = () => {

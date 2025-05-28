@@ -91,6 +91,7 @@ export default function AISettings() {
       if (event.detail && event.detail.callback) {
         event.detail.callback(settings);
       }
+      setOriginalSettings(settings);
     };
 
     const handleRevertChanges = () => {
@@ -148,9 +149,20 @@ export default function AISettings() {
   ) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-
-    const hasChanges =
-      JSON.stringify(newSettings) !== JSON.stringify(originalSettings);
+    
+    // Deep compare the settings
+    const normalizeSettings = (s: AISettings) => {
+      return {
+        ...s,
+        allowed_roles: [...(s.allowed_roles || [])].sort(),
+        public_channels: [...(s.public_channels || [])].sort()
+      };
+    };
+    
+    const hasChanges = JSON.stringify(normalizeSettings(newSettings)) !== 
+                       JSON.stringify(normalizeSettings(originalSettings));
+    console.log(JSON.stringify(normalizeSettings(newSettings)))
+    console.log(JSON.stringify(normalizeSettings(originalSettings)))
     setHasChanges(hasChanges);
   };
 

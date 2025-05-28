@@ -74,6 +74,7 @@ export default function TempVoice() {
       if (event.detail && event.detail.callback) {
         event.detail.callback(settings);
       }
+      setOriginalSettings(settings);
     };
 
     const handleRevertChanges = () => {
