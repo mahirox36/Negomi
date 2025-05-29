@@ -42,8 +42,8 @@ class APIConfig:
         host: str = "0.0.0.0",
         port: int = 25400,
         allowed_origins: Optional[list[str]] = None,
-        rate_limit_requests: int = 300,
-        rate_limit_window: int = 180,
+        rate_limit_requests: int = 1500,
+        rate_limit_window: int = 900,
         cache_ttl: int = 900,
     ) -> None:
         self.host = host

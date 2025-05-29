@@ -3,7 +3,7 @@ from nexon.data.models import Messages
 from nexon.errors import NotFound
 import time
 import asyncio
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, Set
 import logging
 
 from nexon.raw_models import RawReactionActionEvent
@@ -15,6 +15,25 @@ class ReactionRole(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
         self.user_cooldowns = {}
+        self.processing_reactions: Set[str] = set()  # Track processing reactions to prevent race conditions
+        self.bot_removed_reactions: Set[str] = set()  # More specific tracking
+
+    def _get_reaction_key(self, user_id: int, message_id: int, emoji_str: str) -> str:
+        """Generate unique key for reaction tracking"""
+        return f"{user_id}_{message_id}_{emoji_str}"
+
+    async def _get_user_reaction_roles(self, user: Member, reaction_role: dict) -> list:
+        """Get all roles the user has from this reaction group"""
+        user_roles = []
+        for reaction in reaction_role.get("reactions", []):
+            try:
+                role_id = int(reaction["role_id"])
+                role = user.get_role(role_id)
+                if role:
+                    user_roles.append(role)
+            except (ValueError, KeyError) as e:
+                logger.warning(f"Invalid role_id in reaction config: {e}")
+        return user_roles
 
     async def _validate_user_reaction(
         self,
@@ -23,381 +42,379 @@ class ReactionRole(commands.Cog):
         guild: Guild,
         channel: TextChannel,
         message: Message,
+        is_adding: bool = True
     ) -> Tuple[bool, str]:
-        # Check cooldown
-        if reaction_role.get("cooldown"):
+        """Validate if user can add/remove a reaction role"""
+        
+        # Check cooldown only for adding reactions
+        if is_adding and reaction_role.get("cooldown"):
             user_key = f"{user.id}_{message.id}"
             last_use = self.user_cooldowns.get(user_key, 0)
-            if time.time() - last_use < reaction_role["cooldown"]:
-                return False, "You must wait before selecting another role"
-            self.user_cooldowns[user_key] = time.time()
+            cooldown_remaining = reaction_role["cooldown"] - (time.time() - last_use)
+            if cooldown_remaining > 0:
+                return False, f"You must wait {int(cooldown_remaining)} seconds before selecting another role"
 
         # Check required roles
         if reaction_role.get("require_roles"):
-            has_required = any(
-                role.id in reaction_role["require_roles"] for role in user.roles
-            )
-            if not has_required:
+            user_role_ids = {role.id for role in user.roles}
+            required_roles = set(reaction_role["require_roles"])
+            if not required_roles.intersection(user_role_ids):
                 return False, "You don't have the required roles"
 
         # Check forbidden roles
         if reaction_role.get("forbidden_roles"):
-            has_forbidden = any(
-                role.id in reaction_role["forbidden_roles"] for role in user.roles
-            )
-            if has_forbidden:
+            user_role_ids = {role.id for role in user.roles}
+            forbidden_roles = set(reaction_role["forbidden_roles"])
+            if forbidden_roles.intersection(user_role_ids):
                 return False, "You have a role that prevents you from selecting this"
 
-        # Check max reactions per user
-        if reaction_role.get("max_reactions_per_user"):
+        # Check max reactions per user (only when adding)
+        if is_adding and reaction_role.get("max_reactions_per_user"):
             try:
-                user_roles = list(
-                    set(
-                        [
-                            user.get_role(int(reaction["role_id"]))
-                            for reaction in reaction_role["reactions"]
-                            if user.get_role(int(reaction["role_id"]))
-                        ]
-                    )
-                )
-                logger.info(f"User {user.id} has roles: {user_roles}")
-                logger.info(
-                    f"User {user.id} has {len(user_roles)} roles from this reaction group"
-                )
-                if len(user_roles) >= reaction_role["max_reactions_per_user"]:
-                    return (
-                        False,
-                        f"You can only have {reaction_role['max_reactions_per_user']} roles from this reaction group",
-                    )
+                user_roles = await self._get_user_reaction_roles(user, reaction_role)
+                current_count = len(user_roles)
+                max_allowed = reaction_role["max_reactions_per_user"]
+                
+                logger.debug(f"User {user.id} has {current_count}/{max_allowed} roles from reaction group")
+                
+                if current_count >= max_allowed:
+                    return False, f"You can only have {max_allowed} role(s) from this reaction group"
+                    
             except Exception as e:
-                logger.error(f"Error checking max roles: {e}")
+                logger.error(f"Error checking max roles for user {user.id}: {e}")
+                return False, "Error validating role limits"
 
         return True, ""
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        reaction = payload.emoji
+    async def _safe_remove_reaction(self, message: Message, emoji, user: Member, logger_instance) -> bool:
+        """Safely remove a reaction with proper error handling"""
+        try:
+            # Find the actual reaction object
+            actual_reaction = None
+            for reaction in message.reactions:
+                if str(reaction.emoji) == str(emoji):
+                    actual_reaction = reaction
+                    break
+            
+            if actual_reaction:
+                reaction_key = self._get_reaction_key(user.id, message.id, str(emoji))
+                self.bot_removed_reactions.add(reaction_key)
+                await actual_reaction.remove(user)
+                # Remove from tracking after a short delay to handle async timing
+                await asyncio.sleep(0.1)
+                self.bot_removed_reactions.discard(reaction_key)
+                return True
+        except Exception as e:
+            await logger_instance.error(
+                "Failed to remove reaction",
+                context={"reaction": str(emoji), "error": str(e)}
+            )
+        return False
 
-        guild = (
-            self.client.get_guild(payload.guild_id)
-            if payload.guild_id is not None
-            else None
-        )
-        if not guild:
+    async def _send_user_notification(self, user: Member, embed: Embed, logger_instance):
+        """Send DM notification to user with error handling"""
+        try:
+            await user.send(embed=embed)
+        except Exception as e:
+            await logger_instance.warning(
+                "Failed to send DM notification", 
+                context={"user_id": user.id, "error": str(e)}
+            )
+
+    async def _process_reaction_add(self, payload: RawReactionActionEvent):
+        """Process reaction addition with proper validation and role management"""
+        reaction = payload.emoji
+        reaction_str = str(reaction)
+        reaction_key = self._get_reaction_key(payload.user_id, payload.message_id, reaction_str)
+        
+        # Prevent duplicate processing
+        if reaction_key in self.processing_reactions:
             return
-        user = guild.get_member(payload.user_id)
-        if not user:
+        self.processing_reactions.add(reaction_key)
+        
+        if not payload.guild_id:
+            return
+        
+        try:
+            # Get guild and validate
+            guild = self.client.get_guild(payload.guild_id)
+            if not guild:
+                try:
+                    guild = await self.client.fetch_guild(payload.guild_id)
+                except NotFound:
+                    return
+
+            # Get user and validate
+            user = guild.get_member(payload.user_id)
+            if not user:
+                try:
+                    user = await guild.fetch_member(payload.user_id)
+                except NotFound:
+                    return
+            if user.bot:
+                return
+
+            # Get channel and validate
+            channel = guild.get_channel(payload.channel_id)
+            if not isinstance(channel, TextChannel):
+                return
+
+            Logger = Logs.Logger(guild=guild, user=user, cog=self)
+            
+            # Check if feature is enabled
+            feature = await Feature.get_guild_feature_or_none(
+                feature_name="reaction_roles", guild_id=guild.id
+            )
+            if not feature or not feature.enabled:
+                return
+
+            # Get reaction role configuration
+            reaction_roles = feature.get_setting("reaction_roles", [])
+            message_data = await Messages.get(message_id=payload.message_id)
+            if not message_data:
+                return
+
+            reaction_role = next(
+                (rr for rr in reaction_roles if str(rr["message_id"]) == str(message_data.id)),
+                None,
+            )
+            if not reaction_role:
+                return
+
+            # Find matching reaction configuration
+            reaction_id = reaction.name if reaction.is_unicode_emoji() else str(reaction.id)
+            reaction_config = next(
+                (
+                    r for r in reaction_role["reactions"]
+                    if str(r.get("emoji")) == str(reaction_id) or 
+                       r.get("url") == str(reaction.url)
+                ),
+                None,
+            )
+            if not reaction_config:
+                return
+
+            # Get the actual message
             try:
-                user = await guild.fetch_member(payload.user_id)
+                message = await channel.fetch_message(payload.message_id)
             except NotFound:
                 return
-        if user.bot:
-            return
 
-        channel = guild.get_channel(payload.channel_id)
-        if not isinstance(channel, TextChannel):
-            return
-
-        Logger = Logs.Logger(guild=guild, user=user, cog=self)
-        await Logger.debug(
-            "ReactionRole: User reacted",
-            context={
-                "user": user.id,
-                "message_id": payload.message_id,
-                "emoji": str(payload.emoji),
-                "channel_id": channel.id,
-            },
-        )
-        reaction_id = (
-            payload.emoji.name if payload.emoji.is_unicode_emoji() else payload.emoji.id
-        )
-        feature = await Feature.get_guild_feature_or_none(
-            feature_name="reaction_roles",
-            guild_id=guild.id,
-        )
-        if not feature or not feature.enabled:
-            return
-
-        reaction_roles = feature.get_setting("reaction_roles", [])
-        message = await Messages.get(message_id=payload.message_id)
-        if not message:
-            return
-
-        reaction_role = next(
-            (rr for rr in reaction_roles if str(rr["message_id"]) == str(message.id)),
-            None,
-        )
-        if not reaction_role:
-            return
-
-        reaction_config = next(
-            (
-                r
-                for r in reaction_role["reactions"]
-                if str(r.get("emoji")) == str(reaction_id)
-                or r.get("url") == str(payload.emoji.url)
-            ),
-            None,
-        )
-        if not reaction_config:
-            return
-
-        message = await channel.fetch_message(payload.message_id)
-        can_react, error_message = await self._validate_user_reaction(
-            user, reaction_role, guild, channel, message
-        )
-
-        try:
-            role = guild.get_role(reaction_config["role_id"])
-            if not role:
-                role = await guild.fetch_role(reaction_config["role_id"])
-        except NotFound:
-            await Logger.warning(
-                "Role not found", context={"role_id": reaction_config["role_id"]}
-            )
-            return
-
-        if not can_react and role not in user.roles:
+            # Get the role
             try:
-                await user.send(
-                    embed=Embed.Warning(
-                        title="Reaction Role", description=error_message
-                    )
-                    .set_author(
-                        name=guild.name, icon_url=guild.icon.url if guild.icon else None
-                    )
-                    .set_footer(text=f"Guild ID: {guild.id}")
+                role = guild.get_role(int(reaction_config["role_id"]))
+                if not role:
+                    role = await guild.fetch_role(int(reaction_config["role_id"]))
+            except (NotFound, ValueError):
+                await Logger.warning(
+                    "Role not found or invalid", 
+                    context={"role_id": reaction_config["role_id"]}
                 )
-            except Exception as e:
-                await Logger.error(
-                    "Failed to send DM to user", context={"error": str(e)}
-                )
-            if reaction_role.get("remove_reactions", True):
+                return
 
-                actual_reaction = next(
-                    (r for r in message.reactions if str(r.emoji) == str(reaction)),
-                    None,
-                )
-                if actual_reaction:
-                    try:
-                        await actual_reaction.remove(user)
-                    except:
-                        await Logger.error(
-                            "Failed to remove reaction",
-                            context={"reaction": str(reaction)},
-                        )
-            return
-
-        if role in user.roles:
-            if reaction_role.get("allow_unselect", True):
-                await user.remove_roles(role, reason="ReactionRole: Unselected role")
-                try:
-                    await user.send(
-                        embed=Embed.Info(
-                            title="Reaction Role",
-                            description=f"You have unselected the role: {role.name} in {channel.mention}",
-                        )
-                        .set_author(
-                            name=guild.name,
-                            icon_url=guild.icon.url if guild.icon else None,
-                        )
-                        .set_footer(text=f"Guild ID: {guild.id}")
-                    )
-                except Exception as e:
-                    await Logger.error(
-                        "Failed to send DM to user", context={"error": str(e)}
-                    )
-                if reaction_role.get("remove_reactions", True):
-                    message = await channel.fetch_message(payload.message_id)
-                    actual_reaction = next(
-                        (r for r in message.reactions if str(r.emoji) == str(reaction)),
-                        None,
-                    )
-                    if actual_reaction:
-                        try:
-                            await actual_reaction.remove(user)
-                        except:
-                            await Logger.error(
-                                "Failed to remove reaction",
-                                context={"reaction": str(reaction)},
-                            )
-            else:
-                try:
-                    await user.send(
-                        embed=Embed.Warning(
-                            title="Reaction Role",
-                            description="You cannot unselect this role",
-                        )
-                        .set_author(
-                            name=guild.name,
-                            icon_url=guild.icon.url if guild.icon else None,
-                        )
-                        .set_footer(text=f"Guild ID: {guild.id}")
-                    )
-                except Exception as e:
-                    await Logger.error(
-                        "Failed to send DM to user", context={"error": str(e)}
-                    )
-                if reaction_role.get("remove_reactions", True):
-                    message = await channel.fetch_message(payload.message_id)
-                    actual_reaction = next(
-                        (r for r in message.reactions if str(r.emoji) == str(reaction)),
-                        None,
-                    )
-                    if actual_reaction:
-                        try:
-                            await actual_reaction.remove(user)
-                        except:
-                            await Logger.error(
-                                "Failed to remove reaction",
-                                context={"reaction": str(reaction)},
-                            )
-        else:
-            await user.add_roles(role, reason="ReactionRole: Added role")
-            try:
-                await user.send(
-                    embed=Embed.Info(
+            # Check if user already has the role (toggle off)
+            if role in user.roles:
+                if reaction_role.get("allow_unselect", True):
+                    await user.remove_roles(role, reason="ReactionRole: Unselected role")
+                    
+                    embed = Embed.Info(
                         title="Reaction Role",
-                        description=f"You have selected the role: {role.name} in {channel.mention}",
-                    )
-                    .set_author(
-                        name=guild.name, icon_url=guild.icon.url if guild.icon else None
-                    )
-                    .set_footer(text=f"Guild ID: {guild.id}")
-                )
-            except Exception as e:
-                await Logger.error(
-                    "Failed to send DM to user", context={"error": str(e)}
-                )
+                        description=f"You have unselected the role: **{role.name}** in {channel.mention}",
+                    ).set_author(
+                        name=guild.name,
+                        icon_url=guild.icon.url if guild.icon else None,
+                    ).set_footer(text=f"Guild ID: {guild.id}")
+                    
+                    await self._send_user_notification(user, embed, Logger)
+                else:
+                    embed = Embed.Warning(
+                        title="Reaction Role",
+                        description="You cannot unselect this role",
+                    ).set_author(
+                        name=guild.name,
+                        icon_url=guild.icon.url if guild.icon else None,
+                    ).set_footer(text=f"Guild ID: {guild.id}")
+                    
+                    await self._send_user_notification(user, embed, Logger)
+
+                # Remove reaction if configured
+                if reaction_role.get("remove_reactions", True):
+                    await self._safe_remove_reaction(message, reaction, user, Logger)
+                return
+
+            # User doesn't have role - validate before adding
+            can_react, error_message = await self._validate_user_reaction(
+                user, reaction_role, guild, channel, message, is_adding=True
+            )
+
+            if not can_react:
+                embed = Embed.Warning(
+                    title="Reaction Role",
+                    description=error_message
+                ).set_author(
+                    name=guild.name,
+                    icon_url=guild.icon.url if guild.icon else None,
+                ).set_footer(text=f"Guild ID: {guild.id}")
+                
+                await self._send_user_notification(user, embed, Logger)
+                
+                # Remove reaction if configured
+                if reaction_role.get("remove_reactions", True):
+                    await self._safe_remove_reaction(message, reaction, user, Logger)
+                return
+
+            # Add the role
+            await user.add_roles(role, reason="ReactionRole: Added role")
+            
+            # Update cooldown
+            if reaction_role.get("cooldown"):
+                user_key = f"{user.id}_{message.id}"
+                self.user_cooldowns[user_key] = time.time()
+            
+            embed = Embed.Info(
+                title="Reaction Role",
+                description=f"You have selected the role: **{role.name}** in {channel.mention}",
+            ).set_author(
+                name=guild.name,
+                icon_url=guild.icon.url if guild.icon else None,
+            ).set_footer(text=f"Guild ID: {guild.id}")
+            
+            await self._send_user_notification(user, embed, Logger)
+            
+            # Remove reaction if configured
             if reaction_role.get("remove_reactions", True):
-                message = await channel.fetch_message(payload.message_id)
-                actual_reaction = next(
-                    (r for r in message.reactions if str(r.emoji) == str(reaction)),
-                    None,
-                )
-                if actual_reaction:
-                    try:
-                        await actual_reaction.remove(user)
-                    except:
-                        await Logger.error(
-                            "Failed to remove reaction",
-                            context={"reaction": str(reaction)},
-                        )
+                await self._safe_remove_reaction(message, reaction, user, Logger)
+
+        finally:
+            self.processing_reactions.discard(reaction_key)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
+        """Handle reaction additions"""
+        try:
+            await self._process_reaction_add(payload)
+        except Exception as e:
+            logger.error(f"Unexpected error in reaction add handler: {e}", exc_info=True)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
-        reaction = payload.emoji
-
-        guild = (
-            self.client.get_guild(payload.guild_id)
-            if payload.guild_id is not None
-            else None
-        )
-        if not guild:
-            if payload.guild_id is not None:
-                guild = await self.client.fetch_guild(payload.guild_id)
-            else:
-                return
-        user = guild.get_member(payload.user_id)
-        if not user:
-            try:
-                user = await guild.fetch_member(payload.user_id)
-            except NotFound:
-                return
-        if user.bot:
-            return
-
-        Logger = Logs.Logger(guild=guild, user=user, cog=self)
-        reaction_id = (
-            reaction.name if payload.emoji.is_unicode_emoji() else reaction.id
-        )
-
-        channel = guild.get_channel(payload.channel_id)
-        if not channel:
-            try:
-                channel = await guild.fetch_channel(payload.channel_id)
-            except NotFound:
-                return
-        # Check if the channel is a TextChannel
-        if not isinstance(channel, TextChannel):
-            return
-
-        feature = await Feature.get_guild_feature_or_none(
-            feature_name="reaction_roles",
-            guild_id=guild.id,
-        )
-        if not feature or not feature.enabled:
-            return
-
-        reaction_roles = feature.get_setting("reaction_roles", [])
-        # Fetch the message from the database using the channel ID and payload message ID
-        message = await Messages.get(message_id=payload.message_id)
-        if not message:
-            return
-
-        # Filter reaction roles that match the message ID
-        reaction_role = next(
-            (rr for rr in reaction_roles if str(rr["message_id"]) == str(message.id)),
-            None,
-        )
-        if not reaction_role:
-            return
-
-        reaction_config = next(
-            (
-                r
-                for r in reaction_role["reactions"]
-                if str(r.get("emoji")) == str(reaction_id)
-                or r.get("url") == str(payload.emoji.url)
-            ),
-            None,
-        )
-        if not reaction_config:
-            return
-
+        """Handle reaction removals (only for manual removals, not bot removals)"""
         try:
-            role = guild.get_role(reaction_config["role_id"])
-            if not role:
-                role = await guild.fetch_role(reaction_config["role_id"])
-        except NotFound:
-            await Logger.warning(
-                "Role not found", context={"role_id": reaction_config["role_id"]}
-            )
-            return
+            reaction_str = str(payload.emoji)
+            reaction_key = self._get_reaction_key(payload.user_id, payload.message_id, reaction_str)
+            
+            # Skip if this was a bot-removed reaction
+            if reaction_key in self.bot_removed_reactions:
+                self.bot_removed_reactions.discard(reaction_key)
+                return
+            
+            # Prevent duplicate processing
+            if reaction_key in self.processing_reactions:
+                return
+            self.processing_reactions.add(reaction_key)
+            
+            if not payload.guild_id:
+                return
+            
+            try:
+                # Get guild and validate
+                guild = self.client.get_guild(payload.guild_id)
+                if not guild:
+                    try:
+                        guild = await self.client.fetch_guild(payload.guild_id)
+                    except NotFound:
+                        return
 
-        if role in user.roles and reaction_role.get("allow_unselect", True):
-            await user.remove_roles(role, reason="ReactionRole: Unselected role")
-            try:
-                await user.send(
-                    embed=Embed.Info(
+                # Get user and validate
+                user = guild.get_member(payload.user_id)
+                if not user:
+                    try:
+                        user = await guild.fetch_member(payload.user_id)
+                    except NotFound:
+                        return
+                if user.bot:
+                    return
+
+                # Get channel and validate
+                channel = guild.get_channel(payload.channel_id)
+                if not channel:
+                    try:
+                        channel = await guild.fetch_channel(payload.channel_id)
+                    except NotFound:
+                        return
+                if not isinstance(channel, TextChannel):
+                    return
+
+                Logger = Logs.Logger(guild=guild, user=user, cog=self)
+                
+                # Check if feature is enabled
+                feature = await Feature.get_guild_feature_or_none(
+                    feature_name="reaction_roles", guild_id=guild.id
+                )
+                if not feature or not feature.enabled:
+                    return
+
+                # Get reaction role configuration
+                reaction_roles = feature.get_setting("reaction_roles", [])
+                message_data = await Messages.get(message_id=payload.message_id)
+                if not message_data:
+                    return
+
+                reaction_role = next(
+                    (rr for rr in reaction_roles if str(rr["message_id"]) == str(message_data.id)),
+                    None,
+                )
+                if not reaction_role:
+                    return
+
+                # Only process if unselect is allowed
+                if not reaction_role.get("allow_unselect", True):
+                    return
+
+                # Find matching reaction configuration
+                reaction_id = payload.emoji.name if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
+                reaction_config = next(
+                    (
+                        r for r in reaction_role["reactions"]
+                        if str(r.get("emoji")) == str(reaction_id) or 
+                           r.get("url") == str(payload.emoji.url)
+                    ),
+                    None,
+                )
+                if not reaction_config:
+                    return
+
+                # Get the role
+                try:
+                    role = guild.get_role(int(reaction_config["role_id"]))
+                    if not role:
+                        role = await guild.fetch_role(int(reaction_config["role_id"]))
+                except (NotFound, ValueError):
+                    await Logger.warning(
+                        "Role not found or invalid", 
+                        context={"role_id": reaction_config["role_id"]}
+                    )
+                    return
+
+                # Remove role if user has it
+                if role in user.roles:
+                    await user.remove_roles(role, reason="ReactionRole: Unselected role (manual removal)")
+                    
+                    embed = Embed.Info(
                         title="Reaction Role",
-                        description=f"You have unselected the role: {role.name} in {channel.mention}",
-                    )
-                    .set_author(
-                        name=guild.name, icon_url=guild.icon.url if guild.icon else None
-                    )
-                    .set_footer(text=f"Guild ID: {guild.id}")
-                )
-            except Exception as e:
-                await Logger.error(
-                    "Failed to send DM to user", context={"error": str(e)}
-                )
-        else:
-            try:
-                await user.send(
-                    embed=Embed.Warning(
-                        title="Reaction Role",
-                        description="You cannot unselect this role",
-                    )
-                    .set_author(
-                        name=guild.name, icon_url=guild.icon.url if guild.icon else None
-                    )
-                    .set_footer(text=f"Guild ID: {guild.id}")
-                )
-            except Exception as e:
-                await Logger.error(
-                    "Failed to send DM to user", context={"error": str(e)}
-                )
+                        description=f"You have unselected the role: **{role.name}** in {channel.mention}",
+                    ).set_author(
+                        name=guild.name,
+                        icon_url=guild.icon.url if guild.icon else None,
+                    ).set_footer(text=f"Guild ID: {guild.id}")
+                    
+                    await self._send_user_notification(user, embed, Logger)
+
+            finally:
+                self.processing_reactions.discard(reaction_key)
+                
+        except Exception as e:
+            logger.error(f"Unexpected error in reaction remove handler: {e}", exc_info=True)
 
 
 def setup(client):
