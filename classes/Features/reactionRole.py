@@ -258,9 +258,7 @@ class ReactionRole(commands.Cog):
                 
                 await self._send_user_notification(user, embed, Logger)
                 
-                # Remove reaction if configured
-                if reaction_role.get("remove_reactions", True):
-                    await self._safe_remove_reaction(message, reaction, user, Logger)
+                await self._safe_remove_reaction(message, reaction, user, Logger)
                 return
 
             # Add the role
