@@ -71,7 +71,7 @@ export default function ServerLayoutClient({
     <div className="h-screen flex flex-col bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
       <div className="flex-1 pt-16 relative">
         <div className="flex h-full">
-          <div className="w-64 flex-shrink-0">
+          <div className="lg:w-72 flex-shrink-0">
             <ServerSidebar
               serverId={serverId}
               hasUnsavedChanges={hasChanges}
@@ -108,10 +108,10 @@ export default function ServerLayoutClient({
               damping: 25,
               duration: 0.5,
             }}
-            className="fixed bottom-8 inset-x-0 mx-auto w-fit py-4 px-6 rounded-lg backdrop-blur-lg border border-white/10 shadow-2xl bg-black/30"
+            className="fixed bottom-8 inset-x-0 mx-auto w-fit max-w-[90%] py-4 px-6 rounded-lg backdrop-blur-lg border border-white/10 shadow-2xl bg-black/30"
           >
             <motion.div
-              className="flex items-center gap-6"
+              className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6"
               initial={{ x: -20 }}
               animate={{ x: 0 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
@@ -122,7 +122,7 @@ export default function ServerLayoutClient({
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 5 }}
               >
                 <i className="fas fa-exclamation-circle text-yellow-500"></i>
-                <span className="font-medium">You have unsaved changes</span>
+                <span className="font-medium">Unsaved changes</span>
               </motion.div>
               <div className="flex gap-3">
                 <motion.button
@@ -141,7 +141,7 @@ export default function ServerLayoutClient({
                     });
                   }}
                   disabled={isLoading}
-                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all
+                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all w-full sm:w-auto justify-center
       ${
         isLoading
           ? "bg-emerald-700/40 text-white/70 cursor-not-allowed"
@@ -175,7 +175,7 @@ export default function ServerLayoutClient({
                   whileTap={{ scale: isLoading ? 1 : 0.98 }}
                   onClick={revertChanges}
                   disabled={isLoading}
-                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all
+                  className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all w-full sm:w-auto justify-center
       ${
         isLoading
           ? "bg-gray-700/40 text-white/70 cursor-not-allowed"

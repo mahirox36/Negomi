@@ -120,7 +120,7 @@ export default function Overview() {
                 <i className="fas fa-users"></i>
                 <span>{formatNumber(guild.member_count)} members</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <i className="fas fa-clock"></i>
                 <span>Created {formatDate(guild.created_at * 1000)}</span>
               </div>

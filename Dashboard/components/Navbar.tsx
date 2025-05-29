@@ -275,7 +275,7 @@ export default function Navbar() {
                       {user.global_name || user.username}
                     </span>
                   </div>
-                  <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all">
+                  <div className="h-10 w-10 md:h-8 md:w-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all">
                     {backendError ? (
                       <div className="bg-gray-600 w-full h-full" />
                     ) : (
@@ -396,7 +396,7 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200
+                  className={`block px-4 py-3 rounded-md text-base font-medium transition-colors duration-200
                     ${
                       isActive(item.path)
                         ? "text-white bg-white/20"
