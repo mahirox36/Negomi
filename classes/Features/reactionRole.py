@@ -100,9 +100,6 @@ class ReactionRole(commands.Cog):
                 reaction_key = self._get_reaction_key(user.id, message.id, str(emoji))
                 self.bot_removed_reactions.add(reaction_key)
                 await actual_reaction.remove(user)
-                # Remove from tracking after a short delay to handle async timing
-                await asyncio.sleep(0.1)
-                self.bot_removed_reactions.discard(reaction_key)
                 return True
         except Exception as e:
             await logger_instance.error(
@@ -304,14 +301,17 @@ class ReactionRole(commands.Cog):
             # Skip if this was a bot-removed reaction
             if reaction_key in self.bot_removed_reactions:
                 self.bot_removed_reactions.discard(reaction_key)
+                logger.info("1")
                 return
             
             # Prevent duplicate processing
             if reaction_key in self.processing_reactions:
+                logger.info("2")
                 return
             self.processing_reactions.add(reaction_key)
             
             if not payload.guild_id:
+                logger.info("3")
                 return
             
             try:
@@ -321,6 +321,7 @@ class ReactionRole(commands.Cog):
                     try:
                         guild = await self.client.fetch_guild(payload.guild_id)
                     except NotFound:
+                        logger.info("4")
                         return
 
                 # Get user and validate
@@ -329,8 +330,10 @@ class ReactionRole(commands.Cog):
                     try:
                         user = await guild.fetch_member(payload.user_id)
                     except NotFound:
+                        logger.info("6")
                         return
                 if user.bot:
+                    logger.info("5")
                     return
 
                 # Get channel and validate
@@ -339,8 +342,10 @@ class ReactionRole(commands.Cog):
                     try:
                         channel = await guild.fetch_channel(payload.channel_id)
                     except NotFound:
+                        logger.info("7")
                         return
                 if not isinstance(channel, TextChannel):
+                    logger.info("8")
                     return
 
                 Logger = Logs.Logger(guild=guild, user=user, cog=self)
@@ -350,12 +355,14 @@ class ReactionRole(commands.Cog):
                     feature_name="reaction_roles", guild_id=guild.id
                 )
                 if not feature or not feature.enabled:
+                    logger.info("9")
                     return
 
                 # Get reaction role configuration
                 reaction_roles = feature.get_setting("reaction_roles", [])
                 message_data = await Messages.get(message_id=payload.message_id)
                 if not message_data:
+                    logger.info("10")
                     return
 
                 reaction_role = next(
@@ -363,10 +370,12 @@ class ReactionRole(commands.Cog):
                     None,
                 )
                 if not reaction_role:
+                    logger.info("11")
                     return
 
                 # Only process if unselect is allowed
                 if not reaction_role.get("allow_unselect", True):
+                    logger.info("12")
                     return
 
                 # Find matching reaction configuration
@@ -380,6 +389,7 @@ class ReactionRole(commands.Cog):
                     None,
                 )
                 if not reaction_config:
+                    logger.info("13")
                     return
 
                 # Get the role
@@ -392,6 +402,7 @@ class ReactionRole(commands.Cog):
                         "Role not found or invalid", 
                         context={"role_id": reaction_config["role_id"]}
                     )
+                    logger.info("14")
                     return
 
                 # Remove role if user has it
