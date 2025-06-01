@@ -196,8 +196,7 @@ jobs:
           # Create the webhook payload
           PAYLOAD=$(cat << EOF
           {
-            "username": "GitHub Bot",
-            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "username": "Teto Github Bot",
             "embeds": [{
               "title": "${{ steps.setup.outputs.emoji }} ${{ steps.setup.outputs.title }}",
               "url": "https://github.com/${{ github.repository }}",
