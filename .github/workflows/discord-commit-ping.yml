@@ -85,7 +85,7 @@ jobs:
             "push")
               EVENT_EMOJI="🚀"
               EVENT_TITLE="New Push to ${{ github.ref_name }}"
-              EVENT_COLOR="3447003"
+              EVENT_COLOR="16738740"
               ;;
             "pull_request")
               if [ "${{ github.event.action }}" = "opened" ]; then
@@ -183,7 +183,7 @@ jobs:
             for lang in $(echo $LANGUAGES | tr ',' ' '); do
               case $lang in
                 "py") LANG_BADGES="$LANG_BADGES🐍 " ;;
-                "js"|"ts") LANG_BADGES="$LANG_BADGES⚡ " ;;
+                "js"|"ts"| "tsx") LANG_BADGES="$LANG_BADGES⚡ " ;;
                 "java") LANG_BADGES="$LANG_BADGES☕ " ;;
                 "cpp") LANG_BADGES="$LANG_BADGES⚙️ " ;;
                 "go") LANG_BADGES="$LANG_BADGES🐹 " ;;
