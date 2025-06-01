@@ -201,7 +201,7 @@ jobs:
             "embeds": [{
               "title": "${{ steps.setup.outputs.emoji }} ${{ steps.setup.outputs.title }}",
               "url": "https://github.com/${{ github.repository }}",
-              "description": "Repository: **${{ github.repository }}**\n\n**Recent Changes:**\n${{ steps.commits.outputs.commits }}",
+              "description": "**Recent Changes:**\n${{ steps.commits.outputs.commits }}",
               "color": ${{ steps.setup.outputs.color }},
               "fields": [
                 {
@@ -266,7 +266,7 @@ jobs:
             "embeds": [{
               "title": "📋 Batch Push Summary",
               "description": "This push contained **$TOTAL_COMMITS commits**. Here's a summary of the changes:",
-              "color": 15105570,
+              "color": 16738740,
               "fields": [
                 {
                   "name": "📊 Statistics",
