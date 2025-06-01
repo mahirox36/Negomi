@@ -19,4 +19,10 @@ mypy-boto3-s3
 python-multipart
 cachetools
 aiohttp
+nextcord
+nextcord[voice]
+nextcord[speed]
+tortoise-ORM
 python-jose[cryptography]
+aiofiles
+aerich

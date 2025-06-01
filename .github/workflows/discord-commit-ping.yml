@@ -1,33 +1,286 @@
-name: Discord Commit Notifier
+name: 🚀 Advanced Discord Commit Notifier
 
 on:
   push:
-    branches:
-      - main 
+    branches: ['main', 'develop', 'staging']
+  pull_request:
+    types: [opened, closed]
+    branches: ['main']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      custom_message:
+        description: 'Custom notification message'
+        required: false
+        default: ''
+
+env:
+  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  notify:
+  analyze-changes:
     runs-on: ubuntu-latest
-
+    outputs:
+      file-changes: ${{ steps.changes.outputs.files }}
+      commit-count: ${{ steps.commit-info.outputs.count }}
+      languages: ${{ steps.languages.outputs.detected }}
+      complexity-score: ${{ steps.complexity.outputs.score }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Notify Discord
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Analyze file changes
+        id: changes
         run: |
-          COMMITS=$(git log -1 --pretty=format:"%s by %an")
-          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-          PAYLOAD="{
-            \"embeds\": [{
-              \"title\": \"📦 New Commit Pushed!\",
-              \"description\": \"[\`$(echo "$COMMITS")\`]($COMMIT_URL)\",
-              \"color\": 16738740,
-              \"footer\": {
-                \"text\": \"Branch: ${{ github.ref_name }}\"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            FILES=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} | head -20)
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD | head -20)
+          fi
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Get commit info
+        id: commit-info
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            COUNT=$(git rev-list --count ${{ github.event.before }}..${{ github.sha }})
+          else
+            COUNT=1
+          fi
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+      
+      - name: Detect languages
+        id: languages
+        run: |
+          LANGS=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.java" -o -name "*.cpp" -o -name "*.go" -o -name "*.rs" -o -name "*.php" | head -10 | sed 's/.*\.//' | sort -u | tr '\n' ',' | sed 's/,$//')
+          echo "detected=$LANGS" >> $GITHUB_OUTPUT
+      
+      - name: Calculate complexity score
+        id: complexity
+        run: |
+          SCORE=0
+          if [ "${{ steps.commit-info.outputs.count }}" -gt 5 ]; then SCORE=$((SCORE + 3)); fi
+          if echo "${{ steps.changes.outputs.files }}" | grep -q "package.json\|requirements.txt\|Cargo.toml\|go.mod"; then SCORE=$((SCORE + 2)); fi
+          if echo "${{ steps.changes.outputs.files }}" | wc -l | awk '{print ($1 > 10)}' | grep -q 1; then SCORE=$((SCORE + 2)); fi
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+  notify-discord:
+    runs-on: ubuntu-latest
+    needs: analyze-changes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup notification data
+        id: setup
+        run: |
+          # Event-specific setup
+          case "${{ github.event_name }}" in
+            "push")
+              EVENT_EMOJI="🚀"
+              EVENT_TITLE="New Push to ${{ github.ref_name }}"
+              EVENT_COLOR="3447003"
+              ;;
+            "pull_request")
+              if [ "${{ github.event.action }}" = "opened" ]; then
+                EVENT_EMOJI="🔀"
+                EVENT_TITLE="Pull Request Opened"
+                EVENT_COLOR="7506394"
+              elif [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+                EVENT_EMOJI="✅"
+                EVENT_TITLE="Pull Request Merged"
+                EVENT_COLOR="3066993"
+              else
+                EVENT_EMOJI="🔄"
+                EVENT_TITLE="Pull Request Updated"
+                EVENT_COLOR="15844367"
+              fi
+              ;;
+            "release")
+              EVENT_EMOJI="🎉"
+              EVENT_TITLE="New Release Published"
+              EVENT_COLOR="15105570"
+              ;;
+            *)
+              EVENT_EMOJI="📢"
+              EVENT_TITLE="Repository Update"
+              EVENT_COLOR="9936031"
+              ;;
+          esac
+          
+          echo "emoji=$EVENT_EMOJI" >> $GITHUB_OUTPUT
+          echo "title=$EVENT_TITLE" >> $GITHUB_OUTPUT
+          echo "color=$EVENT_COLOR" >> $GITHUB_OUTPUT
+      
+      - name: Generate commit details
+        id: commits
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            COMMIT_LIST=""
+            COMMITS=$(git log --pretty=format:"%h|%s|%an|%ar" ${{ github.event.before }}..${{ github.sha }} | head -5)
+            while IFS='|' read -r hash subject author time; do
+              COMMIT_LIST="$COMMIT_LIST• [\`$hash\`](https://github.com/${{ github.repository }}/commit/$hash) $subject - *$author ($time)*\n"
+            done <<< "$COMMITS"
+            echo -e "commits=$COMMIT_LIST" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "commits=PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          else
+            LATEST_COMMIT=$(git log -1 --pretty=format:"%h|%s|%an|%ar")
+            IFS='|' read -r hash subject author time <<< "$LATEST_COMMIT"
+            echo "commits=• [\`$hash\`](https://github.com/${{ github.repository }}/commit/$hash) $subject - *$author ($time)*" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate file changes summary
+        id: files
+        run: |
+          FILES="${{ needs.analyze-changes.outputs.file-changes }}"
+          if [ -n "$FILES" ]; then
+            FILE_COUNT=$(echo "$FILES" | wc -l)
+            if [ $FILE_COUNT -gt 5 ]; then
+              SUMMARY=$(echo "$FILES" | head -5 | sed 's/^/• `/' | sed 's/$/`/' | tr '\n' ' ')
+              SUMMARY="$SUMMARY\n• *... and $((FILE_COUNT - 5)) more files*"
+            else
+              SUMMARY=$(echo "$FILES" | sed 's/^/• `/' | sed 's/$/`/' | tr '\n' ' ')
+            fi
+            echo -e "summary=$SUMMARY" >> $GITHUB_OUTPUT
+          else
+            echo "summary=No files changed" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get repository stats
+        id: stats
+        run: |
+          TOTAL_COMMITS=$(git rev-list --all --count)
+          CONTRIBUTORS=$(git shortlog -sn | wc -l)
+          REPO_SIZE=$(du -sh . | cut -f1)
+          
+          echo "total_commits=$TOTAL_COMMITS" >> $GITHUB_OUTPUT
+          echo "contributors=$CONTRIBUTORS" >> $GITHUB_OUTPUT
+          echo "size=$REPO_SIZE" >> $GITHUB_OUTPUT
+      
+      - name: Send rich Discord notification
+        run: |
+          # Build complexity indicator
+          COMPLEXITY_SCORE="${{ needs.analyze-changes.outputs.complexity-score }}"
+          if [ "$COMPLEXITY_SCORE" -ge 5 ]; then
+            COMPLEXITY_INDICATOR="🔥 High"
+          elif [ "$COMPLEXITY_SCORE" -ge 3 ]; then
+            COMPLEXITY_INDICATOR="⚡ Medium"
+          else
+            COMPLEXITY_INDICATOR="✨ Low"
+          fi
+          
+          # Build language badges
+          LANGUAGES="${{ needs.analyze-changes.outputs.languages }}"
+          LANG_BADGES=""
+          if [ -n "$LANGUAGES" ]; then
+            for lang in $(echo $LANGUAGES | tr ',' ' '); do
+              case $lang in
+                "py") LANG_BADGES="$LANG_BADGES🐍 " ;;
+                "js"|"ts") LANG_BADGES="$LANG_BADGES⚡ " ;;
+                "java") LANG_BADGES="$LANG_BADGES☕ " ;;
+                "cpp") LANG_BADGES="$LANG_BADGES⚙️ " ;;
+                "go") LANG_BADGES="$LANG_BADGES🐹 " ;;
+                "rs") LANG_BADGES="$LANG_BADGES🦀 " ;;
+                *) LANG_BADGES="$LANG_BADGES📝 " ;;
+              esac
+            done
+          fi
+          
+          # Create the webhook payload
+          PAYLOAD=$(cat << EOF
+          {
+            "username": "GitHub Bot",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "embeds": [{
+              "title": "${{ steps.setup.outputs.emoji }} ${{ steps.setup.outputs.title }}",
+              "url": "https://github.com/${{ github.repository }}",
+              "description": "Repository: **${{ github.repository }}**\n\n**Recent Changes:**\n${{ steps.commits.outputs.commits }}",
+              "color": ${{ steps.setup.outputs.color }},
+              "fields": [
+                {
+                  "name": "📁 Files Modified",
+                  "value": "${{ steps.files.outputs.summary }}",
+                  "inline": false
+                },
+                {
+                  "name": "📊 Impact",
+                  "value": "Complexity: $COMPLEXITY_INDICATOR\nCommits: ${{ needs.analyze-changes.outputs.commit-count }}\nLanguages: $LANG_BADGES",
+                  "inline": true
+                },
+                {
+                  "name": "📈 Repository Stats",
+                  "value": "Total Commits: ${{ steps.stats.outputs.total_commits }}\nContributors: ${{ steps.stats.outputs.contributors }}\nSize: ${{ steps.stats.outputs.size }}",
+                  "inline": true
+                }
+              ],
+              "footer": {
+                "text": "Branch: ${{ github.ref_name }} • Triggered by ${{ github.actor }}",
+                "icon_url": "https://github.com/${{ github.actor }}.png"
               },
-              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "thumbnail": {
+                "url": "https://github.com/${{ github.repository_owner }}.png"
+              }
             }]
-          }"
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" $DISCORD_WEBHOOK
+          }
+          EOF
+          )
+          
+          # Send to Discord with retry logic
+          for i in {1..3}; do
+            if curl -H "Content-Type: application/json" \
+                    -H "User-Agent: GitHub-Actions-Discord-Notifier" \
+                    -X POST \
+                    -d "$PAYLOAD" \
+                    "$DISCORD_WEBHOOK"; then
+              echo "✅ Discord notification sent successfully!"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              sleep 2
+            fi
+          done
+
+  # Optional: Send summary for large pushes
+  send-summary:
+    runs-on: ubuntu-latest
+    needs: [analyze-changes, notify-discord]
+    if: needs.analyze-changes.outputs.commit-count > 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Send batch summary
+        run: |
+          TOTAL_COMMITS="${{ needs.analyze-changes.outputs.commit-count }}"
+          PAYLOAD=$(cat << EOF
+          {
+            "embeds": [{
+              "title": "📋 Batch Push Summary",
+              "description": "This push contained **$TOTAL_COMMITS commits**. Here's a summary of the changes:",
+              "color": 15105570,
+              "fields": [
+                {
+                  "name": "📊 Statistics",
+                  "value": "• **$TOTAL_COMMITS** total commits\n• **$(echo '${{ needs.analyze-changes.outputs.file-changes }}' | wc -l)** files changed\n• Complexity: $([ ${{ needs.analyze-changes.outputs.complexity-score }} -ge 5 ] && echo 'High 🔥' || echo 'Moderate ⚡')",
+                  "inline": false
+                }
+              ],
+              "footer": {
+                "text": "Large batch detected - consider smaller, more frequent commits"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          EOF
+          )
+          
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$DISCORD_WEBHOOK"
