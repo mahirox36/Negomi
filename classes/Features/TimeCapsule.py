@@ -29,12 +29,14 @@ class timeCapsule(commands.Cog):
         links = re.findall(r"https?://(?:www\.)?([a-zA-Z0-9.-]+)", message)
         if links:
             await ctx.send(embed=Embed.Error("You cannot send Links"))
-        now = utils.utcnow().replace(tzinfo=None)
+        now = utils.utcnow().replace(tzinfo=timezone.utc)
+
         try:
-            target_date = datetime(year, month, day)
+            target_date = datetime(year, month, day, tzinfo=timezone.utc)
         except ValueError:
             return await ctx.send(embed=Embed.Error("Invalid date! Please enter a valid year, month, and day."))
-        if target_date.replace(tzinfo=timezone.utc) <= now:
+        
+        if target_date <= now:
             return await ctx.send(embed=Embed.Error("The date must be in the future!"))
         feature = await Feature.get_global_feature("TimeCapsule", default=[])
 
