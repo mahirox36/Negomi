@@ -180,12 +180,12 @@ async def get_bot_pfp(request: Request):
 async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
     """Upload an image file and return its URL"""
     backend: APIServer = request.app.state.backend
-
+    
     try:
         # Validate file existence
-        if not file:
+        if not file or not file.filename:
             raise HTTPException(status_code=400, detail="No file provided")
-
+        
         # Validate file type
         allowed_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
         if not file.content_type or file.content_type not in allowed_types:
@@ -193,59 +193,40 @@ async def upload_image_endpoint(request: Request, file: UploadFile = File(...)):
                 status_code=400,
                 detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}",
             )
-
-        # Process file content in smaller chunks to prevent blocking
-        content = bytearray()
-        chunk_size = 64 * 1024  # 64KB chunks
-
-        while True:
-            chunk = await file.read(chunk_size)
-            if not chunk:
-                break
-            content.extend(chunk)
-
-            # Allow other coroutines to run between chunks
-            await asyncio.sleep(0)
-
-        # Validate file size
-        if len(content) > 3 * 1024 * 1024:  # 3MB limit
+        
+        file.file.seek(0, 2)
+        file_size =  file.file.tell()
+        await file.seek(0)
+        
+        if file_size > 3 * 1024 * 1024:  # 3MB limit
             raise HTTPException(
                 status_code=400, detail="File size must be less than 3MB"
             )
-
-        # Create a new file-like object with the content
-        file_obj = io.BytesIO(content)
-        file_obj.name = file.filename
-
+        
         # Generate safe filename
-        original_filename = file.filename or "image"
+        original_filename = file.filename
         safe_filename = "".join(
             c for c in original_filename if c.isalnum() or c in "._-"
         )
-        filename = f"upload_{int(time.time())}_{safe_filename}"
-
-        # Wrap BytesIO in UploadFile
-        upload_file = UploadFile(filename=filename, file=file_obj)
-
-        # Upload file
-        url, metadata = await backend.storage.upload_file(upload_file, filename)
-
+        
+        # Upload file directly
+        url, internal_url = await backend.storage.upload_file(file, "uploads/")
+        
         if not url:
             raise HTTPException(status_code=500, detail="Failed to generate upload URL")
-
+        
         return JSONResponse(
             {
                 "success": True,
                 "data": {
                     "url": url,
-                    "filename": filename,
-                    "size": len(content),
+                    "filename": safe_filename,
+                    "size": file_size,
                     "type": file.content_type,
-                    "metadata": metadata,
                 },
             }
         )
-
+        
     except HTTPException as he:
         raise he
     except Exception as e:
